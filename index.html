@@ -2501,7 +2501,7 @@ ${feat('lottery')?'<li>הגרלה: "🎲 הגרלה על מסך מלא" – מת
 <ul><li><b>הקישור:</b> <span dir="ltr">mutzlach-il.github.io/ezer</span>. שם יש רק את התוכנה – בלי שום נתון. מי שאין לו הרשאה רואה רק מסך כניסה.</li>
 <li><b>כניסה אישית:</b> עם Google, או מייל וסיסמה. הראשון שנכנס אי פעם הוא המנהל. כל מי שנכנס אחריו מחכה לאישור: הגדרות ← "☁ חיבור משותף" ← "מי יכול להיכנס" – מסמנים "מאושר" ובוחרים הרשאה (מנהל / רושם / צפייה / כתובות / מתנדב לספירה, ואפשר "בלי סכומים").</li>
 <li><b>מפתח הארגון:</b> המנהל קובע אותו בכניסה הראשונה. כל הנתונים מוצפנים בו במחשב עצמו לפני שהם יוצאים לשרת – בשרת יש רק ג'יבריש. כל עובד מקליד אותו פעם אחת במחשב שלו (המנהל אומר לו בעל פה). אפשר לכתוב אותו <b>בעברית</b> (לוחצים "👁 הצג" כדי לראות מה מקלידים; מתחת לשדה כתוב אם זה עברית או אנגלית).</li>
-<li><b>שכחת את המפתח?</b> כשקובעים אותו מקבלים <b>קוד שחזור</b> (כמו FX5G-ZLQH-…) – שולחים אותו למייל שלך בלחיצה, או מדפיסים. בכניסה: "שכחתי את המפתח – יש לי קוד שחזור" ← מקלידים את הקוד ← בוחרים מפתח חדש. שום נתון לא נמחק. גם: מחשב שכבר מחובר ממשיך לעבוד בלי להקליד שוב. מנהל יכול להחליף מפתח או ליצור קוד שחזור חדש בהגדרות ← "☁ חיבור משותף".</li>
+<li><b>שכחת את המפתח?</b> המנהל לא צריך פתק: נכנסים עם <b>המייל שלך</b> (כפתור Google, או מייל וסיסמה – ואם שכחת גם את הסיסמה, "שכחתי סיסמה" שולח קישור למייל) ← לוחצים <b>"📧 שכחתי את המפתח – שחזור דרך המייל שלי"</b> ← בוחרים משפט חדש. שום נתון לא נמחק. עובד רק לחשבון של מנהל. עובד ששכח – המנהל אומר לו את המפתח. מחשב שכבר מחובר ממשיך לעבוד בלי להקליד שוב. <b>חשוב:</b> מי שנכנס למייל של המנהל יכול לשחזר – לכן שומרים היטב על הסיסמה של המייל.</li>
 <li><b>סנכרון:</b> כל שינוי עובר לכל המחשבים תוך שניות. בפס הצד רואים "☁ מסונכרן". אם שניים רשמו לאותו בחור באותו זמן – שני התשלומים נשמרים, שום דבר לא נדרס.</li>
 <li><b>בלי אינטרנט:</b> לוחצים בפס הצד "📲 התקנה במחשב" – ומקבלים סמל של עזר. עובדים רגיל גם בלי אינטרנט, וכשהחיבור חוזר הכל נשלח לבד ("📴 בלי אינטרנט – יסתנכרן כשיחזור").</li>
 <li><b>עדכונים:</b> כשיוצאת גרסה חדשה מופיע למטה "✔ יש גרסה חדשה – לחצו לרענון". לא שולחים יותר קבצים.</li>
@@ -4606,12 +4606,21 @@ async function clKeyScreen(err){const meta=await clMetaGet();
     clGate(`<h3>🔑 קביעת מפתח הארגון</h3><p class="small" style="text-align:right;line-height:1.8">המפתח נועל את כל הנתונים. אפשר <b>בעברית</b> או באנגלית.<br>• משפט שקל לזכור וקשה לנחש (לפחות 10 תווים).<br>• אומרים אותו בעל־פה רק לאנשי הצוות.<br>• אם תשכח אותו – יש <b>קוד שחזור</b> (תקבל אותו בשלב הבא).</p>
     ${clPwField('ck1','מפתח הארגון')}${clPwField('ck2','שוב – לאימות')}<div id="clErr" class="small" style="color:var(--bad);margin:6px 0;min-height:18px">${err||''}</div><button class="btn pri" onclick="clKeyCreate()">קבע מפתח והמשך</button>`);return}
   clGate(`<h3>🔑 מפתח הארגון</h3><p class="small">כותבים פעם אחת במחשב הזה את מפתח הארגון (המנהל יגיד לך אותו).</p>${clPwField('ck1','מפתח הארגון',`onkeydown="if(event.key==='Enter')clKeyEnter()"`)}<div id="clErr" class="small" style="color:var(--bad);margin:6px 0;min-height:18px">${err||''}</div>
-  <button class="btn pri" onclick="clKeyEnter()">המשך</button> <button class="btn" onclick="clSignOut()">יציאה</button>${meta.rwrap&&CLOUD.me.role==='admin'?`<div style="margin-top:12px"><a href="#" class="small" onclick="clRecoverScreen();return false">שכחתי את המפתח – יש לי קוד שחזור</a></div>`:''}`)}
+  <button class="btn pri" onclick="clKeyEnter()">המשך</button> <button class="btn" onclick="clSignOut()">יציאה</button>${CLOUD.me.role==='admin'?`<div style="margin-top:12px"><button class="btn" onclick="clEscrowRecover()">📧 שכחתי את המפתח – שחזור דרך המייל שלי</button>${meta.rwrap?`<div style="margin-top:6px"><a href="#" class="small" onclick="clRecoverScreen();return false">יש לי קוד שחזור</a></div>`:''}</div>`:`<div class="small muted" style="margin-top:12px">שכחת? המנהל יכול לשחזר דרך המייל שלו ולהגיד לך את המפתח.</div>`}`)}
 async function clKeyCreate(){const a=clNorm(document.getElementById('ck1').value),b=clNorm(document.getElementById('ck2').value);if(a.length<10){clErr('לפחות 10 תווים');return}if(a!==b){clErr('שני המפתחות לא זהים – לחץ "👁 הצג" ובדוק');return}
   clErr('מכין…');const dek=crypto.getRandomValues(new Uint8Array(32));CLOUD.key=await crypto.subtle.importKey('raw',dek,{name:'AES-GCM'},true,['encrypt','decrypt']);
-  const code=clRandCode(),w1=await clWrap(a,dek),w2=await clWrap(code,dek),check=await clEnc('ezer-ok');
-  try{await clMetaPut({salt:w1.salt,wrap:w1.wrap,rsalt:w2.salt,rwrap:w2.wrap,check})}catch(e){clErr('שמירה בשרת נכשלה: '+e.message);return}
-  await clStoreKey();clShowRecovery(code,true)}
+  const w1=await clWrap(a,dek),check=await clEnc('ezer-ok');
+  try{await clMetaPut({salt:w1.salt,wrap:w1.wrap,check})}catch(e){clErr('שמירה בשרת נכשלה: '+e.message);return}
+  await clStoreKey();await clEscrowSave();clEnter()}
+/* שחזור דרך המייל: עותק של מפתח הנתונים שמור בשרת, נעול לחשבון של המנהל בלבד (המייל שלו).
+   שכחת את המשפט? נכנסים עם המייל (Google או קישור/סיסמה מהמייל) ← "שחזור דרך המייל" ← בוחרים משפט חדש. */
+async function clEscrowSave(){if(!CLOUD.me||CLOUD.me.role!=='admin'||!CLOUD.key)return;try{const raw=await crypto.subtle.exportKey('raw',CLOUD.key);
+  const {data}=await CLOUD.sb.from('ez_escrow').select('email').eq('email',CLOUD.me.email).maybeSingle();if(!data)await CLOUD.sb.from('ez_escrow').upsert({email:CLOUD.me.email,dek:clB64(raw)})}catch(e){console.warn('escrow',e)}}
+async function clEscrowRecover(){clErr('משחזר דרך החשבון שלך…');const {data,error}=await CLOUD.sb.from('ez_escrow').select('dek').eq('email',CLOUD.me.email).maybeSingle();
+  if(error||!data){clErr('לא נמצא גיבוי מפתח לחשבון הזה. צריך להיכנס עם אותו מייל של המנהל שהקים את המערכת.');return}
+  try{CLOUD.key=await crypto.subtle.importKey('raw',clUb(data.dek),{name:'AES-GCM'},true,['encrypt','decrypt']);if(await clDec(CLOUD.srvMeta.check)!=='ezer-ok')throw 0}catch(e){CLOUD.key=null;clErr('השחזור נכשל');return}
+  await clStoreKey();clGate(`<h3>✔ שוחזר דרך המייל שלך</h3><p class="small">עכשיו בוחרים משפט חדש לאנשי הצוות (אפשר בעברית).</p>${clPwField('ck1','מפתח ארגון חדש')}${clPwField('ck2','שוב – לאימות')}
+  <div id="clErr" class="small" style="color:var(--bad);margin:6px 0;min-height:18px"></div><button class="btn pri" onclick="clChangeKeyDo(true)">שמירה והמשך</button>`)}
 function clShowRecovery(code,first){const em=CLOUD.me.email,body=`קוד השחזור של מערכת עזר (קרן עזר נישואין):\n\n${code}\n\nמשתמשים בו רק אם שוכחים את מפתח הארגון: נכנסים ← "שכחתי את המפתח – יש לי קוד שחזור".\nלא להעביר לאף אחד.`;
   clGate(`<h3>🧾 קוד שחזור</h3><p class="small" style="text-align:right">אם תשכח את מפתח הארגון – הקוד הזה פותח את הנתונים, ותבחר מפתח חדש. <b>שמור אותו</b>: שלח לעצמך למייל, הדפס, או כתוב על נייר.</p>
   <div dir="ltr" style="font:700 18px monospace;letter-spacing:1px;background:#fff8e1;border:2px dashed #b8892a;border-radius:10px;padding:12px;margin:10px 0;user-select:all">${code}</div>
@@ -4633,15 +4642,15 @@ async function clRecover(){const c=document.getElementById('rc1').value.toUpperC
 // בהגדרות: החלפת מפתח / קוד שחזור חדש (רק מנהל, במחשב שכבר מחובר)
 function clChangeKey(){clGate(`<h3>🔑 החלפת מפתח הארגון</h3><p class="small">הנתונים לא משתנים – רק המשפט שפותח אותם. מי שכבר מחובר ממשיך לעבוד.</p>${clPwField('ck1','מפתח חדש')}${clPwField('ck2','שוב – לאימות')}
   <div id="clErr" class="small" style="color:var(--bad);margin:6px 0;min-height:18px"></div><button class="btn pri" onclick="clChangeKeyDo()">שמירה</button> <button class="btn" onclick="clGateClose()">ביטול</button>`)}
-async function clChangeKeyDo(){const a=clNorm(document.getElementById('ck1').value),b=clNorm(document.getElementById('ck2').value);if(a.length<10){clErr('לפחות 10 תווים');return}if(a!==b){clErr('שני המפתחות לא זהים');return}
+async function clChangeKeyDo(enter){const a=clNorm(document.getElementById('ck1').value),b=clNorm(document.getElementById('ck2').value);if(a.length<10){clErr('לפחות 10 תווים');return}if(a!==b){clErr('שני המפתחות לא זהים');return}
   const M=await clMetaGet();if(!M.wrap){clErr('המערכת הוקמה בגרסה ישנה – אי אפשר להחליף מכאן');return}const dek=new Uint8Array(await crypto.subtle.exportKey('raw',CLOUD.key)),w1=await clWrap(a,dek);
-  try{await clMetaPut({salt:w1.salt,wrap:w1.wrap})}catch(e){clErr(e.message);return}log('ענן','מפתח הארגון הוחלף');clGateClose();toast('✔ המפתח הוחלף')}
+  try{await clMetaPut({salt:w1.salt,wrap:w1.wrap})}catch(e){clErr(e.message);return}if(enter){clEnter();setTimeout(()=>{log('ענן','מפתח הארגון הוחלף אחרי שחזור דרך המייל');toast('✔ נקבע מפתח חדש')},800);return}log('ענן','מפתח הארגון הוחלף');clGateClose();toast('✔ המפתח הוחלף')}
 async function clNewRecovery(){if(!confirm('ליצור קוד שחזור חדש? הקוד הקודם יפסיק לעבוד.'))return;const dek=new Uint8Array(await crypto.subtle.exportKey('raw',CLOUD.key)),code=clRandCode(),w2=await clWrap(code,dek);
   try{await clMetaPut({rsalt:w2.salt,rwrap:w2.wrap})}catch(e){alert(e.message);return}log('ענן','נוצר קוד שחזור חדש');clShowRecovery(code,false)}
 
 /* ---------- כניסה למערכת ---------- */
 function clUser(){const m=CLOUD.me;return {id:'c:'+m.email,name:m.name,email:m.email,role:m.role,hideAmounts:m.hide,cloud:true}}
-async function clEnter(){clLoadMeta();clGateClose();CLOUD.on=true;startSession(clUser());clStatus();setInterval(()=>{clStatus();clInstallBtn()},5000);
+async function clEnter(){clLoadMeta();clGateClose();CLOUD.on=true;clEscrowSave();startSession(clUser());clStatus();setInterval(()=>{clStatus();clInstallBtn()},5000);
   await clContentLoad();clSync(true);clRealtime();
   setInterval(()=>clSync(),60000);window.addEventListener('online',()=>{CLOUD.online=true;clSync()});window.addEventListener('offline',()=>{CLOUD.online=false;clStatus()});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)clSync()})}
@@ -4785,7 +4794,7 @@ function renderNav(){
   document.getElementById('sidefoot').innerHTML=`גיבוי אחרון: ${lb?esc(hebDate(localIso(lb))):'<b>אף פעם</b>'}${days===null||days>=7?' ⚠':''}
     ${can('settings')||USER.role==='clerk'?`<button onclick="backup()">💾 שמור גיבוי</button>`:''}${can('settings')?`<button onclick="archiveModal()">📦 תיקיית סוף שנה</button>`:''}${USER.role!=='addresses'?`<button onclick="exportAll()">📊 ייצוא לאקסל</button>`:''}
     <div class="row"><button onclick="fontSize(1)" title="אותיות גדולות">א+</button><button onclick="fontSize(-1)" title="אותיות קטנות">א−</button><button onclick="openTheme()" title="צבעים ומראה">🎨</button></div>
-    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 21.10.2026 19:35</div>`;
+    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 21.10.2026 19:43</div>`;
   const yp=document.getElementById('yearpick');yp.innerHTML=st.years.map(y=>`<option ${y===S.viewYear?'selected':''} value='${esc(y)}'>${esc(y)}${y===st.currentYear?' (נוכחית)':''}</option>`).join('');
   document.getElementById('todayHeb').textContent=hebDate(today());applyBrand();
   document.getElementById('gsWrap').style.display=USER.role==='addresses'||USER.role==='counter'?'none':'';
