@@ -717,7 +717,7 @@ function tryLogin(){
   if(String(u.pass||'')===document.getElementById('lockpw').value){document.getElementById('lockpw').value='';document.getElementById('lockerr').textContent='';recFails(0);startSession(u)}
   else{const n=recFails(1);document.getElementById('lockerr').textContent='סיסמה שגויה'+(n>=3&&n<RECOVER_AFTER?` (ניסיון ${n})`:'');recShow()}
 }
-function logout(){if(CLOUD.on){clSignOut();return}setTimeout(()=>applyTheme(),0);try{sessionStorage.removeItem(KEY+'_user')}catch(e){}USER=null;showLogin()}
+function logout(){if(CLOUD.on){clLogoutMenu();return}setTimeout(()=>applyTheme(),0);try{sessionStorage.removeItem(KEY+'_user')}catch(e){}USER=null;showLogin()}
 function askAdmin(then){
   if(isAdmin()) return true;
   modal(`<div class="modal narrow"><div class="mh"><h2>אישור מנהל</h2><button class="x" onclick="closeModal()">×</button></div>
@@ -2499,7 +2499,9 @@ ${feat('lottery')?'<li>הגרלה: "🎲 הגרלה על מסך מלא" – מת
 <li>אם בית לא נמצא במפה – בודקים את שם הרחוב בכרטיס הבית (כתיב כמו בשלט) ולוחצים במסך המפות "📍 מיקום הבתים".</li></ul>`],
 ['h10c','☁ הגרסה המקוונת – כל הצוות על אותם נתונים, מוצפן',`
 <ul><li><b>הקישור:</b> <span dir="ltr">mutzlach-il.github.io/ezer</span>. שם יש רק את התוכנה – בלי שום נתון. מי שאין לו הרשאה רואה רק מסך כניסה.</li>
-<li><b>כניסה אישית:</b> עם Google, או מייל וסיסמה. הראשון שנכנס אי פעם הוא המנהל. כל מי שנכנס אחריו מחכה לאישור: הגדרות ← "☁ חיבור משותף" ← "מי יכול להיכנס" – מסמנים "מאושר" ובוחרים הרשאה (מנהל / רושם / צפייה / כתובות / מתנדב לספירה, ואפשר "בלי סכומים").</li>
+<li><b>כניסה אישית:</b> עם Google, או מייל וסיסמה, או <b>"📧 כניסה עם קוד שנשלח למייל"</b> – כותבים את המייל, מקבלים קוד של 6 ספרות ומקלידים אותו (בלי סיסמה בכלל; גם מי ששכח סיסמה נכנס ככה, ואחר כך יכול לקבוע סיסמה חדשה בהגדרות ← "☁ חיבור משותף" ← "🔐 קביעת / שינוי סיסמה").</li>
+<li><b>🚪 יציאה</b> (כפתור למעלה): "יציאה רגילה" – במחשב שלך; "יציאה ומחיקה מהמחשב הזה" – במחשב משותף: מוחק מהמחשב את הנתונים והמפתח (בשרת לא נמחק כלום). עובד שהורדת לו את האישור – בפעם הבאה שהמחשב שלו מתחבר, הנתונים נמחקים ממנו לבד.</li>
+<li><b>אישור:</b> הראשון שנכנס אי פעם הוא המנהל. כל מי שנכנס אחריו מחכה לאישור: הגדרות ← "☁ חיבור משותף" ← "מי יכול להיכנס" – מסמנים "מאושר" ובוחרים הרשאה (מנהל / רושם / צפייה / כתובות / מתנדב לספירה, ואפשר "בלי סכומים").</li>
 <li><b>מפתח הארגון:</b> המנהל קובע אותו בכניסה הראשונה. כל הנתונים מוצפנים בו במחשב עצמו לפני שהם יוצאים לשרת – בשרת יש רק ג'יבריש. כל עובד מקליד אותו פעם אחת במחשב שלו (המנהל אומר לו בעל פה). אפשר לכתוב אותו <b>בעברית</b> (לוחצים "👁 הצג" כדי לראות מה מקלידים; מתחת לשדה כתוב אם זה עברית או אנגלית).</li>
 <li><b>שכחת את המפתח?</b> המנהל לא צריך פתק: נכנסים עם <b>המייל שלך</b> (כפתור Google, או מייל וסיסמה – ואם שכחת גם את הסיסמה, "שכחתי סיסמה" שולח קישור למייל) ← לוחצים <b>"📧 שכחתי את המפתח – שחזור דרך המייל שלי"</b> ← בוחרים משפט חדש. שום נתון לא נמחק. עובד רק לחשבון של מנהל. עובד ששכח – המנהל אומר לו את המפתח. מחשב שכבר מחובר ממשיך לעבוד בלי להקליד שוב. <b>חשוב:</b> מי שנכנס למייל של המנהל יכול לשחזר – לכן שומרים היטב על הסיסמה של המייל.</li>
 <li><b>סנכרון:</b> כל שינוי עובר לכל המחשבים תוך שניות. בפס הצד רואים "☁ מסונכרן". אם שניים רשמו לאותו בחור באותו זמן – שני התשלומים נשמרים, שום דבר לא נדרס.</li>
@@ -4558,7 +4560,7 @@ function clLoginScreen(msg){
   <div class="small muted" style="margin:14px 0 8px">— או עם מייל וסיסמה —</div>
   <input type="email" id="clEm" placeholder="מייל" style="width:100%;margin-bottom:6px" dir="ltr"><input type="password" id="clPw" placeholder="סיסמה" style="width:100%" dir="ltr" onkeydown="if(event.key==='Enter')clEmailIn()">
   <div style="display:flex;gap:6px;margin-top:8px"><button class="btn pri" style="flex:1" onclick="clEmailIn()">כניסה</button><button class="btn" onclick="clEmailUp()">הרשמה חדשה</button></div>
-  <div style="margin-top:6px"><a href="#" class="small" onclick="clForgot();return false">שכחתי סיסמה</a></div>
+  <button class="btn" style="width:100%;margin-top:8px" onclick="clOtpStart()">📧 כניסה עם קוד שנשלח למייל (גם אם שכחת סיסמה)</button>
   <div id="clErr" class="small" style="color:var(--bad);margin-top:10px;min-height:18px">${msg||''}</div>
   <div class="small muted" style="margin-top:10px">🔒 רק מי שהמנהל אישר יכול להיכנס. הנתונים מוצפנים.</div>`);clInitGoogle()}
 let clNonce='';
@@ -4576,6 +4578,23 @@ async function clEmailIn(){const em=document.getElementById('clEm').value.trim()
 async function clEmailUp(){const em=document.getElementById('clEm').value.trim().toLowerCase(),pw=document.getElementById('clPw').value;if(!em||pw.length<8){clErr('מייל, וסיסמה של 8 תווים לפחות');return}
   const {data,error}=await CLOUD.sb.auth.signUp({email:em,password:pw,options:{emailRedirectTo:location.href.split('#')[0]}});if(error){clErr('ההרשמה נכשלה: '+error.message);return}
   if(data.session)clAfterAuth(data.user);else clErr('נשלח אליך מייל לאישור הכתובת. אחרי שתאשר – חזור לכאן והיכנס.')}
+/* כניסה עם קוד חד־פעמי למייל – בלי סיסמה. גם "שכחתי סיסמה" עובר דרך זה */
+const clHere=()=>location.origin+location.pathname;
+async function clOtpStart(){const em=(document.getElementById('clEm')||{}).value?.trim().toLowerCase()||'';
+  clGate(`<h3>📧 כניסה עם קוד למייל</h3><p class="small">כותבים את המייל, ונשלח אליו קוד של 6 ספרות (או קישור כניסה).</p><input type="email" id="otE" dir="ltr" placeholder="המייל שלך" value="${esc(em)}" style="width:100%" onkeydown="if(event.key==='Enter')clOtpSend()">
+  <div id="clErr" class="small" style="color:var(--bad);margin:8px 0;min-height:18px"></div><button class="btn pri" onclick="clOtpSend()">שלחו לי קוד</button> <button class="btn" onclick="clLoginScreen()">חזרה</button>`)}
+async function clOtpSend(){const em=document.getElementById('otE').value.trim().toLowerCase();if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){clErr('מייל לא תקין');return}clErr('שולח…');
+  const {error}=await CLOUD.sb.auth.signInWithOtp({email:em,options:{shouldCreateUser:true,emailRedirectTo:clHere()}});if(error){clErr(/rate|seconds/i.test(error.message)?'נשלח כבר קוד לפני רגע – חכה דקה ונסה שוב':'השליחה נכשלה: '+error.message);return}
+  clGate(`<h3>📧 בדוק את המייל</h3><p class="small">שלחנו ל־<b dir="ltr">${esc(em)}</b> מייל. אם יש בו <b>קוד של 6 ספרות</b> – כותבים אותו כאן. אם יש בו <b>קישור</b> – לוחצים עליו (פותחים אותו באותו דפדפן).</p>
+  <input type="text" id="otC" inputmode="numeric" maxlength="8" dir="ltr" placeholder="123456" style="width:100%;font:700 24px monospace;text-align:center;letter-spacing:6px" onkeydown="if(event.key==='Enter')clOtpVerify(${jsq(em)})">
+  <div id="clErr" class="small" style="color:var(--bad);margin:8px 0;min-height:18px"></div><button class="btn pri" onclick="clOtpVerify(${jsq(em)})">כניסה</button> <button class="btn" onclick="clOtpStart()">שלחו שוב</button>
+  <div class="small muted" style="margin-top:8px">לא הגיע? בודקים גם ב"דואר זבל". המייל נשלח מ־Supabase.</div>`);setTimeout(()=>{const c=document.getElementById('otC');if(c)c.focus()},50)}
+async function clOtpVerify(em){const t=document.getElementById('otC').value.replace(/\D/g,'');if(t.length<6){clErr('צריך את הקוד מהמייל');return}clErr('בודק…');
+  const {data,error}=await CLOUD.sb.auth.verifyOtp({email:em,token:t,type:'email'});if(error){clErr('הקוד לא נכון או שפג תוקפו – בקש קוד חדש');return}clAfterAuth(data.user)}
+// הגיעו מקישור "איפוס סיסמה" – בוחרים סיסמה חדשה
+function clNewPassScreen(){clGate(`<h3>🔐 סיסמה חדשה</h3>${clPwField('np1','סיסמה חדשה (8 תווים לפחות)')}${clPwField('np2','שוב – לאימות')}<div id="clErr" class="small" style="color:var(--bad);margin:6px 0;min-height:18px"></div><button class="btn pri" onclick="clNewPassSave()">שמירה</button>`)}
+async function clNewPassSave(){const a=document.getElementById('np1').value,b=document.getElementById('np2').value;if(a.length<8){clErr('לפחות 8 תווים');return}if(a!==b){clErr('לא זהות');return}
+  const {data,error}=await CLOUD.sb.auth.updateUser({password:a});if(error){clErr(error.message);return}toast('✔ הסיסמה נשמרה');if(CLOUD.on)clGateClose();else clAfterAuth(data.user)}
 async function clForgot(){const em=document.getElementById('clEm').value.trim().toLowerCase();if(!em){clErr('כתוב קודם את המייל');return}
   const {error}=await CLOUD.sb.auth.resetPasswordForEmail(em,{redirectTo:location.href.split('#')[0]});clErr(error?'לא הצלחתי לשלוח: '+error.message:'נשלח אליך מייל עם קישור לסיסמה חדשה.')}
 
@@ -4584,6 +4603,7 @@ async function clAfterAuth(user){const email=(user.email||'').toLowerCase(),name
   let {data:u,error}=await CLOUD.sb.from('ez_users').select('*').eq('email',email).maybeSingle();
   if(error){clGate(`<p style="color:var(--bad)">אין חיבור לרשימת המשתמשים בשרת.</p><p class="small muted">${esc(error.message)}</p><button class="btn" onclick="location.reload()">נסה שוב</button>`);return}
   if(!u){const r=await CLOUD.sb.rpc('ez_join',{p_name:name});u=r.data||null}
+  if(u&&!u.active&&localStorage.getItem(KEY+'_ck_'+email)){try{localStorage.removeItem(KEY+'_ck_'+email);localStorage.removeItem(KEY);localStorage.removeItem(KEY+'_cloud_'+email);localStorage.removeItem(KEY+'_cloud_me');indexedDB.deleteDatabase('ezer_files')}catch(e){}}
   if(!u||!u.active){clGate(`<h3>⏳ ממתין לאישור</h3><p>נרשמת כ־<b dir="ltr">${esc(email)}</b>.<br>מנהל המערכת צריך לאשר אותך – ואז תוכל להיכנס.</p><div style="display:flex;gap:6px;justify-content:center"><button class="btn pri" onclick="clBoot()">בדוק שוב</button><button class="btn" onclick="clSignOut()">החלף משתמש</button></div>`);return}
   CLOUD.me={email,name:u.name||name,role:u.role||'viewer',hide:!!u.hide_amounts};try{localStorage.setItem(KEY+'_cloud_me',JSON.stringify(CLOUD.me))}catch(e){}
   if(!(await clLoadKey())){clKeyScreen();return}clEnter()}
@@ -4658,6 +4678,15 @@ function clEnterOffline(){const me=JSON.parse(localStorage.getItem(KEY+'_cloud_m
   return clLoadKey().then(ok=>{if(!ok)return false;clLoadMeta();CLOUD.on=true;CLOUD.online=false;clGateClose();startSession(clUser());clStatus();clContentLoad();
     window.addEventListener('online',()=>location.reload(),{once:true});return true})}
 async function clSignOut(){try{await CLOUD.sb.auth.signOut()}catch(e){}try{localStorage.removeItem(KEY+'_cloud_me')}catch(e){}location.reload()}
+// יציאה: רגילה (העותק נשאר במחשב לעבודה בלי אינטרנט) או מלאה (מחשב משותף – מוחקים הכל מהמחשב הזה)
+function clLogoutMenu(){const pend=CLOUD.meta&&clRecords&&Object.keys(clRecords()).some(k=>CLOUD.meta.synced[k]!==clHash(clRecords()[k]));
+  modal(`<div class="modal narrow"><div class="mh"><h2>🚪 יציאה</h2><button class="x" onclick="closeModal()">×</button></div><div class="mb">
+  ${pend?'<div class="alert warn">⚠ יש שינויים שעוד לא נשלחו לשרת (אין אינטרנט?). כדאי לחכות ל"☁ מסונכרן" לפני יציאה מלאה.</div>':''}
+  <button class="btn pri" style="width:100%;margin-bottom:8px" onclick="clSignOut()">🚪 יציאה רגילה</button><div class="small muted" style="margin-bottom:14px">במחשב שלך. בפעם הבאה נכנסים שוב עם המייל (בלי להקליד את מפתח הארגון).</div>
+  <button class="btn danger" style="width:100%;margin-bottom:8px" onclick="clWipeOut()">🧹 יציאה ומחיקה מהמחשב הזה</button><div class="small muted">במחשב משותף / של מישהו אחר: מוחק מהמחשב את כל הנתונים ואת המפתח. הנתונים נשארים בשרת – לא נמחק כלום אצל אחרים.</div></div></div>`)}
+async function clWipeOut(){if(!confirm('למחוק מהמחשב הזה את כל הנתונים והמפתח ולצאת?'))return;try{await CLOUD.sb.auth.signOut()}catch(e){}
+  try{Object.keys(localStorage).filter(k=>k.startsWith(KEY)||k.startsWith('ezer')||k.startsWith('sb-')).forEach(k=>localStorage.removeItem(k))}catch(e){}
+  try{indexedDB.deleteDatabase('ezer_files')}catch(e){}try{const c=await caches.keys();await Promise.all(c.map(x=>caches.delete(x)))}catch(e){}location.reload()}
 
 /* ---------- סנכרון ---------- */
 function clHash(s){let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return (4294967296*(2097151&h2)+(h1>>>0)).toString(36)}
@@ -4730,7 +4759,7 @@ async function clCardFill(){const el=document.getElementById('clCard');if(!el)re
   if(adm){const r=await CLOUD.sb.from('ez_users').select('*').order('created_at');U=r.data||[]}
   const n=Object.keys(CLOUD.meta.synced).length;
   el.outerHTML=`<div class="card"><h2>☁ חיבור משותף</h2><div class="strip"><div><span>מחובר כ</span><b style="font-size:15px" dir="ltr">${esc(CLOUD.me.email)}</b><span>${esc(CL_ROLES[CLOUD.me.role]||CLOUD.me.role)}</span></div><div><span>מצב</span><b style="font-size:15px">${!CLOUD.online?'📴 בלי אינטרנט':CLOUD.state==='err'?'⚠ בעיה':'☁ מסונכרן'}</b></div><div><span>פריטים בשרת</span><b>${n}</b></div></div>
-  <div class="toolbar"><button class="btn" onclick="clSync().then(()=>render())">↻ סנכרון עכשיו</button><button class="btn" onclick="clSignOut()">🚪 יציאה מהחשבון</button>${adm?'<button class="btn" onclick="clContentUpload()">📤 העלאת תוכן קבוע (עלונים ותמונות)</button><button class="btn" onclick="clChangeKey()">🔑 החלפת מפתח הארגון</button><button class="btn" onclick="clNewRecovery()">🧾 קוד שחזור חדש</button>':''}</div>
+  <div class="toolbar"><button class="btn" onclick="clSync().then(()=>render())">↻ סנכרון עכשיו</button><button class="btn" onclick="clLogoutMenu()">🚪 יציאה</button><button class="btn" onclick="clNewPassScreen()">🔐 קביעת / שינוי סיסמה</button>${adm?'<button class="btn" onclick="clContentUpload()">📤 העלאת תוכן קבוע (עלונים ותמונות)</button><button class="btn" onclick="clChangeKey()">🔑 החלפת מפתח הארגון</button><button class="btn" onclick="clNewRecovery()">🧾 קוד שחזור חדש</button>':''}</div>
   <p class="small muted">🔒 כל הנתונים מוצפנים במחשב לפני שהם יוצאים לשרת, עם מפתח הארגון. מי שאין לו את המפתח – גם אם יגיע לשרת – לא יוכל לקרוא כלום.</p></div>
   ${adm?`<div class="card"><h2>👥 מי יכול להיכנס</h2><p class="small muted">מי שנכנס בפעם הראשונה (עם Google או מייל) מופיע כאן כ"ממתין". מסמנים "מאושר" ובוחרים הרשאה. אחרי האישור צריך להגיד לו את מפתח הארגון – בעל פה.</p>
   <table><thead><tr><th class="nosort">שם</th><th class="nosort">מייל</th><th class="nosort">הרשאה</th><th class="nosort">בלי סכומים</th><th class="nosort">מאושר</th><th class="nosort"></th></tr></thead><tbody>
@@ -4749,7 +4778,9 @@ async function clBoot(){if(!CLOUD_BUILD||!/^https?:/.test(location.protocol))ret
   clGate('<p>טוען…</p>');
   try{if(!window.supabase)await clScript(CL_SBJS);CLOUD.sb=supabase.createClient(CL_URL,CL_KEY,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'ezer-auth'}})}
   catch(e){if(!(await clEnterOffline()))clGate('<p>אין חיבור לאינטרנט, ובמחשב הזה עוד לא נכנסו אף פעם.</p><p class="small muted">בפעם הראשונה צריך אינטרנט. אחר כך אפשר לעבוד גם בלי.</p><button class="btn" onclick="location.reload()">נסה שוב</button>');return true}
+  try{CLOUD.sb.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY')setTimeout(clNewPassScreen,300)})}catch(e){}
   let sess=null;try{sess=(await CLOUD.sb.auth.getSession()).data.session}catch(e){}
+  if(sess&&/type=recovery/.test(location.hash)){setTimeout(clNewPassScreen,300);return true}
   if(!sess){if(!navigator.onLine&&(await clEnterOffline()))return true;clLoginScreen();return true}
   if(!navigator.onLine){if(await clEnterOffline())return true}
   try{await clAfterAuth(sess.user)}catch(e){if(!(await clEnterOffline()))clLoginScreen('אין חיבור לשרת: '+e.message)}
@@ -4794,15 +4825,15 @@ function renderNav(){
   document.getElementById('sidefoot').innerHTML=`גיבוי אחרון: ${lb?esc(hebDate(localIso(lb))):'<b>אף פעם</b>'}${days===null||days>=7?' ⚠':''}
     ${can('settings')||USER.role==='clerk'?`<button onclick="backup()">💾 שמור גיבוי</button>`:''}${can('settings')?`<button onclick="archiveModal()">📦 תיקיית סוף שנה</button>`:''}${USER.role!=='addresses'?`<button onclick="exportAll()">📊 ייצוא לאקסל</button>`:''}
     <div class="row"><button onclick="fontSize(1)" title="אותיות גדולות">א+</button><button onclick="fontSize(-1)" title="אותיות קטנות">א−</button><button onclick="openTheme()" title="צבעים ומראה">🎨</button></div>
-    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 21.10.2026 19:43</div>`;
+    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 21.10.2026 21:28</div>`;
   const yp=document.getElementById('yearpick');yp.innerHTML=st.years.map(y=>`<option ${y===S.viewYear?'selected':''} value='${esc(y)}'>${esc(y)}${y===st.currentYear?' (נוכחית)':''}</option>`).join('');
   document.getElementById('todayHeb').textContent=hebDate(today());applyBrand();
   document.getElementById('gsWrap').style.display=USER.role==='addresses'||USER.role==='counter'?'none':'';
   document.getElementById('undoBtn').disabled=!undoStack.length;
-  if(CLOUD.on){clStatus();clInstallBtn()}
   const tb=document.getElementById('topBtns');
   tb.innerHTML=USER.role==='viewer'||USER.role==='addresses'||USER.role==='counter'?'':['people','year','grooms'].includes(S.view)?`<button class="btn" onclick="openPerson()">+ בחור</button> <button class="btn" onclick="openBulk()">+ כמה בחורים</button> <button class="btn pri" onclick="openPayment()">+ תשלום</button>`:'';
   if(USER.role!=='addresses'&&USER.role!=='counter')tb.insertAdjacentHTML('afterbegin',alertsBadge()+' ');
+  if(CLOUD.on){clStatus();clInstallBtn();{const b=document.createElement('button');b.id='clOut';b.className='btn';b.textContent='🚪 יציאה';b.title='יציאה מהמערכת';b.onclick=clLogoutMenu;tb.appendChild(b)}}
 }
 function render(){
   if(!USER)return;
