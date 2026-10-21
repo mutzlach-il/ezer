@@ -955,7 +955,7 @@ function openCard(id,openYear){
   </div>
   <div class="mf edit-only">
     ${feat('grooms')?(!p.married?`<button class="btn" onclick="openWedding('${p.id}')">💍 רשום חתונה</button>`:`<button class="btn pri" onclick="closeModal();openGrantFlow('${p.id}')">🎁 מענק / השלמה</button><button class="btn" onclick="closeModal();go('grooms')">💍 למסך החתנים</button>`):''}
-    ${p.married?`<button class="btn" onclick="kitCard('${p.id}')">🎁 סל בגדים</button><button class="btn" onclick="printMazalTov('${p.id}')">🎉 מזל טוב</button>`:`<button class="btn" onclick="engageModal('${p.id}')">💐 ${p.engaged?'מאורס':'אירוסין'}</button>`}<button class="btn" onclick="movePerson('${p.id}')">🔀 מעבר ישיבה</button><button class="btn" onclick="goalModal('${p.id}')">🎯 יעד אישי</button><button class="btn" onclick="personLog('${p.id}')">📜 היסטוריה</button>
+    ${p.married?`<button class="btn" onclick="kitCard('${p.id}')">🎁 סל בגדים</button><button class="btn" onclick="printMazalTov('${p.id}')">🎉 מזל טוב</button>`:`<button class="btn" onclick="engageModal('${p.id}')">💐 ${p.engaged?'מאורס':'אירוסין'}</button>`}<button class="btn" onclick="movePerson('${p.id}')">🔀 מעבר ישיבה</button><button class="btn" onclick="goalModal('${p.id}')">🎯 יעד אישי</button>${clIsAdmLocal()?`<button class="btn" onclick="personLog('${p.id}')">📜 היסטוריה</button>`:''}
     <button class="btn" onclick="eligCheck('${p.id}')">🔍 בדיקת זכאות</button><button class="btn" onclick="printProgressCards(['${p.id}'])">🖨 כרטיס התקדמות</button>
     <span style="flex:1"></span>
     <button class="btn danger" onclick="archivePerson('${p.id}')">${p.active===false?'החזר מהארכיון':'העבר לארכיון'}</button>
@@ -2334,9 +2334,7 @@ function restoreTrash(id){const t=DB.trash.find(x=>x.id===id);if(!t)return;const
   else if(t.type==='household'){DB.households.push(d);(t.routes||[]).forEach(rid=>{const r=DB.routes.find(x=>x.id===rid);if(r&&!r.stops.includes(d.id))r.stops.push(d.id)})}
   else if(t.type==='route')DB.routes.push(d);else if(t.type==='group'){DB.groups.push(d);syncGroupCredits(d.year)}else if(t.type==='expense')DB.expenses.push(d);else if(t.type==='task')DB.tasks.push(d);else if(t.type==='purchase')DB.purchases.push(d);
   DB.trash=DB.trash.filter(x=>x.id!==id);log('שחזור מסל המחזור',t.label);save();render();toast('שוחזר')}
-function setLog(){const q=(S.logQ||'').trim();const L=[...DB.log].reverse().filter(l=>(typeof logKeep!=='function'||logKeep(l))).filter(l=>!q||(l.a+' '+l.d+' '+l.u).includes(q)).slice(0,500);
-  return `<div class="card"><div class="toolbar"><h2 style="margin:0;flex:1">יומן שינויים – מי עשה מה ומתי</h2><input type="search" placeholder="חיפוש ביומן…" value="${esc(S.logQ||'')}" oninput="S.logQ=this.value;render()">${clIsAdmLocal()?'<button class="btn" style="color:var(--bad)" onclick="logClearAll()">🗑 מחיקת כל ההיסטוריה</button>':''}</div>
-  <div class="tw"><table><thead><tr><th class="nosort">מתי</th><th class="nosort">מי</th><th class="nosort">פעולה</th><th class="nosort">פרטים</th></tr></thead><tbody>${L.map(l=>`<tr><td class="small">${dtTime(l.t)}</td><td class="small">${esc(l.u)}</td><td>${esc(l.a)}</td><td class="small wrap">${esc(l.d)}</td></tr>`).join('')}</tbody></table></div><div class="small muted">מוצגות 500 הפעולות האחרונות${q?' שמתאימות לחיפוש':''}.</div></div>`}
+/* setLog – הועבר ל־36_secure.js */
 
 function compareRules(){const ps=groupSort(activePeople()),st=DB.settings;
   const reqBy=(p,m)=>{if(hasOverride(p))return +p.reqOverride;const r=campaignRuleBy(p,m);return r?+r.req:+st.defaultReq};
@@ -2545,8 +2543,8 @@ ${feat('lottery')?'<li>הגרלה: "🎲 הגרלה על מסך מלא" – מת
 ['h10t','🔐 אבטחה: נעילה אוטומטית, היסטוריה בכרטיס, בדיקה עצמית',`<ul>
 <li><b>איפה זה:</b> ⚙ הגדרות ← לשונית <b>"🔐 אבטחה ובדיקה"</b>.</li>
 <li><b>🔒 נעילה אוטומטית:</b> אחרי חצי שעה בלי פעילות המערכת ננעלת. כדי להמשיך – "📧 שלחו לי קוד למייל" (או Google). דקה לפני הנעילה מופיע פס כתום – לחיצה עליו ממשיכה. בעל המערכת יכול לשנות את הזמן (10 דקות עד שעתיים). גם מי שסגר את המערכת וחוזר אחרי יותר מחצי שעה – נכנס עם קוד.</li>
-<li><b>📜 מי שינה מה:</b> בכרטיס הבחור ← "📜 היסטוריה". כל שינוי נרשם לבד: מי, מתי, ומה השתנה (למשל "טלפון: הישן ← החדש", "נוסף מזומן 300 ₪"). ההיסטוריה משותפת לכל המחשבים.</li>
-<li><b>🗑 מחיקת היסטוריה (מנהל):</b> בחלון ההיסטוריה של בחור – "מחיקת ההיסטוריה שלו". ובהגדרות ← "יומן שינויים" – "מחיקת כל ההיסטוריה" (צריך לכתוב "מחיקה"). המחיקה חלה בכל המחשבים. נרשמת רק שורה אחת שההיסטוריה נמחקה.</li>
+<li><b>📜 מי שינה מה (רק מנהל):</b> ⚙ הגדרות ← "יומן שינויים". רואים כל מה שכל אחד עשה, בכל המחשבים: מי, מתי, ומה השתנה (למשל "טלפון: הישן ← החדש", "נוסף מזומן 300 ₪"). אפשר לבחור משתמש מסוים ולראות רק מה שהוא עשה. גם בכרטיס הבחור יש "📜 היסטוריה" – רק למנהל.</li>
+<li><b>🗑 מחיקת היסטוריה (רק מנהל):</b> 🗑 ליד כל שורה – מוחק שורה אחת. ☑ סימון כמה שורות ← "מחיקת המסומנים". בחירת משתמש ← "מחיקת כל מה שהוא עשה". או "מחיקת כל ההיסטוריה" (צריך לכתוב "מחיקה"). המחיקה חלה בכל המחשבים.</li>
 <li><b>🩺 בדיקה עצמית:</b> בודקת בלחיצה: אינטרנט, שרת, כניסה, הרשאה, מפתח, שינויים שלא נשלחו, גיבוי לילי, ממתינים לאישור, תמונות, מקום וגרסה. ✅ תקין · ⚠ לתשומת לב · ❌ צריך טיפול – ולידו כתוב מה לעשות.</li>
 <li><b>✉ מייל כשמישהו מבקש להצטרף:</b> נשלח לבעל המערכת, עם הסבר איך לאשר. את הכתובת משנים באותה לשונית, ויש כפתור "שליחת בדיקה".</li></ul>`],
 ['h10m','🖼 תמונות ומסמכים בכל המחשבים',`<ul>
@@ -4440,9 +4438,9 @@ function goalsCard(y){const L=groupSort(activePeople()).filter(p=>goalOf(p,y));i
   ${L.sort((a,b)=>yearTotal(b,y)/goalOf(b,y)-yearTotal(a,y)/goalOf(a,y)).map(p=>{const g=goalOf(p,y),t=yearTotal(p,y);return `<tr><td class="name" onclick="openCard('${p.id}')">${esc(fullName(p))}</td><td class="num">${fmt(g)}</td><td class="num">${fmt(t)}</td><td>${pctBar(t,g)}</td><td>${t>=g?'<b style="color:var(--ok)">✔ הגיע</b>':shek(g-t)}</td></tr>`}).join('')}</tbody></table></div>`}
 
 /* ---- 24. היסטוריית שינויים לבחור ---- */
-function personLog(id){const p=byId(id),n=fullName(p),L=DB.log.filter(l=>(l.pid===id||String(l.d||'').includes(n))&&(typeof logKeep!=='function'||logKeep(l))).slice().reverse();
+function personLog(id){if(!clIsAdmLocal())return toast('רק מנהל רואה את ההיסטוריה');const p=byId(id),n=fullName(p),L=DB.log.filter(l=>(l.pid===id||String(l.d||'').includes(n))&&(typeof logKeep!=='function'||logKeep(l))).slice().reverse();
   modal(`<div class="modal wide"><div class="mh"><h2>📜 היסטוריית שינויים – ${esc(n)}</h2><button class="x" onclick="openCard('${id}')">×</button></div><div class="mb">
-  ${L.length?`<div class="tw" style="max-height:62vh"><table><thead><tr><th class="nosort">מתי</th><th class="nosort">מי</th><th class="nosort">פעולה</th><th class="nosort">פירוט</th></tr></thead><tbody>${L.map(l=>`<tr><td class="small" style="white-space:nowrap">${esc(hebDate(localIso(l.t),false))} ${esc(new Date(l.t).toTimeString().slice(0,5))}</td><td class="small">${esc(l.u||'')}</td><td>${esc(l.a)}</td><td class="small wrap">${esc(l.d)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="muted">לא נמצאו שינויים שנרשמו על שמו.</div>'}
+  ${L.length?`<div class="tw" style="max-height:62vh"><table><thead><tr><th class="nosort">מתי</th><th class="nosort">מי</th><th class="nosort">פעולה</th><th class="nosort">פירוט</th><th class="nosort"></th></tr></thead><tbody>${L.map(l=>`<tr><td class="small" style="white-space:nowrap">${esc(hebDate(localIso(l.t),false))} ${esc(new Date(l.t).toTimeString().slice(0,5))}</td><td class="small">${esc(l.u||'')}</td><td>${esc(l.a)}</td><td class="small wrap">${esc(l.d)}</td><td><button class="btn sm" title="מחיקת השורה" onclick="logDelKeys([${jsq(logKey(l))}]);personLog('${id}')">🗑</button></td></tr>`).join('')}</tbody></table></div>`:'<div class="muted">לא נמצאו שינויים שנרשמו על שמו.</div>'}
   ${(p.moves||[]).length?`<h3>מעברי ישיבה</h3>${p.moves.map(m=>`<div class="small">${esc(hebDate(m.date))}: ${esc(m.from)} ← ${esc(m.to)} (${esc(m.by||'')})</div>`).join('')}`:''}</div>
   <div class="mf">${clIsAdmLocal()&&L.length?`<button class="btn" style="color:var(--bad)" onclick="logClearPerson('${id}')">🗑 מחיקת ההיסטוריה שלו</button>`:''}<button class="btn" onclick="openCard('${id}')">חזרה לכרטיס</button></div></div>`)}
 
@@ -4738,7 +4736,7 @@ function clApply(k,val,del){const i=k.indexOf(':'),c=k.slice(0,i),id=k.slice(i+1
   const A=DB[c]=DB[c]||[];const j=A.findIndex(x=>x.id===id);if(del){if(j>=0)A.splice(j,1);return}if(j>=0)A[j]=val;else A.push(val)}
 // שני מחשבים שינו אותו פריט: מאחדים בחכמה – לא מאבדים תשלומים או יומן
 function clMerge(k,loc,rem){if(k.startsWith('log:')){const s=new Set(),o=[];[...rem,...loc].forEach(l=>{const t=l.t+'|'+l.u+'|'+l.a+'|'+l.d;if(!s.has(t)){s.add(t);o.push(l)}});return o.filter(l=>typeof logKeep!=='function'||logKeep(l)).sort((a,b)=>String(a.t).localeCompare(String(b.t)))}
-  if(k==='o:logCleared'){const m={all:[loc.all,rem.all].filter(Boolean).sort().pop(),p:{...(rem.p||{})}};for(const [i,x] of Object.entries(loc.p||{}))if(!m.p[i]||m.p[i].t<x.t)m.p[i]=x;if(!m.all)delete m.all;return m}
+  if(k==='o:logCleared'){const m={all:[loc.all,rem.all].filter(Boolean).sort().pop(),p:{...(rem.p||{})}};for(const [i,x] of Object.entries(loc.p||{}))if(!m.p[i]||m.p[i].t<x.t)m.p[i]=x;const ee=[...new Set([...(rem.e||[]),...(loc.e||[])])];if(ee.length)m.e=ee.slice(-20000);if(!m.all)delete m.all;return m}
   if(k.startsWith('people:')){const m=clone(rem);m.years=m.years||{};for(const [y,r] of Object.entries(loc.years||{})){const R=m.years[y]=m.years[y]||{entries:[],flags:{}};const ids=new Set((R.entries||[]).map(e=>e.id));
       (r.entries||[]).forEach(e=>{if(!ids.has(e.id))R.entries.push(e)});R.flags=Object.assign({},r.flags||{},R.flags||{});for(const kk in r)if(!(kk in R))R[kk]=r[kk]}return m}
   if(k.startsWith('households:')){const m=clone(rem);m.hist=Object.assign({},loc.hist||{},rem.hist||{});return m}
@@ -4934,7 +4932,8 @@ function pAudit(){try{if(!USER||!DB||!DB.people)return;if(!PSNAP||PSNAP_DB!==DB)
 
 /* מחיקת היסטוריה – נשמר "סימן מחיקה" כדי שמחשב אחר לא יחזיר את מה שנמחק */
 function logTomb(){return DB.logCleared||{}}
-function logKeep(l,T){T=T||logTomb();if(T.all&&String(l.t)<=T.all)return false;const P=T.p||{};
+const logKey=l=>String(l.t)+'|'+(l.u||'')+'|'+(l.a||'')+'|'+String(l.d||'').slice(0,80);let _lkE=null,_lkA=null;
+function logKeep(l,T){T=T||logTomb();if(T.all&&String(l.t)<=T.all)return false;if(T.e&&T.e.length){if(_lkA!==T.e){_lkA=T.e;_lkE=new Set(T.e)}if(_lkE.has(logKey(l)))return false}const P=T.p||{};
   if(l.pid&&P[l.pid]&&String(l.t)<=P[l.pid].t)return false;
   for(const id in P){const x=P[id];if(x.n&&String(l.t)<=x.t&&String(l.d||'').includes(x.n))return false}return true}
 function logPurge(){if(!DB.logCleared||!DB.log)return;const T=logTomb();const n=DB.log.length;DB.log=DB.log.filter(l=>logKeep(l,T));return n-DB.log.length}
@@ -4986,6 +4985,27 @@ async function selfCheck(){const el=document.getElementById('selfChk');if(!el)re
   {const v=[...document.querySelectorAll('#sidefoot div')].map(d=>d.textContent).find(t=>/^\s*גרסה:/.test(t))||'';const upd=!!document.getElementById('swUpd');add(upd?'warn':'ok','גרסה',(v.replace(/^\s*גרסה:\s*/,'')||'—')+(upd?' – יש גרסה חדשה, לחצו על הכפתור הירוק למטה':' – מעודכנת'))}
   const ic={ok:'✅',warn:'⚠',bad:'❌'};const bad=R.filter(r=>r[0]==='bad').length,warn=R.filter(r=>r[0]==='warn').length;
   el.classList.remove('muted');el.innerHTML=`<div class="alert ${bad?'bad':warn?'warn':'ok'}" style="margin-bottom:8px">${bad?'❌ יש '+bad+' דברים שצריכים טיפול':warn?'⚠ הכל עובד, יש '+warn+' דברים לתשומת לב':'✅ הכל תקין'}</div><table><tbody>${R.map(([s,t,d])=>`<tr><td style="width:28px">${ic[s]}</td><td><b>${esc(t)}</b></td><td class="small">${esc(d)}</td></tr>`).join('')}</tbody></table>`}
+
+/* ---------- יומן שינויים למנהל: כל ההיסטוריה, סינון לפי משתמש, מחיקה אחת-אחת / מסומנים / הכל ---------- */
+let LOGSEL=new Set();
+function logVisible(){return (DB.log||[]).filter(l=>logKeep(l))}
+function setLog(){if(!clIsAdmLocal())return '<div class="card"><h2>יומן שינויים</h2><div class="muted">רק מנהל רואה את ההיסטוריה.</div></div>';
+  const q=(S.logQ||'').trim(),who=S.logU||'',lim=S.logN||300;const all=logVisible();const users=[...new Set(all.map(l=>l.u||''))].filter(Boolean).sort();
+  const F=all.slice().reverse().filter(l=>(!who||l.u===who)&&(!q||(l.a+' '+l.d+' '+l.u).includes(q)));const L=F.slice(0,lim);
+  const cnt={};all.forEach(l=>{const k=l.u||'—';cnt[k]=(cnt[k]||0)+1});
+  return `<div class="card"><div class="toolbar"><h2 style="margin:0;flex:1">📜 יומן שינויים – מי עשה מה ומתי</h2>
+  <select onchange="S.logU=this.value;LOGSEL.clear();render()"><option value="">כל המשתמשים (${all.length})</option>${users.map(u=>`<option value="${esc(u)}" ${u===who?'selected':''}>${esc(u)} (${cnt[u]||0})</option>`).join('')}</select>
+  <input type="search" placeholder="חיפוש ביומן…" value="${esc(q)}" oninput="S.logQ=this.value;render()"></div>
+  <p class="small muted" style="margin:4px 0 8px">כאן רואים כל מה שכל אחד עשה – בכל המחשבים. רק מנהל רואה את זה. אפשר למחוק שורה אחת (🗑), לסמן כמה ולמחוק, או למחוק הכל. המחיקה חלה בכל המחשבים.</p>
+  <div class="toolbar"><button class="btn" onclick="logSelAll(${jsq(who)},${jsq(q)})">☑ סימון כל המוצגים</button><button class="btn" ${LOGSEL.size?'':'disabled'} style="color:var(--bad)" onclick="logDelSel()">🗑 מחיקת המסומנים (${LOGSEL.size})</button>${who?`<button class="btn" style="color:var(--bad)" onclick="logDelUser(${jsq(who)})">🗑 מחיקת כל מה ש${esc(who)} עשה</button>`:''}<span style="flex:1"></span><button class="btn" style="color:var(--bad)" onclick="logClearAll()">🗑 מחיקת כל ההיסטוריה</button></div>
+  <div class="tw"><table><thead><tr><th class="nosort" style="width:28px"></th><th class="nosort">מתי</th><th class="nosort">מי</th><th class="nosort">פעולה</th><th class="nosort">פרטים</th><th class="nosort" style="width:40px"></th></tr></thead><tbody>${L.map(l=>{const k=logKey(l);return `<tr><td><input type="checkbox" ${LOGSEL.has(k)?'checked':''} onchange="logSel(${jsq(k)},this.checked)"></td><td class="small" style="white-space:nowrap">${dtTime(l.t)}</td><td class="small">${esc(l.u||'')}</td><td>${esc(l.a)}</td><td class="small wrap">${esc(l.d)}</td><td><button class="btn sm" title="מחיקת השורה" onclick="logDelOne(${jsq(k)})">🗑</button></td></tr>`}).join('')}</tbody></table></div>
+  <div class="small muted">מוצגות ${L.length} מתוך ${F.length} שורות.${F.length>L.length?` <button class="btn sm" onclick="S.logN=${lim+500};render()">הצג עוד</button>`:''}</div></div>`}
+function logSel(k,v){v?LOGSEL.add(k):LOGSEL.delete(k);render()}
+function logSelAll(who,q){logVisible().filter(l=>(!who||l.u===who)&&(!q||(l.a+' '+l.d+' '+l.u).includes(q))).forEach(l=>LOGSEL.add(logKey(l)));render()}
+function logDelKeys(keys){if(!keys.length)return;const T=DB.logCleared=DB.logCleared||{};const E=new Set(T.e||[]);keys.forEach(k=>E.add(k));T.e=[...E].slice(-20000);logPurge();LOGSEL.clear();save();toast('נמחק ('+keys.length+')');render()}
+function logDelOne(k){if(!clIsAdmLocal())return;logDelKeys([k])}
+function logDelSel(){if(!clIsAdmLocal()||!LOGSEL.size)return;if(!confirm('למחוק '+LOGSEL.size+' שורות מההיסטוריה? (בכל המחשבים)'))return;logDelKeys([...LOGSEL])}
+function logDelUser(u){if(!clIsAdmLocal())return;const K=logVisible().filter(l=>l.u===u).map(logKey);if(!confirm('למחוק את כל '+K.length+' הפעולות של '+u+'? (בכל המחשבים)'))return;logDelKeys(K)}
 
 /* ====================== תמונות ומסמכים בכל המחשבים (מוצפן, דרך השרת) ======================
    כל מחשב שיש בו תמונות/מסמכים (מחבילות שנה או שהועלו ידנית) – מעלה אותם מוצפנים לשרת.
@@ -5072,7 +5092,7 @@ function renderNav(){
   document.getElementById('sidefoot').innerHTML=`גיבוי אחרון: ${lb?esc(hebDate(localIso(lb))):'<b>אף פעם</b>'}${days===null||days>=7?' ⚠':''}
     ${can('settings')||USER.role==='clerk'?`<button onclick="backup()">💾 שמור גיבוי</button>`:''}${can('settings')?`<button onclick="archiveModal()">📦 תיקיית סוף שנה</button>`:''}${USER.role!=='addresses'?`<button onclick="exportAll()">📊 ייצוא לאקסל</button>`:''}
     <div class="row"><button onclick="fontSize(1)" title="אותיות גדולות">א+</button><button onclick="fontSize(-1)" title="אותיות קטנות">א−</button><button onclick="openTheme()" title="צבעים ומראה">🎨</button></div>
-    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 22.10.2026 01:07</div>`;
+    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 22.10.2026 01:30</div>`;
   const yp=document.getElementById('yearpick');yp.innerHTML=st.years.map(y=>`<option ${y===S.viewYear?'selected':''} value='${esc(y)}'>${esc(y)}${y===st.currentYear?' (נוכחית)':''}</option>`).join('');
   document.getElementById('todayHeb').textContent=hebDate(today());applyBrand();
   document.getElementById('gsWrap').style.display=USER.role==='addresses'||USER.role==='counter'?'none':'';
