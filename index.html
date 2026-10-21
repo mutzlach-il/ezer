@@ -2500,7 +2500,8 @@ ${feat('lottery')?'<li>הגרלה: "🎲 הגרלה על מסך מלא" – מת
 ['h10c','☁ הגרסה המקוונת – כל הצוות על אותם נתונים, מוצפן',`
 <ul><li><b>הקישור:</b> <span dir="ltr">mutzlach-il.github.io/ezer</span>. שם יש רק את התוכנה – בלי שום נתון. מי שאין לו הרשאה רואה רק מסך כניסה.</li>
 <li><b>כניסה אישית:</b> עם Google, או מייל וסיסמה. הראשון שנכנס אי פעם הוא המנהל. כל מי שנכנס אחריו מחכה לאישור: הגדרות ← "☁ חיבור משותף" ← "מי יכול להיכנס" – מסמנים "מאושר" ובוחרים הרשאה (מנהל / רושם / צפייה / כתובות / מתנדב לספירה, ואפשר "בלי סכומים").</li>
-<li><b>מפתח הארגון:</b> המנהל קובע אותו בכניסה הראשונה. כל הנתונים מוצפנים בו במחשב עצמו לפני שהם יוצאים לשרת – בשרת יש רק ג'יבריש. כל עובד מקליד אותו פעם אחת במחשב שלו (המנהל אומר לו בעל פה). <b>חובה לכתוב אותו על נייר ולשמור</b> – בלעדיו אי אפשר לקרוא את הנתונים מהשרת.</li>
+<li><b>מפתח הארגון:</b> המנהל קובע אותו בכניסה הראשונה. כל הנתונים מוצפנים בו במחשב עצמו לפני שהם יוצאים לשרת – בשרת יש רק ג'יבריש. כל עובד מקליד אותו פעם אחת במחשב שלו (המנהל אומר לו בעל פה). אפשר לכתוב אותו <b>בעברית</b> (לוחצים "👁 הצג" כדי לראות מה מקלידים; מתחת לשדה כתוב אם זה עברית או אנגלית).</li>
+<li><b>שכחת את המפתח?</b> כשקובעים אותו מקבלים <b>קוד שחזור</b> (כמו FX5G-ZLQH-…) – שולחים אותו למייל שלך בלחיצה, או מדפיסים. בכניסה: "שכחתי את המפתח – יש לי קוד שחזור" ← מקלידים את הקוד ← בוחרים מפתח חדש. שום נתון לא נמחק. גם: מחשב שכבר מחובר ממשיך לעבוד בלי להקליד שוב. מנהל יכול להחליף מפתח או ליצור קוד שחזור חדש בהגדרות ← "☁ חיבור משותף".</li>
 <li><b>סנכרון:</b> כל שינוי עובר לכל המחשבים תוך שניות. בפס הצד רואים "☁ מסונכרן". אם שניים רשמו לאותו בחור באותו זמן – שני התשלומים נשמרים, שום דבר לא נדרס.</li>
 <li><b>בלי אינטרנט:</b> לוחצים בפס הצד "📲 התקנה במחשב" – ומקבלים סמל של עזר. עובדים רגיל גם בלי אינטרנט, וכשהחיבור חוזר הכל נשלח לבד ("📴 בלי אינטרנט – יסתנכרן כשיחזור").</li>
 <li><b>עדכונים:</b> כשיוצאת גרסה חדשה מופיע למטה "✔ יש גרסה חדשה – לחצו לרענון". לא שולחים יותר קבצים.</li>
@@ -4586,18 +4587,57 @@ async function clAfterAuth(user){const email=(user.email||'').toLowerCase(),name
   if(!u||!u.active){clGate(`<h3>⏳ ממתין לאישור</h3><p>נרשמת כ־<b dir="ltr">${esc(email)}</b>.<br>מנהל המערכת צריך לאשר אותך – ואז תוכל להיכנס.</p><div style="display:flex;gap:6px;justify-content:center"><button class="btn pri" onclick="clBoot()">בדוק שוב</button><button class="btn" onclick="clSignOut()">החלף משתמש</button></div>`);return}
   CLOUD.me={email,name:u.name||name,role:u.role||'viewer',hide:!!u.hide_amounts};try{localStorage.setItem(KEY+'_cloud_me',JSON.stringify(CLOUD.me))}catch(e){}
   if(!(await clLoadKey())){clKeyScreen();return}clEnter()}
-async function clKeyScreen(err){const {data:m}=await CLOUD.sb.from('ez_meta').select('*');const meta={};(m||[]).forEach(r=>meta[r.k]=r.v);CLOUD.srvMeta=meta;
-  if(!meta.salt){if(CLOUD.me.role!=='admin'){clGate(`<h3>🔑 המערכת עוד לא הוקמה</h3><p>המנהל צריך להיכנס ראשון ולקבוע את מפתח הארגון.</p><button class="btn" onclick="clBoot()">בדוק שוב</button>`);return}
-    clGate(`<h3>🔑 קביעת מפתח הארגון</h3><p class="small" style="text-align:right;line-height:1.8">המפתח מצפין את כל הנתונים. <b>בלעדיו אי אפשר לקרוא אותם</b> – גם לא אנחנו.<br>• בוחרים משפט שקל לזכור וקשה לנחש (לפחות 10 תווים).<br>• אומרים אותו בעל־פה רק לאנשי הצוות.<br>• <b>כותבים אותו על נייר ושומרים במקום בטוח.</b></p>
-    <input type="password" id="ck1" placeholder="מפתח הארגון" style="width:100%;margin-bottom:6px"><input type="password" id="ck2" placeholder="שוב – לאימות" style="width:100%"><div id="clErr" class="small" style="color:var(--bad);margin:8px 0;min-height:18px">${err||''}</div><button class="btn pri" onclick="clKeyCreate()">קבע מפתח והמשך</button>`);return}
-  clGate(`<h3>🔑 מפתח הארגון</h3><p class="small">כותבים פעם אחת במחשב הזה את מפתח הארגון (המנהל יגיד לך אותו).</p><input type="password" id="ck1" placeholder="מפתח הארגון" style="width:100%" onkeydown="if(event.key==='Enter')clKeyEnter()"><div id="clErr" class="small" style="color:var(--bad);margin:8px 0;min-height:18px">${err||''}</div><button class="btn pri" onclick="clKeyEnter()">המשך</button> <button class="btn" onclick="clSignOut()">יציאה</button>`)}
-async function clKeyCreate(){const a=document.getElementById('ck1').value,b=document.getElementById('ck2').value;if(a.length<10){clErr('לפחות 10 תווים');return}if(a!==b){clErr('שני המפתחות לא זהים');return}
-  const salt=clB64(crypto.getRandomValues(new Uint8Array(16)));CLOUD.key=await clDerive(a,salt);const check=await clEnc('ezer-ok');
-  const {error}=await CLOUD.sb.from('ez_meta').insert([{k:'salt',v:salt},{k:'check',v:check}]);if(error){clErr('שמירה בשרת נכשלה: '+error.message);return}
+/* מפתח הארגון: המידע מוצפן במפתח אקראי חזק (DEK). המפתח הזה שמור פעמיים בשרת – נעול במשפט שלך, ונעול בקוד שחזור.
+   שכחת את המשפט? קוד השחזור (שנשלח למייל שלך / הודפס) פותח – ובוחרים משפט חדש. שום דבר לא נמחק. */
+const clNorm=s=>String(s||'').normalize('NFC').trim();
+const clPwField=(id,ph,extra='')=>`<div style="position:relative;margin-bottom:4px"><input type="password" id="${id}" placeholder="${ph}" style="width:100%;padding-left:64px" autocomplete="new-password" oninput="clLangHint(this)" onkeyup="clLangHint(this,event)" ${extra}>
+  <button type="button" class="btn sm" style="position:absolute;left:4px;top:50%;transform:translateY(-50%)" onclick="const i=document.getElementById('${id}');i.type=i.type==='password'?'text':'password';this.textContent=i.type==='password'?'👁 הצג':'🙈 הסתר'">👁 הצג</button></div><div id="${id}_h" class="small muted" style="min-height:16px;text-align:right"></div>`;
+function clLangHint(el,ev){const h=document.getElementById(el.id+'_h');if(!h)return;const v=el.value,he=/[֐-׿]/.test(v),en=/[A-Za-z]/.test(v),caps=ev&&ev.getModifierState&&ev.getModifierState('CapsLock');
+  h.innerHTML=(v?`${v.length} תווים · ${he&&en?'עברית ואנגלית':he?'בעברית ✔':en?'<b style="color:var(--warn)">באנגלית</b> – רוצה עברית? Alt+Shift':''}`:'')+(caps?' · <b style="color:var(--bad)">Caps Lock דלוק</b>':'')}
+const clRandCode=()=>{const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',b=crypto.getRandomValues(new Uint8Array(20));let s='';b.forEach((x,i)=>{s+=A[x%A.length];if(i%4===3&&i<19)s+='-'});return s};
+async function clWrap(secret,dekRaw){const salt=clB64(crypto.getRandomValues(new Uint8Array(16))),k=await clDerive(secret,salt),iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},k,dekRaw);const o=new Uint8Array(12+ct.byteLength);o.set(iv);o.set(new Uint8Array(ct),12);return {salt,wrap:clB64(o)}}
+async function clUnwrap(secret,salt,wrap){const k=await clDerive(secret,salt),u=clUb(wrap);const raw=await crypto.subtle.decrypt({name:'AES-GCM',iv:u.slice(0,12)},k,u.slice(12));
+  return crypto.subtle.importKey('raw',raw,{name:'AES-GCM'},true,['encrypt','decrypt'])}
+async function clMetaGet(){const {data:m}=await CLOUD.sb.from('ez_meta').select('*');const meta={};(m||[]).forEach(r=>meta[r.k]=r.v);CLOUD.srvMeta=meta;return meta}
+async function clMetaPut(obj){for(const [k,v] of Object.entries(obj)){const r=await CLOUD.sb.from('ez_meta').upsert({k,v});if(r.error)throw r.error}}
+async function clKeyScreen(err){const meta=await clMetaGet();
+  if(!meta.check){if(CLOUD.me.role!=='admin'){clGate(`<h3>🔑 המערכת עוד לא הוקמה</h3><p>המנהל צריך להיכנס ראשון ולקבוע את מפתח הארגון.</p><button class="btn" onclick="clBoot()">בדוק שוב</button>`);return}
+    clGate(`<h3>🔑 קביעת מפתח הארגון</h3><p class="small" style="text-align:right;line-height:1.8">המפתח נועל את כל הנתונים. אפשר <b>בעברית</b> או באנגלית.<br>• משפט שקל לזכור וקשה לנחש (לפחות 10 תווים).<br>• אומרים אותו בעל־פה רק לאנשי הצוות.<br>• אם תשכח אותו – יש <b>קוד שחזור</b> (תקבל אותו בשלב הבא).</p>
+    ${clPwField('ck1','מפתח הארגון')}${clPwField('ck2','שוב – לאימות')}<div id="clErr" class="small" style="color:var(--bad);margin:6px 0;min-height:18px">${err||''}</div><button class="btn pri" onclick="clKeyCreate()">קבע מפתח והמשך</button>`);return}
+  clGate(`<h3>🔑 מפתח הארגון</h3><p class="small">כותבים פעם אחת במחשב הזה את מפתח הארגון (המנהל יגיד לך אותו).</p>${clPwField('ck1','מפתח הארגון',`onkeydown="if(event.key==='Enter')clKeyEnter()"`)}<div id="clErr" class="small" style="color:var(--bad);margin:6px 0;min-height:18px">${err||''}</div>
+  <button class="btn pri" onclick="clKeyEnter()">המשך</button> <button class="btn" onclick="clSignOut()">יציאה</button>${meta.rwrap&&CLOUD.me.role==='admin'?`<div style="margin-top:12px"><a href="#" class="small" onclick="clRecoverScreen();return false">שכחתי את המפתח – יש לי קוד שחזור</a></div>`:''}`)}
+async function clKeyCreate(){const a=clNorm(document.getElementById('ck1').value),b=clNorm(document.getElementById('ck2').value);if(a.length<10){clErr('לפחות 10 תווים');return}if(a!==b){clErr('שני המפתחות לא זהים – לחץ "👁 הצג" ובדוק');return}
+  clErr('מכין…');const dek=crypto.getRandomValues(new Uint8Array(32));CLOUD.key=await crypto.subtle.importKey('raw',dek,{name:'AES-GCM'},true,['encrypt','decrypt']);
+  const code=clRandCode(),w1=await clWrap(a,dek),w2=await clWrap(code,dek),check=await clEnc('ezer-ok');
+  try{await clMetaPut({salt:w1.salt,wrap:w1.wrap,rsalt:w2.salt,rwrap:w2.wrap,check})}catch(e){clErr('שמירה בשרת נכשלה: '+e.message);return}
+  await clStoreKey();clShowRecovery(code,true)}
+function clShowRecovery(code,first){const em=CLOUD.me.email,body=`קוד השחזור של מערכת עזר (קרן עזר נישואין):\n\n${code}\n\nמשתמשים בו רק אם שוכחים את מפתח הארגון: נכנסים ← "שכחתי את המפתח – יש לי קוד שחזור".\nלא להעביר לאף אחד.`;
+  clGate(`<h3>🧾 קוד שחזור</h3><p class="small" style="text-align:right">אם תשכח את מפתח הארגון – הקוד הזה פותח את הנתונים, ותבחר מפתח חדש. <b>שמור אותו</b>: שלח לעצמך למייל, הדפס, או כתוב על נייר.</p>
+  <div dir="ltr" style="font:700 18px monospace;letter-spacing:1px;background:#fff8e1;border:2px dashed #b8892a;border-radius:10px;padding:12px;margin:10px 0;user-select:all">${code}</div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center"><a class="btn pri" href="mailto:${encodeURIComponent(em)}?subject=${encodeURIComponent('עזר – קוד שחזור')}&body=${encodeURIComponent(body)}">📧 שלח למייל שלי</a>
+  <button class="btn" onclick="copyText(${esc(JSON.stringify(code))})">📋 העתקה</button><button class="btn" onclick="printHtml('קוד שחזור','<h1>עזר – קוד שחזור</h1><div dir=ltr style=&quot;font:700 26px monospace;margin:20px 0&quot;>${code}</div><p>משתמשים בו רק אם שוכחים את מפתח הארגון. לשמור במקום בטוח.</p>')">🖨 הדפסה</button></div>
+  <label class="small" style="display:block;margin-top:14px"><input type="checkbox" id="rcOk" onchange="document.getElementById('rcGo').disabled=!this.checked"> שמרתי את הקוד</label>
+  <button class="btn pri" id="rcGo" disabled style="margin-top:8px" onclick="${first?'clEnter()':'clGateClose()'}">המשך</button>`)}
+async function clKeyEnter(){const a=clNorm(document.getElementById('ck1').value);if(!a)return;clErr('בודק…');const M=CLOUD.srvMeta;
+  try{CLOUD.key=M.wrap?await clUnwrap(a,M.salt,M.wrap):await clDerive(a,M.salt);if(await clDec(M.check)!=='ezer-ok')throw 0}catch(e){CLOUD.key=null;clErr('המפתח לא נכון – לחץ "👁 הצג" ובדוק (עברית / אנגלית, רווחים)');return}
   await clStoreKey();clEnter()}
-async function clKeyEnter(){const a=document.getElementById('ck1').value;if(!a)return;clErr('בודק…');const M=CLOUD.srvMeta;
-  try{CLOUD.key=await clDerive(a,M.salt);if(await clDec(M.check)!=='ezer-ok')throw 0}catch(e){CLOUD.key=null;clErr('המפתח לא נכון');return}
-  await clStoreKey();clEnter()}
+function clRecoverScreen(){clGate(`<h3>🧾 שחזור עם קוד שחזור</h3><p class="small">מקלידים את קוד השחזור (מהמייל / מהדף המודפס), ואז בוחרים מפתח ארגון חדש.</p>
+  <input type="text" id="rc1" dir="ltr" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX" style="width:100%;font-family:monospace;margin-bottom:8px">${clPwField('ck1','מפתח ארגון חדש')}${clPwField('ck2','שוב – לאימות')}
+  <div id="clErr" class="small" style="color:var(--bad);margin:6px 0;min-height:18px"></div><button class="btn pri" onclick="clRecover()">שחזר וקבע מפתח חדש</button> <button class="btn" onclick="clKeyScreen()">חזרה</button>`)}
+async function clRecover(){const c=document.getElementById('rc1').value.toUpperCase().replace(/[^A-Z0-9]/g,'').replace(/(.{4})(?=.)/g,'$1-'),a=clNorm(document.getElementById('ck1').value),b=clNorm(document.getElementById('ck2').value);
+  if(a.length<10){clErr('מפתח חדש – לפחות 10 תווים');return}if(a!==b){clErr('שני המפתחות לא זהים');return}const M=CLOUD.srvMeta;clErr('בודק…');
+  try{CLOUD.key=await clUnwrap(c,M.rsalt,M.rwrap);if(await clDec(M.check)!=='ezer-ok')throw 0}catch(e){CLOUD.key=null;clErr('קוד השחזור לא נכון');return}
+  const dek=new Uint8Array(await crypto.subtle.exportKey('raw',CLOUD.key)),w1=await clWrap(a,dek);try{await clMetaPut({salt:w1.salt,wrap:w1.wrap})}catch(e){clErr('שמירה נכשלה: '+e.message);return}
+  await clStoreKey();log('ענן','מפתח הארגון הוחלף בעזרת קוד שחזור');clEnter();setTimeout(()=>alert('✔ נקבע מפתח ארגון חדש. מעכשיו אומרים לאנשי הצוות את החדש (מי שכבר מחובר – ממשיך לעבוד כרגיל).'),600)}
+// בהגדרות: החלפת מפתח / קוד שחזור חדש (רק מנהל, במחשב שכבר מחובר)
+function clChangeKey(){clGate(`<h3>🔑 החלפת מפתח הארגון</h3><p class="small">הנתונים לא משתנים – רק המשפט שפותח אותם. מי שכבר מחובר ממשיך לעבוד.</p>${clPwField('ck1','מפתח חדש')}${clPwField('ck2','שוב – לאימות')}
+  <div id="clErr" class="small" style="color:var(--bad);margin:6px 0;min-height:18px"></div><button class="btn pri" onclick="clChangeKeyDo()">שמירה</button> <button class="btn" onclick="clGateClose()">ביטול</button>`)}
+async function clChangeKeyDo(){const a=clNorm(document.getElementById('ck1').value),b=clNorm(document.getElementById('ck2').value);if(a.length<10){clErr('לפחות 10 תווים');return}if(a!==b){clErr('שני המפתחות לא זהים');return}
+  const M=await clMetaGet();if(!M.wrap){clErr('המערכת הוקמה בגרסה ישנה – אי אפשר להחליף מכאן');return}const dek=new Uint8Array(await crypto.subtle.exportKey('raw',CLOUD.key)),w1=await clWrap(a,dek);
+  try{await clMetaPut({salt:w1.salt,wrap:w1.wrap})}catch(e){clErr(e.message);return}log('ענן','מפתח הארגון הוחלף');clGateClose();toast('✔ המפתח הוחלף')}
+async function clNewRecovery(){if(!confirm('ליצור קוד שחזור חדש? הקוד הקודם יפסיק לעבוד.'))return;const dek=new Uint8Array(await crypto.subtle.exportKey('raw',CLOUD.key)),code=clRandCode(),w2=await clWrap(code,dek);
+  try{await clMetaPut({rsalt:w2.salt,rwrap:w2.wrap})}catch(e){alert(e.message);return}log('ענן','נוצר קוד שחזור חדש');clShowRecovery(code,false)}
 
 /* ---------- כניסה למערכת ---------- */
 function clUser(){const m=CLOUD.me;return {id:'c:'+m.email,name:m.name,email:m.email,role:m.role,hideAmounts:m.hide,cloud:true}}
@@ -4681,7 +4721,7 @@ async function clCardFill(){const el=document.getElementById('clCard');if(!el)re
   if(adm){const r=await CLOUD.sb.from('ez_users').select('*').order('created_at');U=r.data||[]}
   const n=Object.keys(CLOUD.meta.synced).length;
   el.outerHTML=`<div class="card"><h2>☁ חיבור משותף</h2><div class="strip"><div><span>מחובר כ</span><b style="font-size:15px" dir="ltr">${esc(CLOUD.me.email)}</b><span>${esc(CL_ROLES[CLOUD.me.role]||CLOUD.me.role)}</span></div><div><span>מצב</span><b style="font-size:15px">${!CLOUD.online?'📴 בלי אינטרנט':CLOUD.state==='err'?'⚠ בעיה':'☁ מסונכרן'}</b></div><div><span>פריטים בשרת</span><b>${n}</b></div></div>
-  <div class="toolbar"><button class="btn" onclick="clSync().then(()=>render())">↻ סנכרון עכשיו</button><button class="btn" onclick="clSignOut()">🚪 יציאה מהחשבון</button>${adm?'<button class="btn" onclick="clContentUpload()">📤 העלאת תוכן קבוע (עלונים ותמונות)</button>':''}</div>
+  <div class="toolbar"><button class="btn" onclick="clSync().then(()=>render())">↻ סנכרון עכשיו</button><button class="btn" onclick="clSignOut()">🚪 יציאה מהחשבון</button>${adm?'<button class="btn" onclick="clContentUpload()">📤 העלאת תוכן קבוע (עלונים ותמונות)</button><button class="btn" onclick="clChangeKey()">🔑 החלפת מפתח הארגון</button><button class="btn" onclick="clNewRecovery()">🧾 קוד שחזור חדש</button>':''}</div>
   <p class="small muted">🔒 כל הנתונים מוצפנים במחשב לפני שהם יוצאים לשרת, עם מפתח הארגון. מי שאין לו את המפתח – גם אם יגיע לשרת – לא יוכל לקרוא כלום.</p></div>
   ${adm?`<div class="card"><h2>👥 מי יכול להיכנס</h2><p class="small muted">מי שנכנס בפעם הראשונה (עם Google או מייל) מופיע כאן כ"ממתין". מסמנים "מאושר" ובוחרים הרשאה. אחרי האישור צריך להגיד לו את מפתח הארגון – בעל פה.</p>
   <table><thead><tr><th class="nosort">שם</th><th class="nosort">מייל</th><th class="nosort">הרשאה</th><th class="nosort">בלי סכומים</th><th class="nosort">מאושר</th><th class="nosort"></th></tr></thead><tbody>
@@ -4745,7 +4785,7 @@ function renderNav(){
   document.getElementById('sidefoot').innerHTML=`גיבוי אחרון: ${lb?esc(hebDate(localIso(lb))):'<b>אף פעם</b>'}${days===null||days>=7?' ⚠':''}
     ${can('settings')||USER.role==='clerk'?`<button onclick="backup()">💾 שמור גיבוי</button>`:''}${can('settings')?`<button onclick="archiveModal()">📦 תיקיית סוף שנה</button>`:''}${USER.role!=='addresses'?`<button onclick="exportAll()">📊 ייצוא לאקסל</button>`:''}
     <div class="row"><button onclick="fontSize(1)" title="אותיות גדולות">א+</button><button onclick="fontSize(-1)" title="אותיות קטנות">א−</button><button onclick="openTheme()" title="צבעים ומראה">🎨</button></div>
-    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 21.10.2026 19:11</div>`;
+    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 21.10.2026 19:35</div>`;
   const yp=document.getElementById('yearpick');yp.innerHTML=st.years.map(y=>`<option ${y===S.viewYear?'selected':''} value='${esc(y)}'>${esc(y)}${y===st.currentYear?' (נוכחית)':''}</option>`).join('');
   document.getElementById('todayHeb').textContent=hebDate(today());applyBrand();
   document.getElementById('gsWrap').style.display=USER.role==='addresses'||USER.role==='counter'?'none':'';
