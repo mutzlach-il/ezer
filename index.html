@@ -672,6 +672,7 @@ function save(silent){
   if(!can('edit')){ // צפייה בלבד – מחזירים את המצב הקודם
     DB=JSON.parse(lastJSON); toast('במצב צפייה אי אפשר לשנות'); render(); return false;
   }
+  if(typeof pAudit==='function')pAudit();
   undoStack.push(lastJSON); if(undoStack.length>25) undoStack.shift();
   DB.updated=new Date().toISOString(); DB.changes=(DB.changes||0)+1;
   lastJSON=JSON.stringify(DB); persist();
@@ -2255,9 +2256,9 @@ function setPath(path,val){let o=DB.settings;const ks=path.split('.');for(let i=
 const numIn=(path,v,w=100)=>`<input type="number" value="${v??''}" onchange="setPath('${path}',this.value===''?null:+this.value)" style="width:${w}px">`;
 const listIn=(path,arr,sep=',')=>`<input type="text" style="width:100%" value="${esc((arr||[]).join(sep+' '))}" onchange="setPath('${path}',this.value.split(/[,]+/).map(s=>s.trim()).filter(Boolean))">`;
 function vSettings(){
-  const tabs=[...(CLOUD.on?[['cloud','☁ חיבור משותף'],['srvbk','🕘 גיבויים בשרת']]:[]),['general','כללי ושנים'],['money','סכומים ותשלומים'],['lists','רשימות'],['features','הפעלה / השבתה'],...(CLOUD.on?[]:[['users','משתמשים'],['cloudinfo','☁ גרסה מקוונת']]),['backup','גיבוי'],['trash','סל מחזור'],['log','יומן שינויים']];
+  const tabs=[...(CLOUD.on?[['cloud','☁ חיבור משותף'],['srvbk','🕘 גיבויים בשרת'],['secure','🔐 אבטחה ובדיקה']]:[]),['general','כללי ושנים'],['money','סכומים ותשלומים'],['lists','רשימות'],['features','הפעלה / השבתה'],...(CLOUD.on?[]:[['users','משתמשים'],['cloudinfo','☁ גרסה מקוונת']]),['backup','גיבוי'],['trash','סל מחזור'],['log','יומן שינויים']];
   const tab=S.tab.set||'general';
-  const f={srvbk:setSrvBk,cloud:setCloud,cloudinfo:setCloud,general:setGeneral,money:setMoney,lists:setLists,features:setFeatures,users:setUsers,backup:setBackup,trash:setTrash,log:setLog}[tab];
+  const f={secure:setSecure,srvbk:setSrvBk,cloud:setCloud,cloudinfo:setCloud,general:setGeneral,money:setMoney,lists:setLists,features:setFeatures,users:setUsers,backup:setBackup,trash:setTrash,log:setLog}[tab];
   return `<div class="tabs">${tabs.map(([k,t])=>`<button class="${tab===k?'on':''}" onclick="S.tab.set='${k}';render()">${t}</button>`).join('')}</div>${f()}`;
 }
 function setGeneral(){const st=DB.settings;return `
@@ -2333,8 +2334,8 @@ function restoreTrash(id){const t=DB.trash.find(x=>x.id===id);if(!t)return;const
   else if(t.type==='household'){DB.households.push(d);(t.routes||[]).forEach(rid=>{const r=DB.routes.find(x=>x.id===rid);if(r&&!r.stops.includes(d.id))r.stops.push(d.id)})}
   else if(t.type==='route')DB.routes.push(d);else if(t.type==='group'){DB.groups.push(d);syncGroupCredits(d.year)}else if(t.type==='expense')DB.expenses.push(d);else if(t.type==='task')DB.tasks.push(d);else if(t.type==='purchase')DB.purchases.push(d);
   DB.trash=DB.trash.filter(x=>x.id!==id);log('שחזור מסל המחזור',t.label);save();render();toast('שוחזר')}
-function setLog(){const q=(S.logQ||'').trim();const L=[...DB.log].reverse().filter(l=>!q||(l.a+' '+l.d+' '+l.u).includes(q)).slice(0,500);
-  return `<div class="card"><div class="toolbar"><h2 style="margin:0;flex:1">יומן שינויים – מי עשה מה ומתי</h2><input type="search" placeholder="חיפוש ביומן…" value="${esc(S.logQ||'')}" oninput="S.logQ=this.value;render()"></div>
+function setLog(){const q=(S.logQ||'').trim();const L=[...DB.log].reverse().filter(l=>(typeof logKeep!=='function'||logKeep(l))).filter(l=>!q||(l.a+' '+l.d+' '+l.u).includes(q)).slice(0,500);
+  return `<div class="card"><div class="toolbar"><h2 style="margin:0;flex:1">יומן שינויים – מי עשה מה ומתי</h2><input type="search" placeholder="חיפוש ביומן…" value="${esc(S.logQ||'')}" oninput="S.logQ=this.value;render()">${clIsAdmLocal()?'<button class="btn" style="color:var(--bad)" onclick="logClearAll()">🗑 מחיקת כל ההיסטוריה</button>':''}</div>
   <div class="tw"><table><thead><tr><th class="nosort">מתי</th><th class="nosort">מי</th><th class="nosort">פעולה</th><th class="nosort">פרטים</th></tr></thead><tbody>${L.map(l=>`<tr><td class="small">${dtTime(l.t)}</td><td class="small">${esc(l.u)}</td><td>${esc(l.a)}</td><td class="small wrap">${esc(l.d)}</td></tr>`).join('')}</tbody></table></div><div class="small muted">מוצגות 500 הפעולות האחרונות${q?' שמתאימות לחיפוש':''}.</div></div>`}
 
 function compareRules(){const ps=groupSort(activePeople()),st=DB.settings;
@@ -2541,6 +2542,13 @@ ${feat('lottery')?'<li>הגרלה: "🎲 הגרלה על מסך מלא" – מת
 <li><b>↩ שחזור לכאן</b> – מחזיר את כל המערכת, אצל כולם, למצב של אותו יום. צריך לאשר ולכתוב את המילה "שחזור". לפני השחזור נשמר צילום של המצב הנוכחי (🛟 לפני שחזור) – כך שאפשר לחזור בחזרה.</li>
 <li>רק מנהל רואה ומשחזר. הצילומים מוצפנים כמו כל הנתונים.</li>
 <li><b>🔒 הקבצים הישנים נעולים:</b> קובץ "עזר" שנשלח פעם במחשב כבר לא נפתח – מופיע מסך "המערכת עברה לקישור" עם כפתור לקישור. אם היו בו נתונים – יש שם כפתור "💾 שמירת גיבוי להעברה", ואת הקובץ טוענים בקישור: ⚙ הגדרות ← גיבוי ← "📂 טען גיבוי".</li></ul>`],
+['h10t','🔐 אבטחה: נעילה אוטומטית, היסטוריה בכרטיס, בדיקה עצמית',`<ul>
+<li><b>איפה זה:</b> ⚙ הגדרות ← לשונית <b>"🔐 אבטחה ובדיקה"</b>.</li>
+<li><b>🔒 נעילה אוטומטית:</b> אחרי חצי שעה בלי פעילות המערכת ננעלת. כדי להמשיך – "📧 שלחו לי קוד למייל" (או Google). דקה לפני הנעילה מופיע פס כתום – לחיצה עליו ממשיכה. בעל המערכת יכול לשנות את הזמן (10 דקות עד שעתיים). גם מי שסגר את המערכת וחוזר אחרי יותר מחצי שעה – נכנס עם קוד.</li>
+<li><b>📜 מי שינה מה:</b> בכרטיס הבחור ← "📜 היסטוריה". כל שינוי נרשם לבד: מי, מתי, ומה השתנה (למשל "טלפון: הישן ← החדש", "נוסף מזומן 300 ₪"). ההיסטוריה משותפת לכל המחשבים.</li>
+<li><b>🗑 מחיקת היסטוריה (מנהל):</b> בחלון ההיסטוריה של בחור – "מחיקת ההיסטוריה שלו". ובהגדרות ← "יומן שינויים" – "מחיקת כל ההיסטוריה" (צריך לכתוב "מחיקה"). המחיקה חלה בכל המחשבים. נרשמת רק שורה אחת שההיסטוריה נמחקה.</li>
+<li><b>🩺 בדיקה עצמית:</b> בודקת בלחיצה: אינטרנט, שרת, כניסה, הרשאה, מפתח, שינויים שלא נשלחו, גיבוי לילי, ממתינים לאישור, תמונות, מקום וגרסה. ✅ תקין · ⚠ לתשומת לב · ❌ צריך טיפול – ולידו כתוב מה לעשות.</li>
+<li><b>✉ מייל כשמישהו מבקש להצטרף:</b> נשלח לבעל המערכת, עם הסבר איך לאשר. את הכתובת משנים באותה לשונית, ויש כפתור "שליחת בדיקה".</li></ul>`],
 ['h10n','כלים חדשים: ספירה מהירה, קבלות, כפילויות, זכאות, תזכורות',`
 <ul><li><b>⚡ ספירה מהירה</b> (רישום כסף לשנה): לערב החפ"ק – כותבים שם ← Enter ← סכום ← Enter. רואים רשימה של מה שנרשם, ו"↶ ביטול" לטעות.</li>
 <li><b>🧾 קבלה</b>: בכרטיס הבחור, ליד כל תשלום – אישור קבלת כסף עם מספר רץ (מקור + העתק).</li>
@@ -4175,7 +4183,7 @@ function engagePick(){const ps=groupSort(activePeople()).filter(p=>!p.married);
   modal(`<div class="modal narrow"><div class="mh"><h2>💐 סימון בחור כמאורס</h2><button class="x" onclick="closeModal()">×</button></div><div class="mb form">
   <label class="full">הבחור<input type="text" id="epN" list="epL" placeholder="מתחילים להקליד שם…" autocomplete="off"><datalist id="epL">${ps.map(p=>`<option value="${esc(fullName(p))}">${esc(yName(p.yeshiva)+' '+(p.shiur||''))}${p.engaged?' – כבר מאורס':''}</option>`).join('')}</datalist></label>
   <label class="full">תאריך האירוסין ${dateInput('epD',today())}</label><label class="full">תאריך החתונה (אם כבר ידוע) ${dateInput('epW','')}</label></div>
-  <div class="mf"><button class="btn pri" onclick="engagePickSave()">שמירה</button><button class="btn" onclick="closeModal()">ביטול</button></div></div>`);setTimeout(()=>document.getElementById('epN').focus(),50)}
+  <div class="mf"><button class="btn pri" onclick="engagePickSave()">שמירה</button><button class="btn" onclick="closeModal()">ביטול</button></div></div>`);setTimeout(()=>{const e=document.getElementById('epN');if(e)e.focus()},50)}
 function engagePickSave(){const v=document.getElementById('epN').value.trim(),m=activePeople().filter(p=>fullName(p)===v);if(m.length!==1){toast('בחרו בחור מהרשימה');return}
   const p=m[0];p.engaged=true;p.engDate=document.getElementById('epD').value;p.planDate=document.getElementById('epW').value||p.planDate||'';log('אירוסין',fullName(p)+' – מאורס'+(p.planDate?' · חתונה '+p.planDate:''));save();closeModal();render();toast('💐 מזל טוב! '+fullName(p)+' סומן כמאורס')}
 function engageSave(id){const p=byId(id),g=i=>document.getElementById(i);p.engaged=g('enOn').checked;p.engDate=g('enD').value;p.planDate=g('enW').value;p.engNote=g('enN').value;log('אירוסין',fullName(p)+(p.engaged?' – מאורס':' – בוטל'));save();if(window._engBack){closeModal();render()}else openCard(id);toast(p.engaged?'נשמר. מזל טוב!':'נשמר')}
@@ -4426,11 +4434,11 @@ function goalsCard(y){const L=groupSort(activePeople()).filter(p=>goalOf(p,y));i
   ${L.sort((a,b)=>yearTotal(b,y)/goalOf(b,y)-yearTotal(a,y)/goalOf(a,y)).map(p=>{const g=goalOf(p,y),t=yearTotal(p,y);return `<tr><td class="name" onclick="openCard('${p.id}')">${esc(fullName(p))}</td><td class="num">${fmt(g)}</td><td class="num">${fmt(t)}</td><td>${pctBar(t,g)}</td><td>${t>=g?'<b style="color:var(--ok)">✔ הגיע</b>':shek(g-t)}</td></tr>`}).join('')}</tbody></table></div>`}
 
 /* ---- 24. היסטוריית שינויים לבחור ---- */
-function personLog(id){const p=byId(id),n=fullName(p),L=DB.log.filter(l=>String(l.d||'').includes(n)).slice().reverse();
+function personLog(id){const p=byId(id),n=fullName(p),L=DB.log.filter(l=>(l.pid===id||String(l.d||'').includes(n))&&(typeof logKeep!=='function'||logKeep(l))).slice().reverse();
   modal(`<div class="modal wide"><div class="mh"><h2>📜 היסטוריית שינויים – ${esc(n)}</h2><button class="x" onclick="openCard('${id}')">×</button></div><div class="mb">
   ${L.length?`<div class="tw" style="max-height:62vh"><table><thead><tr><th class="nosort">מתי</th><th class="nosort">מי</th><th class="nosort">פעולה</th><th class="nosort">פירוט</th></tr></thead><tbody>${L.map(l=>`<tr><td class="small" style="white-space:nowrap">${esc(hebDate(localIso(l.t),false))} ${esc(new Date(l.t).toTimeString().slice(0,5))}</td><td class="small">${esc(l.u||'')}</td><td>${esc(l.a)}</td><td class="small wrap">${esc(l.d)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="muted">לא נמצאו שינויים שנרשמו על שמו.</div>'}
   ${(p.moves||[]).length?`<h3>מעברי ישיבה</h3>${p.moves.map(m=>`<div class="small">${esc(hebDate(m.date))}: ${esc(m.from)} ← ${esc(m.to)} (${esc(m.by||'')})</div>`).join('')}`:''}</div>
-  <div class="mf"><button class="btn" onclick="openCard('${id}')">חזרה לכרטיס</button></div></div>`)}
+  <div class="mf">${clIsAdmLocal()&&L.length?`<button class="btn" style="color:var(--bad)" onclick="logClearPerson('${id}')">🗑 מחיקת ההיסטוריה שלו</button>`:''}<button class="btn" onclick="openCard('${id}')">חזרה לכרטיס</button></div></div>`)}
 
 /* ---- 26. אחים – כל הבחורים מבית אחד ---- */
 function familyKey(p){const ph=String(p.phoneH||'').replace(/\D/g,'');return normName(p.last)+'|'+(ph.length>=9?ph:normName(p.fatherName||p.city||''))}
@@ -4587,7 +4595,7 @@ async function clInitGoogle(){try{if(!window.google||!google.accounts){await clS
     clNonce=clB64(crypto.getRandomValues(new Uint8Array(16)));const h=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(clNonce)))).map(b=>b.toString(16).padStart(2,'0')).join('');
     google.accounts.id.initialize({client_id:CL_GOOGLE,callback:clOnGoogle,auto_select:false,ux_mode:'popup',nonce:h,use_fedcm_for_prompt:true});
     google.accounts.id.renderButton(document.getElementById('gBtn'),{theme:'filled_blue',size:'large',text:'signin_with',shape:'pill',locale:'he',width:300})}
-  catch(e){const m=document.getElementById('gMsg');if(m)m.textContent='כניסה עם Google לא זמינה כרגע (אולי חסומה בסינון). אפשר להיכנס עם מייל וסיסמה.'}}
+  catch(e){const m=document.getElementById('gMsg');if(m)m.textContent='כניסה עם Google לא זמינה כרגע (אולי חסומה בסינון). אפשר להיכנס עם קוד למייל.'}}
 function clScript(src){return new Promise((ok,no)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=()=>no(new Error('load '+src));document.head.appendChild(s)})}
 const clErr=t=>{const e=document.getElementById('clErr');if(e)e.textContent=t};
 async function clOnGoogle(resp){clErr('נכנס…');const {data,error}=await CLOUD.sb.auth.signInWithIdToken({provider:'google',token:resp.credential,nonce:clNonce});
@@ -4621,12 +4629,12 @@ async function clForgot(){const em=document.getElementById('clEm').value.trim().
 async function clAfterAuth(user){const email=(user.email||'').toLowerCase(),name=(user.user_metadata&&(user.user_metadata.full_name||user.user_metadata.name))||email.split('@')[0];
   let {data:u,error}=await CLOUD.sb.from('ez_users').select('*').eq('email',email).maybeSingle();
   if(error){clGate(`<p style="color:var(--bad)">אין חיבור לרשימת המשתמשים בשרת.</p><p class="small muted">${esc(error.message)}</p><button class="btn" onclick="location.reload()">נסה שוב</button>`);return}
-  if(!u){const r=await CLOUD.sb.rpc('ez_join',{p_name:name});u=r.data||null}
+  if(!u){const r=await CLOUD.sb.rpc('ez_join',{p_name:name});u=r.data||null;if(u&&!u.active)joinNotify(email,name)}
   if(u&&!u.active&&localStorage.getItem(KEY+'_ck_'+email)){try{localStorage.removeItem(KEY+'_ck_'+email);localStorage.removeItem(KEY);localStorage.removeItem(KEY+'_cloud_'+email);localStorage.removeItem(KEY+'_cloud_me');indexedDB.deleteDatabase('ezer_files')}catch(e){}}
   if(!u||!u.active){clGate(`<h3>⏳ ממתין לאישור</h3><p>נרשמת כ־<b dir="ltr">${esc(email)}</b>.<br>מנהל המערכת צריך לאשר אותך – ואז תוכל להיכנס.</p><div style="display:flex;gap:6px;justify-content:center"><button class="btn pri" onclick="clBoot()">בדוק שוב</button><button class="btn" onclick="clSignOut()">החלף משתמש</button></div>`);return}
   if(u.blocked){clGate(`<h3>⛔ המשתמש שלך הושבת</h3><p>פנה לבעל המערכת.</p><button class="btn" onclick="clSignOut()">יציאה</button>`);return}
   if(u.role!=='owner'){const {data:sy}=await CLOUD.sb.from('ez_system').select('disabled,msg').eq('id',1).maybeSingle();if(sy&&sy.disabled){clGate(`<h3>⛔ המערכת מושבתת זמנית</h3><p>${esc(sy.msg||'נסו שוב מאוחר יותר.')}</p><button class="btn" onclick="clBoot()">בדוק שוב</button>`);return}}
-  try{CLOUD.sb.rpc('ez_seen').then(()=>{},()=>{})}catch(e){}
+  idleUnlock();try{CLOUD.sb.rpc('ez_seen').then(()=>{},()=>{})}catch(e){}
   CLOUD.me={email,name:u.name||name,role:u.role||'viewer',hide:!!u.hide_amounts};try{localStorage.setItem(KEY+'_cloud_me',JSON.stringify(CLOUD.me))}catch(e){}
   if(!(await clLoadKey())){clKeyScreen();return}clEnter()}
 /* מפתח הארגון: המידע מוצפן במפתח אקראי חזק (DEK). המפתח הזה שמור פעמיים בשרת – נעול במשפט שלך, ונעול בקוד שחזור.
@@ -4692,12 +4700,12 @@ async function clNewRecovery(){if(!confirm('ליצור קוד שחזור חדש?
 
 /* ---------- כניסה למערכת ---------- */
 function clUser(){const m=CLOUD.me;return {id:'c:'+m.email,name:m.name,email:m.email,role:m.role==='owner'?'admin':m.role,hideAmounts:m.hide,cloud:true}}
-async function clEnter(){clLoadMeta();clGateClose();CLOUD.on=true;clEscrowSave();setInterval(clAccessCheck,45000);startSession(clUser());clStatus();setInterval(()=>{clStatus();clInstallBtn()},5000);
+async function clEnter(){clLoadMeta();clGateClose();CLOUD.on=true;idleStart();clEscrowSave();setInterval(clAccessCheck,45000);startSession(clUser());clStatus();setInterval(()=>{clStatus();clInstallBtn()},5000);
   await clContentLoad();await clSync(true);clRealtime();try{CLOUD.sb.rpc('ez_snapshot',{p_manual:false}).then(()=>{},()=>{})}catch(e){}if(clIsAdm()&&!(DB.people||[]).length)clEmptyPrompt();
   setInterval(()=>clSync(),60000);window.addEventListener('online',()=>{CLOUD.online=true;clSync()});window.addEventListener('offline',()=>{CLOUD.online=false;clStatus()});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)clSync()})}
-function clEnterOffline(){const me=JSON.parse(localStorage.getItem(KEY+'_cloud_me')||'null');if(!me)return false;CLOUD.me=me;
-  return clLoadKey().then(ok=>{if(!ok)return false;clLoadMeta();CLOUD.on=true;CLOUD.online=false;clGateClose();startSession(clUser());clStatus();clContentLoad();
+function clEnterOffline(){if(idleLocked())return false;const me=JSON.parse(localStorage.getItem(KEY+'_cloud_me')||'null');if(!me)return false;CLOUD.me=me;
+  return clLoadKey().then(ok=>{if(!ok)return false;clLoadMeta();CLOUD.on=true;CLOUD.online=false;clGateClose();idleStart();startSession(clUser());clStatus();clContentLoad();
     window.addEventListener('online',()=>location.reload(),{once:true});return true})}
 async function clSignOut(){try{await CLOUD.sb.auth.signOut()}catch(e){}try{localStorage.removeItem(KEY+'_cloud_me')}catch(e){}location.reload()}
 // יציאה: רגילה (העותק נשאר במחשב לעבודה בלי אינטרנט) או מלאה (מחשב משותף – מוחקים הכל מהמחשב הזה)
@@ -4718,11 +4726,13 @@ function clRecords(){const R={};
   const byM={};(DB.log||[]).forEach(l=>{const m=String(l.t||'').slice(0,7)||'x';(byM[m]=byM[m]||[]).push(l)});for(const m in byM)R['log:'+m]=JSON.stringify(byM[m]);
   return R}
 function clApply(k,val,del){const i=k.indexOf(':'),c=k.slice(0,i),id=k.slice(i+1);
-  if(c==='o'){if(del)delete DB[id];else DB[id]=val;return}
-  if(c==='log'){const keep=(DB.log||[]).filter(l=>String(l.t||'').slice(0,7)!==id);DB.log=keep.concat(del?[]:val).sort((a,b)=>String(a.t).localeCompare(String(b.t)));return}
+  if(c==='o'){if(del)delete DB[id];else DB[id]=val;if(id==='logCleared'&&typeof logPurge==='function')logPurge();return}
+  if(c==='log'){const keep=(DB.log||[]).filter(l=>String(l.t||'').slice(0,7)!==id);DB.log=keep.concat(del?[]:val).sort((a,b)=>String(a.t).localeCompare(String(b.t)));if(typeof logPurge==='function')logPurge();return}
+  if(c==='people'&&typeof pSnapSet==='function')pSnapSet(id,del?null:val);
   const A=DB[c]=DB[c]||[];const j=A.findIndex(x=>x.id===id);if(del){if(j>=0)A.splice(j,1);return}if(j>=0)A[j]=val;else A.push(val)}
 // שני מחשבים שינו אותו פריט: מאחדים בחכמה – לא מאבדים תשלומים או יומן
-function clMerge(k,loc,rem){if(k.startsWith('log:')){const s=new Set(),o=[];[...rem,...loc].forEach(l=>{const t=l.t+'|'+l.u+'|'+l.a+'|'+l.d;if(!s.has(t)){s.add(t);o.push(l)}});return o.sort((a,b)=>String(a.t).localeCompare(String(b.t)))}
+function clMerge(k,loc,rem){if(k.startsWith('log:')){const s=new Set(),o=[];[...rem,...loc].forEach(l=>{const t=l.t+'|'+l.u+'|'+l.a+'|'+l.d;if(!s.has(t)){s.add(t);o.push(l)}});return o.filter(l=>typeof logKeep!=='function'||logKeep(l)).sort((a,b)=>String(a.t).localeCompare(String(b.t)))}
+  if(k==='o:logCleared'){const m={all:[loc.all,rem.all].filter(Boolean).sort().pop(),p:{...(rem.p||{})}};for(const [i,x] of Object.entries(loc.p||{}))if(!m.p[i]||m.p[i].t<x.t)m.p[i]=x;if(!m.all)delete m.all;return m}
   if(k.startsWith('people:')){const m=clone(rem);m.years=m.years||{};for(const [y,r] of Object.entries(loc.years||{})){const R=m.years[y]=m.years[y]||{entries:[],flags:{}};const ids=new Set((R.entries||[]).map(e=>e.id));
       (r.entries||[]).forEach(e=>{if(!ids.has(e.id))R.entries.push(e)});R.flags=Object.assign({},r.flags||{},R.flags||{});for(const kk in r)if(!(kk in R))R[kk]=r[kk]}return m}
   if(k.startsWith('households:')){const m=clone(rem);m.hist=Object.assign({},loc.hist||{},rem.hist||{});return m}
@@ -4814,12 +4824,14 @@ async function clBoot(){if(!CLOUD_BUILD||!/^https?:/.test(location.protocol))ret
   catch(e){if(!(await clEnterOffline()))clGate('<p>אין חיבור לאינטרנט, ובמחשב הזה עוד לא נכנסו אף פעם.</p><p class="small muted">בפעם הראשונה צריך אינטרנט. אחר כך אפשר לעבוד גם בלי.</p><button class="btn" onclick="location.reload()">נסה שוב</button>');return true}
   try{CLOUD.sb.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY')setTimeout(clNewPassScreen,300)})}catch(e){}
   let sess=null;try{sess=(await CLOUD.sb.auth.getSession()).data.session}catch(e){}
+  if(idleExpired()){try{localStorage.setItem(LOCK_K(),'1')}catch(e){}}
+  if(idleLocked()){if(sess){try{await CLOUD.sb.auth.signOut({scope:'local'})}catch(e){}}if(!navigator.onLine){clGate('<h3>🔒 המערכת נעולה</h3><p>כדי להיכנס שוב צריך קוד שנשלח למייל – ולשם צריך אינטרנט.</p><button class="btn" onclick="location.reload()">נסה שוב</button>');return true}idleLockScreen();return true}
   if(sess&&/type=recovery/.test(location.hash)){setTimeout(clNewPassScreen,300);return true}
   if(!sess){if(!navigator.onLine&&(await clEnterOffline()))return true;clLoginScreen();return true}
   if(!navigator.onLine){if(await clEnterOffline())return true}
   try{await clAfterAuth(sess.user)}catch(e){if(!(await clEnterOffline()))clLoginScreen('אין חיבור לשרת: '+e.message)}
   return true}
-if(CLOUD_BUILD&&'serviceWorker' in navigator&&/^https:/.test(location.protocol)){navigator.serviceWorker.register('sw.js').then(r=>{r.addEventListener('updatefound',()=>{const w=r.installing;w&&w.addEventListener('statechange',()=>{if(w.state==='installed'&&navigator.serviceWorker.controller){const b=document.createElement('div');b.style.cssText='position:fixed;bottom:14px;left:14px;z-index:9800;background:#1e7b4a;color:#fff;padding:10px 14px;border-radius:10px;cursor:pointer;box-shadow:0 4px 16px #0004';b.textContent='✔ יש גרסה חדשה – לחצו לרענון';b.onclick=()=>location.reload();document.body.appendChild(b)}})})}).catch(()=>{})}
+if(CLOUD_BUILD&&'serviceWorker' in navigator&&/^https:/.test(location.protocol)){navigator.serviceWorker.register('sw.js').then(r=>{r.addEventListener('updatefound',()=>{const w=r.installing;w&&w.addEventListener('statechange',()=>{if(w.state==='installed'&&navigator.serviceWorker.controller){const b=document.createElement('div');b.id='swUpd';b.style.cssText='position:fixed;bottom:14px;left:14px;z-index:9800;background:#1e7b4a;color:#fff;padding:10px 14px;border-radius:10px;cursor:pointer;box-shadow:0 4px 16px #0004';b.textContent='✔ יש גרסה חדשה – לחצו לרענון';b.onclick=()=>location.reload();document.body.appendChild(b)}})})}).catch(()=>{})}
 // התקנה כאפליקציה במחשב (סמל על שולחן העבודה, עובד גם בלי אינטרנט)
 let clInstallEvt=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();clInstallEvt=e;clInstallBtn()});
 function clInstallBtn(){const side=document.getElementById('sidefoot');if(!side||document.getElementById('clInst')||matchMedia('(display-mode: standalone)').matches)return;const b=document.createElement('button');b.id='clInst';b.textContent='💻 הורדה למחשב';b.title='מתקין את עזר כתוכנה – סמל על שולחן העבודה, עובד גם בלי אינטרנט';
@@ -4870,6 +4882,105 @@ async function srvBkRestore(id,day){if(!confirm('לשחזר את כל המערכ
   await clSync();const {data,error}=await CLOUD.sb.rpc('ez_restore',{p_id:id});if(error)return alert('השחזור נכשל: '+error.message);
   log('שחזור מגיבוי בשרת','למצב של '+day);await clSync();toast('✅ שוחזר ('+data+' רשומות). כל המחשבים יתעדכנו תוך דקה.');render()}
 
+/* ====================== אבטחה: נעילה אוטומטית, היסטוריה בכרטיס, בדיקה עצמית, הודעה על הצטרפות ====================== */
+
+/* ---------- 1. נעילה אחרי זמן בלי פעילות ---------- */
+const IDLE_K=()=>KEY+'_idle_last',LOCK_K=()=>KEY+'_idle_locked',IDLE_MIN_K=()=>KEY+'_idle_min';
+const idleMin=()=>{const v=DB&&DB.settings&&DB.settings.idleMin;const n=v===undefined||v===null?+(localStorage.getItem(IDLE_MIN_K())||30):+v;return isNaN(n)?30:n};
+const idleLocked=()=>{try{return localStorage.getItem(LOCK_K())==='1'}catch(e){return false}};
+function idleExpired(){if(!CLOUD_BUILD)return false;const m=+(localStorage.getItem(IDLE_MIN_K())||30);if(!m)return false;const last=+(localStorage.getItem(IDLE_K())||0);return !!last&&Date.now()-last>m*60000}
+let idleT=null,idleBump=0;
+function idleTouch(){const n=Date.now();if(n-idleBump<15000)return;idleBump=n;try{localStorage.setItem(IDLE_K(),String(n))}catch(e){}}
+function idleStart(){if(!CLOUD.on||idleT)return;try{localStorage.setItem(IDLE_MIN_K(),String(idleMin()));localStorage.setItem(IDLE_K(),String(Date.now()))}catch(e){}
+  ['mousemove','mousedown','keydown','wheel','touchstart','scroll'].forEach(ev=>window.addEventListener(ev,idleTouch,{passive:true,capture:true}));
+  idleT=setInterval(()=>{const m=idleMin();try{localStorage.setItem(IDLE_MIN_K(),String(m))}catch(e){}if(!m)return;const last=+(localStorage.getItem(IDLE_K())||Date.now());
+    const left=m*60000-(Date.now()-last);if(left<=0)idleLock();else if(left<60000&&!document.getElementById('idleWarn')){const b=document.createElement('div');b.id='idleWarn';b.style.cssText='position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:9900;background:#b45309;color:#fff;padding:10px 16px;border-radius:10px;cursor:pointer;box-shadow:0 4px 16px #0004';b.textContent='⏳ המערכת תינעל בעוד פחות מדקה – לחצו כאן כדי להמשיך';b.onclick=()=>{idleBump=0;idleTouch();b.remove()};document.body.appendChild(b)}
+    else if(left>=60000){const w=document.getElementById('idleWarn');if(w)w.remove()}},10000)}
+async function idleLock(){if(idleLocked())return;try{localStorage.setItem(LOCK_K(),'1')}catch(e){}
+  try{if(navigator.onLine&&CLOUD.sb)await Promise.race([clSync(),new Promise(r=>setTimeout(r,4000))])}catch(e){}
+  try{await CLOUD.sb.auth.signOut({scope:'local'})}catch(e){}location.reload()}
+function idleUnlock(){try{localStorage.removeItem(LOCK_K());localStorage.setItem(IDLE_K(),String(Date.now()))}catch(e){}}
+function idleLockScreen(){const m=+(localStorage.getItem(IDLE_MIN_K())||30);
+  clGate(`<h3>🔒 המערכת ננעלה</h3><p>לא הייתה פעילות ${m} דקות, ולכן המערכת ננעלה כדי לשמור על הפרטיות.</p><p class="small muted">כל הנתונים שמורים. כדי להמשיך – נכנסים שוב עם קוד שנשלח למייל, או עם חשבון Google.</p>
+  <button class="btn pri" style="width:100%;margin:6px 0" onclick="clOtpStart()">📧 שלחו לי קוד למייל</button>
+  <div class="small muted" style="margin:8px 0">— או —</div><div id="gBtn" style="display:flex;justify-content:center;min-height:44px"></div><div id="gMsg" class="small muted"></div>
+  <div id="clErr" class="small" style="color:var(--bad);margin-top:10px;min-height:18px"></div>`);clInitGoogle()}
+function idleSetMin(v){DB.settings.idleMin=+v;try{localStorage.setItem(IDLE_MIN_K(),String(+v))}catch(e){}log('אבטחה','נעילה אוטומטית: '+(+v?v+' דקות':'כבויה'));save();toast('נשמר – חל על כל המשתמשים');render()}
+
+/* ---------- 2. היסטוריה אוטומטית בכרטיס: מי שינה מה ---------- */
+let PSNAP=null,PSNAP_DB=null;
+const P_LBL={first:'שם פרטי',last:'שם משפחה',phone:'טלפון',phone2:'טלפון נוסף',email:'מייל',addr:'כתובת',city:'עיר',street:'רחוב',yeshiva:'ישיבה',shiur:'שיעור',father:'שם האב',note:'הערה',notes:'הערות',engaged:'מאורס',engagedDate:'תאריך אירוסין',wedding:'תאריך חתונה',weddingDate:'תאריך חתונה',married:'נשוי',kallah:'שם הכלה',req:'סכום יעד',status:'מצב',active:'פעיל',group:'קבוצה',hh:'משפחה',household:'משפחה',tz:'ת"ז',bday:'יום הולדת',photo:'תמונה'};
+function pSnapBuild(){PSNAP=new Map();PSNAP_DB=DB;(DB.people||[]).forEach(p=>{if(p&&p.id)PSNAP.set(p.id,JSON.stringify(p))})}
+function pSnapSet(id,val){if(!PSNAP||PSNAP_DB!==DB)return;if(val)PSNAP.set(id,JSON.stringify(val));else PSNAP.delete(id)}
+const pv=v=>v===true?'כן':v===false||v===undefined||v===null||v===''?'—':typeof v==='object'?'(עודכן)':String(v).slice(0,40);
+function pDiff(a,b){const out=[];const keys=new Set([...Object.keys(a||{}),...Object.keys(b||{})]);
+  for(const k of keys){if(k==='years'||k==='updated'||k==='_t')continue;const x=JSON.stringify(a[k]),y=JSON.stringify(b[k]);if(x!==y)out.push((P_LBL[k]||k)+': '+pv(a[k])+' ← '+pv(b[k]))}
+  const ya=a.years||{},yb=b.years||{};for(const y of new Set([...Object.keys(ya),...Object.keys(yb)])){const A=(ya[y]||{}).entries||[],B=(yb[y]||{}).entries||[];const ma=new Map(A.map(e=>[e.id,e])),mb=new Map(B.map(e=>[e.id,e]));
+    for(const [id,e] of mb){const o=ma.get(id);if(!o)out.push(y+': נוסף '+(e.cat||'')+' '+(e.amount||0)+' ₪'+(e.note?' ('+String(e.note).slice(0,30)+')':''));else if(JSON.stringify(o)!==JSON.stringify(e))out.push(y+': תוקן '+(o.cat||'')+' '+(o.amount||0)+' ← '+(e.amount||0)+' ₪')}
+    for(const [id,e] of ma)if(!mb.has(id))out.push(y+': נמחק '+(e.cat||'')+' '+(e.amount||0)+' ₪');
+    const fa=JSON.stringify(Object.assign({},ya[y],{entries:0})),fb=JSON.stringify(Object.assign({},yb[y],{entries:0}));if(fa!==fb&&ya[y]&&yb[y])out.push(y+': עודכנו סימונים')}
+  return out}
+function pAudit(){try{if(!USER||!DB||!DB.people)return;if(!PSNAP||PSNAP_DB!==DB){pSnapBuild();return}const seen=new Set();
+  for(const p of DB.people){if(!p||!p.id)continue;seen.add(p.id);const s=JSON.stringify(p),o=PSNAP.get(p.id);if(o===s)continue;PSNAP.set(p.id,s);
+    if(o===undefined){DB.log.push({t:new Date().toISOString(),u:USER.name||'',a:'בחור חדש',d:fullName(p),pid:p.id});continue}
+    const d=pDiff(JSON.parse(o),p);if(d.length)DB.log.push({t:new Date().toISOString(),u:USER.name||'',a:'שינוי בכרטיס',d:(fullName(p)+' – '+d.join(' · ')).slice(0,300),pid:p.id})}
+  for(const id of [...PSNAP.keys()])if(!seen.has(id)){const o=JSON.parse(PSNAP.get(id));PSNAP.delete(id);DB.log.push({t:new Date().toISOString(),u:USER.name||'',a:'בחור הוסר',d:fullName(o),pid:id})}}catch(e){}}
+
+/* מחיקת היסטוריה – נשמר "סימן מחיקה" כדי שמחשב אחר לא יחזיר את מה שנמחק */
+function logTomb(){return DB.logCleared||{}}
+function logKeep(l,T){T=T||logTomb();if(T.all&&String(l.t)<=T.all)return false;const P=T.p||{};
+  if(l.pid&&P[l.pid]&&String(l.t)<=P[l.pid].t)return false;
+  for(const id in P){const x=P[id];if(x.n&&String(l.t)<=x.t&&String(l.d||'').includes(x.n))return false}return true}
+function logPurge(){if(!DB.logCleared||!DB.log)return;const T=logTomb();const n=DB.log.length;DB.log=DB.log.filter(l=>logKeep(l,T));return n-DB.log.length}
+function logClearPerson(id){if(!clIsAdmLocal())return toast('רק מנהל יכול למחוק היסטוריה');const p=byId(id),n=fullName(p);
+  if(!confirm('למחוק את כל ההיסטוריה של '+n+'?\nהמחיקה תחול בכל המחשבים ואי אפשר לבטל אותה.'))return;
+  const T=DB.logCleared=DB.logCleared||{};T.p=T.p||{};const now=new Date().toISOString();T.p[id]={t:now,n};const k=logPurge();
+  DB.log.push({t:new Date(Date.now()+1).toISOString(),u:USER.name||'',a:'מחיקת היסטוריה',d:'נמחקה ההיסטוריה של בחור אחד ('+k+' שורות)'});save();toast('נמחק');personLog(id)}
+function logClearAll(){if(!clIsAdmLocal())return toast('רק מנהל יכול למחוק היסטוריה');
+  if(!confirm('למחוק את כל יומן השינויים – של כל הבחורים וכל הפעולות?\nהמחיקה תחול בכל המחשבים ואי אפשר לבטל אותה.'))return;
+  if(prompt('כדי לאשר, כתבו: מחיקה')!=='מחיקה')return toast('בוטל');
+  const now=new Date().toISOString();DB.logCleared={all:now,p:{}};const k=DB.log.length;DB.log=[];
+  DB.log.push({t:new Date(Date.now()+1).toISOString(),u:USER.name||'',a:'מחיקת היסטוריה',d:'כל היומן נמחק ('+k+' שורות)'});save();toast('היומן נמחק');render()}
+const clIsAdmLocal=()=>CLOUD.on?clIsAdm():(USER&&USER.role==='admin');
+
+/* ---------- 3. הודעה במייל למנהל כשמישהו מבקש להצטרף ---------- */
+const EZ_MAIL={service:'service_nybca58',template:'template_gzcqacc',key:'6G0YaH5dH_TKKk_hu'};
+async function joinNotify(email,name){try{const {data:to}=await CLOUD.sb.rpc('ez_join_target');if(!to)return;
+  const msg='שלום,\n\n'+name+' ('+email+') ביקש/ה להצטרף למערכת עזר.\n\nכדי לאשר: נכנסים לעזר ← ⚙ הגדרות ← ☁ חיבור משותף ← "ממתינים לאישור" ← ✅ אישור.\n'+EZ_LINK+'\n\nאם אינך מכיר/ה את המבקש – לא מאשרים (אפשר ללחוץ "חסימה").';
+  await fetch('https://api.emailjs.com/api/v1.0/email/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({service_id:EZ_MAIL.service,template_id:EZ_MAIL.template,user_id:EZ_MAIL.key,template_params:{from_name:'מערכת עזר',reply_to:email,to_email:to,to_name:'מנהל עזר',name:'מערכת עזר',subject:'בקשת הצטרפות חדשה לעזר – '+name,message:msg}})})}catch(e){}}
+async function notifyLoad(){const el=document.getElementById('ntfEm');if(!el)return;const {data}=await CLOUD.sb.from('ez_notify').select('email').eq('id',1).maybeSingle();el.value=(data&&data.email)||''}
+async function notifySave(){const v=(document.getElementById('ntfEm').value||'').trim();if(v&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v))return toast('המייל לא תקין');
+  const {error}=await CLOUD.sb.from('ez_notify').upsert({id:1,email:v});if(error)return alert('לא נשמר: '+error.message);toast('נשמר');log('אבטחה','עודכן המייל להודעות הצטרפות')}
+async function notifyTest(){const v=(document.getElementById('ntfEm').value||'').trim();if(!v)return toast('אין מייל');try{const r=await fetch('https://api.emailjs.com/api/v1.0/email/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({service_id:EZ_MAIL.service,template_id:EZ_MAIL.template,user_id:EZ_MAIL.key,template_params:{from_name:'מערכת עזר',reply_to:v,to_email:v,to_name:'מנהל עזר',name:'מערכת עזר',subject:'בדיקה – הודעות מערכת עזר',message:'זו הודעת בדיקה. מכאן יגיעו הודעות כשמישהו מבקש להצטרף לעזר.'}})});toast(r.ok?'✉ נשלחה הודעת בדיקה – בדקו את המייל':'השליחה נכשלה ('+r.status+')')}catch(e){toast('השליחה נכשלה')}}
+
+/* ---------- 4. בדיקה עצמית + הגדרות אבטחה ---------- */
+function setSecure(){setTimeout(()=>{selfCheck();notifyLoad()},0);const own=clIsOwner();const m=idleMin();return `
+<div class="card" style="border-color:var(--gold)"><div class="toolbar" style="margin:0"><h2 style="margin:0;flex:1">🩺 בדיקה עצמית</h2><button class="btn" onclick="selfCheck()">↻ בדוק שוב</button></div>
+<p class="small muted">בודק שהכל תקין: אינטרנט, שרת, כניסה, מפתח, סנכרון, גיבויים, תמונות ועוד. ✅ תקין · ⚠ לתשומת לב · ❌ צריך טיפול.</p><div id="selfChk" class="muted">בודק…</div></div>
+<div class="card"><h2>🔒 נעילה אוטומטית</h2><p>אם אין פעילות במחשב – המערכת ננעלת, וכדי להמשיך נכנסים שוב עם <b>קוד שנשלח למייל</b> (או עם Google). הנתונים לא נמחקים.</p>
+${own?`<label>לנעול אחרי <select onchange="idleSetMin(this.value)">${[[10,'10 דקות'],[15,'רבע שעה'],[30,'חצי שעה'],[60,'שעה'],[120,'שעתיים'],[0,'אף פעם (לא מומלץ)']].map(([v,t])=>`<option value="${v}" ${m===v?'selected':''}>${t}</option>`).join('')}</select></label> <span class="small muted">חל על כל המשתמשים.</span>`:`<div>עכשיו: ${m?'אחרי '+m+' דקות':'כבוי'}. <span class="small muted">רק בעל המערכת משנה.</span></div>`}</div>
+${own?`<div class="card"><h2>✉ הודעה במייל כשמישהו מבקש להצטרף</h2><p>כשמישהו חדש נרשם – נשלח מייל לכתובת הזאת, עם הסבר איך לאשר. הכתובת שמורה בשרת ורק בעל המערכת רואה אותה.</p>
+<div class="toolbar"><input type="email" id="ntfEm" dir="ltr" style="width:280px" placeholder="המייל לקבלת הודעות"><button class="btn pri" onclick="notifySave()">שמירה</button><button class="btn" onclick="notifyTest()">✉ שליחת בדיקה</button></div></div>`:''}`}
+async function selfCheck(){const el=document.getElementById('selfChk');if(!el)return;el.innerHTML='בודק…';const R=[];const add=(s,t,d)=>R.push([s,t,d||'']);
+  const on=navigator.onLine;add(on?'ok':'warn','חיבור לאינטרנט',on?'מחובר':'אין אינטרנט – עובדים במחשב, והשינויים יישלחו כשיחזור החיבור');
+  let srv=false;if(on&&CLOUD.sb){const t0=Date.now();try{const {error}=await CLOUD.sb.from('ez_system').select('id').eq('id',1).maybeSingle();srv=!error;add(srv?'ok':'bad','חיבור לשרת',srv?'עונה ('+(Date.now()-t0)+' אלפיות שנייה)':error.message)}catch(e){add('bad','חיבור לשרת',e.message)}}else add('warn','חיבור לשרת','לא נבדק (אין אינטרנט)');
+  let sess=null;try{sess=(await CLOUD.sb.auth.getSession()).data.session}catch(e){}add(sess?'ok':(on?'bad':'warn'),'כניסה',sess?'מחובר כ־'+(CLOUD.me&&CLOUD.me.email||''):'אין כניסה פעילה');
+  if(srv){try{const {data:u}=await CLOUD.sb.from('ez_users').select('active,blocked,role').eq('email',CLOUD.me.email).maybeSingle();add(u&&u.active&&!u.blocked?'ok':'bad','הרשאה',u?(CL_ROLES[u.role]||(u.role==='owner'?'👑 בעלים':u.role))+(u.blocked?' – חסום':u.active?' – מאושר':' – ממתין'):'לא נמצא')}catch(e){}}
+  add(CLOUD.key?'ok':'bad','מפתח הארגון',CLOUD.key?'נטען – הנתונים מפוענחים':'לא נטען');
+  let pend=0;try{const R2=clRecords(),M=CLOUD.meta||{synced:{}};for(const k in R2)if(clHash(R2[k])!==M.synced[k])pend++;for(const k in M.synced)if(!(k in R2)&&M.synced[k]!=='#del')pend++}catch(e){}
+  add(pend?(on?'warn':'warn'):'ok','שינויים שעוד לא נשלחו',pend?pend+' פריטים ממתינים'+(on?' – יישלחו תוך רגע':' – יישלחו כשיחזור האינטרנט'):'הכל נשלח');
+  const lp=CLOUD.meta&&CLOUD.meta.lastPull;add(lp&&!lp.startsWith('1970')?'ok':'warn','קבלת עדכונים אחרונה',lp&&!lp.startsWith('1970')?dtTime(lp):'עוד לא');
+  if(srv&&clIsAdm()){try{const {data:e}=await CLOUD.sb.from('ez_escrow').select('email').eq('email',CLOUD.me.email).maybeSingle();add(e?'ok':'warn','שחזור מפתח דרך המייל',e?'מוכן – אם שוכחים את המפתח, משחזרים דרך המייל שלך':'עוד לא נשמר במחשב הזה')}catch(x){}
+    try{const {data:s}=await CLOUD.sb.from('ez_snapshots').select('created_at').order('created_at',{ascending:false}).range(0,0);const t=s&&s[0]&&s[0].created_at;const h=t?(Date.now()-new Date(t))/36e5:1e9;add(h<30?'ok':h<72?'warn':'bad','גיבוי לילי בשרת',t?'אחרון: '+dtTime(t)+' · ⚙ הגדרות ← 🕘 גיבויים בשרת':'אין עדיין')}catch(x){}
+    try{const {data:U}=await CLOUD.sb.from('ez_users').select('email,active').eq('active',false);add(U&&U.length?'warn':'ok','ממתינים לאישור',U&&U.length?U.length+' – ⚙ הגדרות ← ☁ חיבור משותף':'אין')}catch(x){}}
+  try{const ph=(typeof PHOTOS!=='undefined'?PHOTOS.length:0),kb=(typeof KB!=='undefined'&&KB.faq?KB.faq.length:0);add(ph&&kb?'ok':'warn','תוכן קבוע (תמונות, שאלות ותשובות)',ph&&kb?ph+' תמונות, '+kb+' שאלות':'עוד לא הועלה – ☁ חיבור משותף ← "📤 העלאת תוכן קבוע"')}catch(e){}
+  try{if(typeof mediaStatus==='function'){const s=await mediaStatus();add(s.missing?'warn':'ok','תמונות ומסמכים בכל המחשבים',s.text)}}catch(e){}
+  try{const q=navigator.storage&&await navigator.storage.estimate();if(q){const p=q.usage/q.quota;add(p<.8?'ok':'warn','מקום במחשב',Math.round(q.usage/1048576)+' MB בשימוש')}}catch(e){}
+  add('ok','נעילה אוטומטית',idleMin()?'אחרי '+idleMin()+' דקות בלי פעילות':'כבויה');
+  {const v=[...document.querySelectorAll('#sidefoot div')].map(d=>d.textContent).find(t=>/^\s*גרסה:/.test(t))||'';const upd=!!document.getElementById('swUpd');add(upd?'warn':'ok','גרסה',(v.replace(/^\s*גרסה:\s*/,'')||'—')+(upd?' – יש גרסה חדשה, לחצו על הכפתור הירוק למטה':' – מעודכנת'))}
+  const ic={ok:'✅',warn:'⚠',bad:'❌'};const bad=R.filter(r=>r[0]==='bad').length,warn=R.filter(r=>r[0]==='warn').length;
+  el.classList.remove('muted');el.innerHTML=`<div class="alert ${bad?'bad':warn?'warn':'ok'}" style="margin-bottom:8px">${bad?'❌ יש '+bad+' דברים שצריכים טיפול':warn?'⚠ הכל עובד, יש '+warn+' דברים לתשומת לב':'✅ הכל תקין'}</div><table><tbody>${R.map(([s,t,d])=>`<tr><td style="width:28px">${ic[s]}</td><td><b>${esc(t)}</b></td><td class="small">${esc(d)}</td></tr>`).join('')}</tbody></table>`}
+
 /* ====================== ניווט והפעלה ====================== */
 function views(){
   const r=USER?USER.role:'admin';const all=[
@@ -4904,7 +5015,7 @@ function renderNav(){
   document.getElementById('sidefoot').innerHTML=`גיבוי אחרון: ${lb?esc(hebDate(localIso(lb))):'<b>אף פעם</b>'}${days===null||days>=7?' ⚠':''}
     ${can('settings')||USER.role==='clerk'?`<button onclick="backup()">💾 שמור גיבוי</button>`:''}${can('settings')?`<button onclick="archiveModal()">📦 תיקיית סוף שנה</button>`:''}${USER.role!=='addresses'?`<button onclick="exportAll()">📊 ייצוא לאקסל</button>`:''}
     <div class="row"><button onclick="fontSize(1)" title="אותיות גדולות">א+</button><button onclick="fontSize(-1)" title="אותיות קטנות">א−</button><button onclick="openTheme()" title="צבעים ומראה">🎨</button></div>
-    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 22.10.2026 00:45</div>`;
+    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 22.10.2026 00:54</div>`;
   const yp=document.getElementById('yearpick');yp.innerHTML=st.years.map(y=>`<option ${y===S.viewYear?'selected':''} value='${esc(y)}'>${esc(y)}${y===st.currentYear?' (נוכחית)':''}</option>`).join('');
   document.getElementById('todayHeb').textContent=hebDate(today());applyBrand();
   document.getElementById('gsWrap').style.display=USER.role==='addresses'||USER.role==='counter'?'none':'';
