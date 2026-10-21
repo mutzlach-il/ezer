@@ -2549,6 +2549,12 @@ ${feat('lottery')?'<li>הגרלה: "🎲 הגרלה על מסך מלא" – מת
 <li><b>🗑 מחיקת היסטוריה (מנהל):</b> בחלון ההיסטוריה של בחור – "מחיקת ההיסטוריה שלו". ובהגדרות ← "יומן שינויים" – "מחיקת כל ההיסטוריה" (צריך לכתוב "מחיקה"). המחיקה חלה בכל המחשבים. נרשמת רק שורה אחת שההיסטוריה נמחקה.</li>
 <li><b>🩺 בדיקה עצמית:</b> בודקת בלחיצה: אינטרנט, שרת, כניסה, הרשאה, מפתח, שינויים שלא נשלחו, גיבוי לילי, ממתינים לאישור, תמונות, מקום וגרסה. ✅ תקין · ⚠ לתשומת לב · ❌ צריך טיפול – ולידו כתוב מה לעשות.</li>
 <li><b>✉ מייל כשמישהו מבקש להצטרף:</b> נשלח לבעל המערכת, עם הסבר איך לאשר. את הכתובת משנים באותה לשונית, ויש כפתור "שליחת בדיקה".</li></ul>`],
+['h10m','🖼 תמונות ומסמכים בכל המחשבים',`<ul>
+<li>כל התמונות והמסמכים (מחבילות השנה ומה שמעלים ידנית) נשמרים <b>מוצפנים בשרת</b>, ויורדים לבד לכל מחשב שנכנס לקישור. אחרי שירדו – עובדים גם בלי אינטרנט.</li>
+<li><b>פעם אחת בלבד</b>, במחשב אחד, טוענים את חבילות השנה בקישור: ⚙ הגדרות ← גיבוי ← "📥 טעינת חבילת שנה" ← בוחרים את קבצי ה־ZIP (אפשר לסמן את כל החלקים של שנה ביחד עם Ctrl+A). המערכת מעלה אותם לבד לשרת.</li>
+<li>בצד, מתחת למצב החיבור, כתוב "🖼 מעלה / מוריד תמונות וקבצים 120/900" – ואחר כך "מעודכן". אפשר להמשיך לעבוד בזמן הזה.</li>
+<li>חבילה שנטענה בשני מחשבים לא נכפלת – המערכת מזהה שזה אותו קובץ.</li>
+<li>הבדיקה העצמית (⚙ הגדרות ← 🔐 אבטחה ובדיקה) מראה כמה יש במחשב וכמה בשרת.</li></ul>`],
 ['h10n','כלים חדשים: ספירה מהירה, קבלות, כפילויות, זכאות, תזכורות',`
 <ul><li><b>⚡ ספירה מהירה</b> (רישום כסף לשנה): לערב החפ"ק – כותבים שם ← Enter ← סכום ← Enter. רואים רשימה של מה שנרשם, ו"↶ ביטול" לטעות.</li>
 <li><b>🧾 קבלה</b>: בכרטיס הבחור, ליד כל תשלום – אישור קבלת כסף עם מספר רץ (מקור + העתק).</li>
@@ -4700,8 +4706,8 @@ async function clNewRecovery(){if(!confirm('ליצור קוד שחזור חדש?
 
 /* ---------- כניסה למערכת ---------- */
 function clUser(){const m=CLOUD.me;return {id:'c:'+m.email,name:m.name,email:m.email,role:m.role==='owner'?'admin':m.role,hideAmounts:m.hide,cloud:true}}
-async function clEnter(){clLoadMeta();clGateClose();CLOUD.on=true;idleStart();clEscrowSave();setInterval(clAccessCheck,45000);startSession(clUser());clStatus();setInterval(()=>{clStatus();clInstallBtn()},5000);
-  await clContentLoad();await clSync(true);clRealtime();try{CLOUD.sb.rpc('ez_snapshot',{p_manual:false}).then(()=>{},()=>{})}catch(e){}if(clIsAdm()&&!(DB.people||[]).length)clEmptyPrompt();
+async function clEnter(){clLoadMeta();clGateClose();CLOUD.on=true;idleStart();clEscrowSave();setInterval(clAccessCheck,45000);startSession(clUser());clStatus();setInterval(()=>{clStatus();clInstallBtn();if(typeof medStat==='function')medStat()},5000);
+  await clContentLoad();await clSync(true);clRealtime();if(typeof mediaKick==='function'){mediaKick(5000);setInterval(()=>mediaKick(100),10*60000)}try{CLOUD.sb.rpc('ez_snapshot',{p_manual:false}).then(()=>{},()=>{})}catch(e){}if(clIsAdm()&&!(DB.people||[]).length)clEmptyPrompt();
   setInterval(()=>clSync(),60000);window.addEventListener('online',()=>{CLOUD.online=true;clSync()});window.addEventListener('offline',()=>{CLOUD.online=false;clStatus()});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)clSync()})}
 function clEnterOffline(){if(idleLocked())return false;const me=JSON.parse(localStorage.getItem(KEY+'_cloud_me')||'null');if(!me)return false;CLOUD.me=me;
@@ -4981,6 +4987,57 @@ async function selfCheck(){const el=document.getElementById('selfChk');if(!el)re
   const ic={ok:'✅',warn:'⚠',bad:'❌'};const bad=R.filter(r=>r[0]==='bad').length,warn=R.filter(r=>r[0]==='warn').length;
   el.classList.remove('muted');el.innerHTML=`<div class="alert ${bad?'bad':warn?'warn':'ok'}" style="margin-bottom:8px">${bad?'❌ יש '+bad+' דברים שצריכים טיפול':warn?'⚠ הכל עובד, יש '+warn+' דברים לתשומת לב':'✅ הכל תקין'}</div><table><tbody>${R.map(([s,t,d])=>`<tr><td style="width:28px">${ic[s]}</td><td><b>${esc(t)}</b></td><td class="small">${esc(d)}</td></tr>`).join('')}</tbody></table>`}
 
+/* ====================== תמונות ומסמכים בכל המחשבים (מוצפן, דרך השרת) ======================
+   כל מחשב שיש בו תמונות/מסמכים (מחבילות שנה או שהועלו ידנית) – מעלה אותם מוצפנים לשרת.
+   כל מחשב אחר – מוריד לבד את מה שחסר לו. הקבצים נשמרים בכל מחשב ועובדים גם בלי אינטרנט. */
+const MED={busy:false,again:false,total:0,done:0,up:0,down:0,err:0,last:null,msg:'',remote:0,local:0,stopped:''};
+const MED_BUCKET='ezer',MED_MAX=49*1048576;
+async function medEnc(u8){const iv=crypto.getRandomValues(new Uint8Array(12)),ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},CLOUD.key,u8);return new Blob([iv,new Uint8Array(ct)],{type:'application/octet-stream'})}
+async function medDec(blob){const u=new Uint8Array(await blob.arrayBuffer());return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:u.slice(0,12)},CLOUD.key,u.slice(12)))}
+async function medPack(v){if(v==null)return null;if(typeof v==='string'){const b=new TextEncoder().encode(v),o=new Uint8Array(b.length+1);o[0]=0;o.set(b,1);return o}
+  const bl=v instanceof Blob?v:new Blob([v]),m=new TextEncoder().encode((bl.type||'').slice(0,200)),d=new Uint8Array(await bl.arrayBuffer()),o=new Uint8Array(2+m.length+d.length);o[0]=1;o[1]=m.length;o.set(m,2);o.set(d,2+m.length);return o}
+function medUnpack(u){if(u[0]===0)return new TextDecoder().decode(u.subarray(1));const ml=u[1];return new Blob([u.subarray(2+ml)],{type:new TextDecoder().decode(u.subarray(2,2+ml))})}
+const medKey=x=>x.p?(x.y||'')+'|'+x.p:'id|'+x.id;
+async function medPut(path,val){const u=await medPack(val);if(!u)return false;if(u.length>MED_MAX)throw new Error('big');const {error}=await CLOUD.sb.storage.from(MED_BUCKET).upload(path,await medEnc(u),{upsert:true,contentType:'application/octet-stream'});if(error)throw new Error(error.message);return true}
+async function medGet(path){const {data,error}=await CLOUD.sb.storage.from(MED_BUCKET).download(path);if(error||!data)throw new Error(error?error.message:'no data');return medUnpack(await medDec(data))}
+async function medIndex(){const out=[];for(let i=0;;i+=1000){const {data,error}=await CLOUD.sb.from('ez_media').select('id,kind,meta,deleted').order('id').range(i,i+999);if(error)throw new Error(error.message);for(const r of data){try{out.push({id:r.id,kind:r.kind,del:r.deleted,m:JSON.parse(await clDec(r.meta))})}catch(e){}}if(data.length<1000)break}return out}
+function medStat(){const side=document.getElementById('sidefoot');if(!side||!CLOUD.on)return;let el=document.getElementById('medStat');if(!el){el=document.createElement('div');el.id='medStat';el.style.cssText='margin:2px 0;font-size:12px;cursor:pointer;opacity:.9';el.onclick=()=>{S.tab.set='secure';go('settings')};const c=document.getElementById('clStat');c&&c.nextSibling?side.insertBefore(el,c.nextSibling):side.appendChild(el)}
+  el.textContent=MED.busy&&MED.total?`🖼 ${MED.up?'מעלה':'מוריד'} תמונות וקבצים ${MED.done}/${MED.total}`:MED.stopped?'🖼 '+MED.stopped:MED.last?`🖼 תמונות וקבצים: ${MED.local.toLocaleString()} – מעודכן`:'';el.title='תמונות ומסמכים מכל השנים – נשמרים מוצפנים בשרת ויורדים לכל מחשב'}
+let medT=null;function mediaKick(ms){if(!CLOUD.on)return;clearTimeout(medT);medT=setTimeout(mediaSync,ms||3000)}
+async function mediaSync(){if(!CLOUD.on||!CLOUD.key||!CLOUD.sb||!navigator.onLine)return;if(MED.busy){MED.again=true;return}MED.busy=true;MED.again=false;MED.stopped='';MED.err=0;
+  try{const R=await medIndex();const U=await userPhotos(),F=await yearFiles();
+    const rk=new Set(R.map(r=>medKey(r.m))),rid=new Set(R.map(r=>r.id));
+    const lk=new Set([...U,...F].map(medKey)),lid=new Set([...U,...F].map(x=>x.id));
+    const toUp=[...U.map(x=>['photo',x]),...F.map(x=>['file',x])].filter(([k,x])=>!rid.has(x.id)&&!rk.has(medKey(x)));
+    const toDown=R.filter(r=>!r.del&&!lid.has(r.id)&&!lk.has(medKey(r.m)));
+    MED.remote=R.filter(r=>!r.del).length;
+    // הורדה: לבדוק שיש מקום
+    if(toDown.length&&navigator.storage&&navigator.storage.estimate){try{const q=await navigator.storage.estimate();const need=toDown.reduce((a,r)=>a+(+r.m.s||300000),0);if(q.quota&&q.quota-q.usage<need*1.2){MED.stopped='אין מספיק מקום במחשב להוריד את כל התמונות';toDown.length=0}}catch(e){}}
+    if(navigator.storage&&navigator.storage.persist&&toDown.length)try{await navigator.storage.persist()}catch(e){}
+    MED.total=toUp.length+toDown.length;MED.done=0;MED.up=toUp.length;medStat();
+    // העלאה
+    const work=async(list,fn)=>{let i=0;const run=async()=>{while(i<list.length){const it=list[i++];try{await fn(it)}catch(e){MED.err++}MED.done++;if(MED.done%5===0)medStat()}};await Promise.all([run(),run(),run()])};
+    await work(toUp,async([kind,x])=>{if(kind==='photo'){const img=await idbGet('alonimg_'+x.id);if(!img)return;await medPut('p/'+x.id,img);const th=await idbGet('alonthumb_'+x.id);if(th)await medPut('t/'+x.id,th)}
+      else{const b=await idbGet('yfile_'+x.id);if(!b)return;try{await medPut('f/'+x.id,b)}catch(e){if(e.message==='big')return;throw e}}
+      const {error}=await CLOUD.sb.from('ez_media').upsert({id:x.id,kind,meta:await clEnc(JSON.stringify(x)),size:+x.s||0,deleted:false,updated_by:CLOUD.me.email});if(error)throw new Error(error.message)});
+    MED.up=0;
+    // הורדה
+    let addU=[],addF=[],fq=Promise.resolve();const flush=()=>{const aU=addU,aF=addF;addU=[];addF=[];if(!aU.length&&!aF.length)return fq;fq=fq.then(async()=>{const U2=await userPhotos(),F2=await yearFiles();const h=new Set([...U2,...F2].map(x=>x.id));U2.push(...aU.filter(x=>!h.has(x.id)));F2.push(...aF.filter(x=>!h.has(x.id)));await idbPut('photoLib',U2);await idbPut('yearFiles',F2);window._thumbs=null});return fq};
+    await work(toDown,async r=>{if(r.kind==='photo'){const img=await medGet('p/'+r.id);let th=null;try{th=await medGet('t/'+r.id)}catch(e){}await idbPut('alonimg_'+r.id,img);if(th)await idbPut('alonthumb_'+r.id,th);addU.push(r.m)}
+      else{await idbPut('yfile_'+r.id,await medGet('f/'+r.id));addF.push(r.m)}if(addU.length+addF.length>=20)await flush()});
+    await flush();await fq;
+    MED.local=(await userPhotos()).length+(await yearFiles()).length;MED.last=new Date().toISOString();try{localStorage.setItem(KEY+'_med_last',MED.last)}catch(e){}
+  }catch(e){MED.stopped='סנכרון התמונות נכשל – ינסה שוב';console.warn(e)}
+  MED.busy=false;MED.total=0;medStat();if(MED.again)mediaKick(1000)}
+async function mediaStatus(){const loc=(await userPhotos()).length+(await yearFiles()).length;MED.local=loc;
+  if(MED.busy)return {missing:true,text:`${MED.up?'מעלה':'מוריד'} עכשיו: ${MED.done} מתוך ${MED.total}`};
+  if(MED.stopped)return {missing:true,text:MED.stopped};
+  if(!MED.last)return {missing:true,text:'עוד לא נבדק – נבדק לבד תוך דקה'};
+  const miss=MED.err>0||loc<MED.remote;return {missing:miss,text:`${loc.toLocaleString()} במחשב הזה, ${MED.remote.toLocaleString()} בשרת${MED.err?` · ${MED.err} לא הצליחו – ינסה שוב`:loc<MED.remote?' – חלק עוד לא ירד, ינסה שוב':' – הכל מסונכרן'}`}}
+// אחרי טעינת חבילת שנה / הוספת תמונות – להעלות לבד
+if(typeof packImport==='function'){const _pi=packImport;packImport=async function(...a){const r=await _pi(...a);mediaKick(2000);return r}}
+if(typeof addUserPhotos==='function'){const _ap=addUserPhotos;addUserPhotos=async function(...a){const r=await _ap(...a);mediaKick(2000);return r}}
+
 /* ====================== ניווט והפעלה ====================== */
 function views(){
   const r=USER?USER.role:'admin';const all=[
@@ -5015,7 +5072,7 @@ function renderNav(){
   document.getElementById('sidefoot').innerHTML=`גיבוי אחרון: ${lb?esc(hebDate(localIso(lb))):'<b>אף פעם</b>'}${days===null||days>=7?' ⚠':''}
     ${can('settings')||USER.role==='clerk'?`<button onclick="backup()">💾 שמור גיבוי</button>`:''}${can('settings')?`<button onclick="archiveModal()">📦 תיקיית סוף שנה</button>`:''}${USER.role!=='addresses'?`<button onclick="exportAll()">📊 ייצוא לאקסל</button>`:''}
     <div class="row"><button onclick="fontSize(1)" title="אותיות גדולות">א+</button><button onclick="fontSize(-1)" title="אותיות קטנות">א−</button><button onclick="openTheme()" title="צבעים ומראה">🎨</button></div>
-    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 22.10.2026 00:54</div>`;
+    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 22.10.2026 01:07</div>`;
   const yp=document.getElementById('yearpick');yp.innerHTML=st.years.map(y=>`<option ${y===S.viewYear?'selected':''} value='${esc(y)}'>${esc(y)}${y===st.currentYear?' (נוכחית)':''}</option>`).join('');
   document.getElementById('todayHeb').textContent=hebDate(today());applyBrand();
   document.getElementById('gsWrap').style.display=USER.role==='addresses'||USER.role==='counter'?'none':'';
