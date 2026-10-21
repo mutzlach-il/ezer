@@ -847,6 +847,7 @@ function filteredPeople(){
       if(f.status==='notyet'&&s.miss<=0)return false;
       if(f.status==='loan'&&!loanUsd(p))return false;
       if(f.status==='married'&&!p.married)return false;
+      if(f.status==='engaged'&&!(p.engaged&&!p.married))return false;
       if(f.status==='nopay'&&yearTotal(p,DB.settings.currentYear)>0)return false;}
     return true;
   });
@@ -883,7 +884,7 @@ function vPeople(){
     <input type="search" id="q" placeholder="חיפוש שם, מספר, טלפון…" value="${esc(S.filter.q)}" oninput="setF('q',this.value)">
     <select onchange="setF('yeshiva',this.value)"><option value="">כל הישיבות</option>${st.yeshivot.map(y=>`<option value="${esc(y)}" ${S.filter.yeshiva===y?'selected':''}>${esc(yName(y))}</option>`).join('')}</select>
     <select onchange="setF('shiur',this.value)"><option value="">כל השיעורים</option>${allShiur.map(y=>`<option ${S.filter.shiur===y?'selected':''}>${esc(y)}</option>`).join('')}</select>
-    <select onchange="setF('status',this.value)">${[['','כולם'],['elig','רק זכאים'],['notyet','רק לא זכאים'],...(DB.settings.loan&&DB.settings.loan.enabled?[['loan','זכאים להלוואה']]:[]),['nopay','לא שילמו השנה'],['married','התחתנו'],['inactive','ארכיון']].map(([v,t])=>`<option value="${v}" ${S.filter.status===v?'selected':''}>${t}</option>`).join('')}</select>
+    <select onchange="setF('status',this.value)">${[['','כולם'],['elig','רק זכאים'],['notyet','רק לא זכאים'],...(DB.settings.loan&&DB.settings.loan.enabled?[['loan','זכאים להלוואה']]:[]),['nopay','לא שילמו השנה'],['engaged','💐 מאורסים'],['married','התחתנו'],['inactive','ארכיון']].map(([v,t])=>`<option value="${v}" ${S.filter.status===v?'selected':''}>${t}</option>`).join('')}</select>
     <select id="savedF" onchange="useFilter(this.value)" title="מסננים שמורים"><option value="">⭐ מסננים שמורים</option>${st.savedFilters.map((f,i)=>`<option value="${i}">${esc(f.name)}</option>`).join('')}</select>
     <button class="btn sm" onclick="saveFilter()" title="שמור את הסינון הנוכחי">⭐ שמור</button>
     ${st.savedFilters.length?`<button class="btn sm" onclick="delFilter()" title="מחק מסנן שמור">🗑</button>`:''}
@@ -2505,7 +2506,7 @@ ${feat('lottery')?'<li>הגרלה: "🎲 הגרלה על מסך מלא" – מת
 <li><b>מפתח הארגון:</b> המנהל קובע אותו בכניסה הראשונה. כל הנתונים מוצפנים בו במחשב עצמו לפני שהם יוצאים לשרת – בשרת יש רק ג'יבריש. כל עובד מקליד אותו פעם אחת במחשב שלו (המנהל אומר לו בעל פה). אפשר לכתוב אותו <b>בעברית</b> (לוחצים "👁 הצג" כדי לראות מה מקלידים; מתחת לשדה כתוב אם זה עברית או אנגלית).</li>
 <li><b>שכחת את המפתח?</b> המנהל לא צריך פתק: נכנסים עם <b>המייל שלך</b> (כפתור Google, או מייל וסיסמה – ואם שכחת גם את הסיסמה, "שכחתי סיסמה" שולח קישור למייל) ← לוחצים <b>"📧 שכחתי את המפתח – שחזור דרך המייל שלי"</b> ← בוחרים משפט חדש. שום נתון לא נמחק. עובד רק לחשבון של מנהל. עובד ששכח – המנהל אומר לו את המפתח. מחשב שכבר מחובר ממשיך לעבוד בלי להקליד שוב. <b>חשוב:</b> מי שנכנס למייל של המנהל יכול לשחזר – לכן שומרים היטב על הסיסמה של המייל.</li>
 <li><b>סנכרון:</b> כל שינוי עובר לכל המחשבים תוך שניות. בפס הצד רואים "☁ מסונכרן". אם שניים רשמו לאותו בחור באותו זמן – שני התשלומים נשמרים, שום דבר לא נדרס.</li>
-<li><b>בלי אינטרנט:</b> לוחצים בפס הצד "📲 התקנה במחשב" – ומקבלים סמל של עזר. עובדים רגיל גם בלי אינטרנט, וכשהחיבור חוזר הכל נשלח לבד ("📴 בלי אינטרנט – יסתנכרן כשיחזור").</li>
+<li><b>בלי אינטרנט:</b> לוחצים בפס הצד "💻 הורדה למחשב" – ומקבלים סמל של עזר. עובדים רגיל גם בלי אינטרנט, וכשהחיבור חוזר הכל נשלח לבד ("📴 בלי אינטרנט – יסתנכרן כשיחזור").</li>
 <li><b>עדכונים:</b> כשיוצאת גרסה חדשה מופיע למטה "✔ יש גרסה חדשה – לחצו לרענון". לא שולחים יותר קבצים.</li>
 <li><b>העברת הנתונים בפעם הראשונה:</b> בקובץ הישן במחשב – הגדרות ← גיבוי ← "💾 שמירת גיבוי". בגרסה המקוונת – הגדרות ← גיבוי ← "טעינת גיבוי" ובוחרים את הקובץ. הכל עולה מוצפן לשרת.</li>
 <li><b>עלונים, תמונות ומאגר הידע</b> של העוזר לא נמצאים בקישור (פרטיות). המנהל מעלה אותם פעם אחת: הגדרות ← "☁ חיבור משותף" ← "📤 העלאת תוכן קבוע" ← הקובץ "עזר – תוכן קבוע.ezpack". הם עולים מוצפנים, וכל המחשבים מקבלים אותם לבד.</li></ul>`],
@@ -4118,7 +4119,9 @@ function alertsList(){const A=[],t0=today(),y=DB.settings.currentYear,st=DB.sett
   weddingList().filter(w=>w.d>=0&&w.d<=30).forEach(w=>A.push({k:'wed',lv:'info',ico:'💍',txt:`חתונה: <b>${esc(fullName(w.p))}</b> – ${esc(dayName(w.date))} ${esc(hebDate(w.date))} (${inDays(w.d)})${status(w.p).miss>0&&!w.p.grantPaid?' · <span style="color:var(--bad)">חסר '+shek(status(w.p).miss)+'</span>':''}`,btn:`<button class="btn sm" onclick="kitCard('${w.p.id}')">🎁 סל</button>`}));
   const near=activePeople().map(p=>({p,n:nextPrize(p,y)})).filter(x=>x.n&&x.n.need<=(+st.nearPrizeAlert||200));
   if(near.length)A.push({k:'near',lv:'info',ico:'🎁',txt:`<b>${near.length} בחורים</b> קרובים לפרס (חסר להם עד ${shek(+st.nearPrizeAlert||200)}) – כדאי להתקשר: ${near.slice(0,6).map(x=>esc(fullName(x.p))+' ('+fmt(x.n.need)+')').join(', ')}${near.length>6?'…':''}`,btn:`<button class="btn sm" onclick="closeModal();S.tab.campaign='near';go('campaign')">לרשימה</button>`});
-  const risk=nearWedRisk();if(risk.length)A.push({k:'risk',lv:'warn',ico:'💐',txt:`<b>${risk.length}</b> מאורסים / בשיעור האחרון – וחסר להם הרבה: ${risk.slice(0,5).map(p=>esc(fullName(p))+' ('+fmt(status(p).miss)+')').join(', ')}${risk.length>5?'…':''}`,btn:`<button class="btn sm" onclick="closeModal();go('grooms')">לחתנים</button>`});
+  const risk=nearWedRisk(),eng=risk.filter(p=>p.engaged),old=risk.filter(p=>!p.engaged);
+  if(eng.length)A.push({k:'risk',lv:'warn',ico:'💐',txt:`<b>${eng.length} מאורסים</b> שחסר להם עוד הרבה: ${eng.slice(0,5).map(p=>esc(fullName(p))+' ('+fmt(status(p).miss)+')').join(', ')}${eng.length>5?'…':''}`,btn:`<button class="btn sm" onclick="closeModal();go('grooms')">לחתנים</button>`});
+  if(old.length&&!DB.settings.hideOldShiurAlert)A.push({k:'risk',lv:'info',ico:'🎓',txt:`<b>${old.length}</b> בשיעור האחרון שחסר להם הרבה – אולי מישהו מהם מאורס? אתה מחליט: ${old.slice(0,5).map(p=>esc(fullName(p))).join(', ')}${old.length>5?'…':''}`,btn:`<button class="btn sm pri" onclick="engagePick()">💐 לסמן מאורסים</button> <button class="btn sm" onclick="DB.settings.hideOldShiurAlert=true;save();alertsModal()" title="לא להציג את ההתראה הזאת">🔕</button>`});
   if(can('settings')){const d=backupDays();if(d===null||d>=7)A.push({k:'bk',lv:'warn',ico:'💾',txt:d===null?'עוד לא נשמר גיבוי אף פעם':'הגיבוי האחרון נשמר לפני '+d+' ימים – כדאי לשמור גיבוי (ולהעתיק לדיסק און קי)',btn:`<button class="btn sm pri" onclick="backup();alertsModal()">💾 שמור גיבוי</button>`})}
   return A}
 function alertsModal(tab){tab=tab||window._alTab||'now';window._alTab=tab;const A=alertsList();
@@ -4155,12 +4158,20 @@ function moveSave(id){const p=byId(id),g=i=>document.getElementById(i).value,fro
   p.moves=p.moves||[];p.moves.push({date:g('mvD')||today(),from:from.trim(),to:(yName(y)+' '+s).trim(),by:USER.name});p.yeshiva=y;p.shiur=s;p.yeshivaName=g('mvN');log('מעבר',fullName(p)+': '+from+' → '+yName(y)+' '+s);save();openCard(id);toast('עודכן')}
 
 /* ---- מאורס + 28 / 29 ---- */
-function engageModal(id){const p=byId(id);
+function engageModal(id,back){const p=byId(id);window._engBack=back;
   modal(`<div class="modal narrow"><div class="mh"><h2>💐 אירוסין – ${esc(fullName(p))}</h2><button class="x" onclick="openCard('${id}')">×</button></div><div class="mb form">
   <label class="full chk"><input type="checkbox" id="enOn" ${p.engaged?'checked':''}> מאורס</label><label class="full">תאריך האירוסין ${dateInput('enD',p.engDate||today())}</label>
   <label class="full">תאריך החתונה המתוכנן ${dateInput('enW',p.planDate||'')}</label><label class="full">הערה<input type="text" id="enN" value="${esc(p.engNote||'')}"></label></div>
-  <div class="mf"><button class="btn pri" onclick="engageSave('${id}')">שמירה</button><button class="btn" onclick="openCard('${id}')">ביטול</button></div></div>`)}
-function engageSave(id){const p=byId(id),g=i=>document.getElementById(i);p.engaged=g('enOn').checked;p.engDate=g('enD').value;p.planDate=g('enW').value;p.engNote=g('enN').value;log('אירוסין',fullName(p)+(p.engaged?' – מאורס':' – בוטל'));save();openCard(id);toast('נשמר. מזל טוב!')}
+  <div class="mf"><button class="btn pri" onclick="engageSave('${id}')">שמירה</button><button class="btn" onclick="window._engBack?closeModal():openCard('${id}')">ביטול</button></div></div>`)}
+// בחירת בחור מתוך רשימה – וסימון מאורס עם תאריך חתונה
+function engagePick(){const ps=groupSort(activePeople()).filter(p=>!p.married);
+  modal(`<div class="modal narrow"><div class="mh"><h2>💐 סימון בחור כמאורס</h2><button class="x" onclick="closeModal()">×</button></div><div class="mb form">
+  <label class="full">הבחור<input type="text" id="epN" list="epL" placeholder="מתחילים להקליד שם…" autocomplete="off"><datalist id="epL">${ps.map(p=>`<option value="${esc(fullName(p))}">${esc(yName(p.yeshiva)+' '+(p.shiur||''))}${p.engaged?' – כבר מאורס':''}</option>`).join('')}</datalist></label>
+  <label class="full">תאריך האירוסין ${dateInput('epD',today())}</label><label class="full">תאריך החתונה (אם כבר ידוע) ${dateInput('epW','')}</label></div>
+  <div class="mf"><button class="btn pri" onclick="engagePickSave()">שמירה</button><button class="btn" onclick="closeModal()">ביטול</button></div></div>`);setTimeout(()=>document.getElementById('epN').focus(),50)}
+function engagePickSave(){const v=document.getElementById('epN').value.trim(),m=activePeople().filter(p=>fullName(p)===v);if(m.length!==1){toast('בחרו בחור מהרשימה');return}
+  const p=m[0];p.engaged=true;p.engDate=document.getElementById('epD').value;p.planDate=document.getElementById('epW').value||p.planDate||'';log('אירוסין',fullName(p)+' – מאורס'+(p.planDate?' · חתונה '+p.planDate:''));save();closeModal();render();toast('💐 מזל טוב! '+fullName(p)+' סומן כמאורס')}
+function engageSave(id){const p=byId(id),g=i=>document.getElementById(i);p.engaged=g('enOn').checked;p.engDate=g('enD').value;p.planDate=g('enW').value;p.engNote=g('enN').value;log('אירוסין',fullName(p)+(p.engaged?' – מאורס':' – בוטל'));save();if(window._engBack){closeModal();render()}else openCard(id);toast(p.engaged?'נשמר. מזל טוב!':'נשמר')}
 function weddingList(){return DB.people.filter(p=>p.active!==false||p.married).map(p=>{const date=p.married?p.weddingDate:(p.engaged?p.planDate:'');return date?{p,date,d:daysTo(date),done:!!p.married}:null}).filter(Boolean).sort((a,b)=>a.date.localeCompare(b.date))}
 function lastShiur(p){const L=DB.settings.shiurim[p.yeshiva]||[];return p.yeshiva===(DB.settings.yeshivot.slice(-1)[0])&&L.length&&p.shiur===L[L.length-1]}
 function nearWedRisk(){return activePeople().filter(p=>!p.married&&(p.engaged||lastShiur(p))&&status(p).miss>requirement(p)*.4).sort((a,b)=>(b.engaged-a.engaged)||status(b).miss-status(a).miss)}
@@ -4169,7 +4180,8 @@ function weddingsCard(){const L=weddingList(),up=L.filter(w=>w.d>=-14),risk=near
   ${up.length?`<table style="margin-top:6px"><thead><tr><th class="nosort">חתן</th><th class="nosort">יום</th><th class="nosort">תאריך עברי</th><th class="nosort">מתי</th><th class="nosort">מצב</th><th class="nosort">סל</th></tr></thead><tbody>
   ${up.map(w=>{const s=status(w.p),g=kitGotN(w.p);return `<tr><td class="name" onclick="${w.done?`kitCard('${w.p.id}')`:`openCard('${w.p.id}')`}">${esc(fullName(w.p))}${w.done?'':' <span class="pill info">מאורס</span>'}</td><td>${esc(dayName(w.date))}</td><td><b>${esc(hebDate(w.date))}</b>${DB.settings.showGreg?` <span class="greg">${w.date.split('-').reverse().join('.')}</span>`:''}</td><td>${inDays(w.d)}</td>
     <td>${w.p.grantPaid?'<span class="pill info">קיבל מענק</span>':s.miss>0?`<span class="pill bad">חסר ${fmt(s.miss)}</span>`:'<span class="pill ok">זכאי</span>'}</td><td>${w.done?`<span class="pill ${g.n===g.t&&g.t?'ok':''}">${g.n}/${g.t}</span>`:''}</td></tr>`}).join('')}</tbody></table>`:'<div class="muted small" style="margin-top:6px">אין חתונות קרובות. מסמנים בחור כמאורס בכרטיס שלו ("💐 אירוסין") עם תאריך החתונה – והוא יופיע כאן.</div>'}
-  ${risk.length?`<div style="margin-top:10px"><b>⚠ מאורסים / בשיעור האחרון – וחסר להם הרבה (${risk.length})</b><div class="small" style="columns:2 260px;margin-top:4px">${risk.map(p=>`<div><a href="#" onclick="openCard('${p.id}');return false">${esc(fullName(p))}</a>${p.engaged?' 💐':''} – חסר ${shek(status(p).miss)} ${esc(phoneOf(p))}</div>`).join('')}</div></div>`:''}
+  <div class="toolbar" style="margin-top:8px"><button class="btn pri edit-only" onclick="engagePick()">💐 סימון בחור כמאורס + תאריך חתונה</button></div>
+  ${risk.length?`<div style="margin-top:10px"><b>⚠ מאורסים / בשיעור האחרון – וחסר להם הרבה (${risk.length})</b><div class="small" style="columns:2 300px;margin-top:4px">${risk.map(p=>`<div><a href="#" onclick="openCard('${p.id}');return false">${esc(fullName(p))}</a>${p.engaged?' 💐':''} – חסר ${shek(status(p).miss)} ${esc(phoneOf(p))} <a href="#" class="edit-only" onclick="engageModal('${p.id}',1);return false">${p.engaged?'✎':'💐 מאורס?'}</a></div>`).join('')}</div></div>`:''}
   <div class="toolbar" style="margin-top:6px"><button class="btn sm" onclick="printHtml('חתונות','<h1>רשימת חתונות</h1>'+document.querySelector('#wedPrint').innerHTML)">🖨 הדפסה</button></div><div id="wedPrint" style="display:none"><table><tr><th>חתן</th><th>יום</th><th>תאריך</th><th>ישיבה</th><th>טלפון</th></tr>${up.map(w=>`<tr><td>${esc(fullName(w.p))}</td><td>${esc(dayName(w.date))}</td><td>${esc(hebDate(w.date))}</td><td>${esc(yName(w.p.yeshiva))}</td><td>${esc(phoneOf(w.p))}</td></tr>`).join('')}</table></div></details>`}
 
 /* ---- 31. דוח חתנים לפי שנים ---- */
@@ -4605,6 +4617,9 @@ async function clAfterAuth(user){const email=(user.email||'').toLowerCase(),name
   if(!u){const r=await CLOUD.sb.rpc('ez_join',{p_name:name});u=r.data||null}
   if(u&&!u.active&&localStorage.getItem(KEY+'_ck_'+email)){try{localStorage.removeItem(KEY+'_ck_'+email);localStorage.removeItem(KEY);localStorage.removeItem(KEY+'_cloud_'+email);localStorage.removeItem(KEY+'_cloud_me');indexedDB.deleteDatabase('ezer_files')}catch(e){}}
   if(!u||!u.active){clGate(`<h3>⏳ ממתין לאישור</h3><p>נרשמת כ־<b dir="ltr">${esc(email)}</b>.<br>מנהל המערכת צריך לאשר אותך – ואז תוכל להיכנס.</p><div style="display:flex;gap:6px;justify-content:center"><button class="btn pri" onclick="clBoot()">בדוק שוב</button><button class="btn" onclick="clSignOut()">החלף משתמש</button></div>`);return}
+  if(u.blocked){clGate(`<h3>⛔ המשתמש שלך הושבת</h3><p>פנה לבעל המערכת.</p><button class="btn" onclick="clSignOut()">יציאה</button>`);return}
+  if(u.role!=='owner'){const {data:sy}=await CLOUD.sb.from('ez_system').select('disabled,msg').eq('id',1).maybeSingle();if(sy&&sy.disabled){clGate(`<h3>⛔ המערכת מושבתת זמנית</h3><p>${esc(sy.msg||'נסו שוב מאוחר יותר.')}</p><button class="btn" onclick="clBoot()">בדוק שוב</button>`);return}}
+  try{CLOUD.sb.rpc('ez_seen')}catch(e){}
   CLOUD.me={email,name:u.name||name,role:u.role||'viewer',hide:!!u.hide_amounts};try{localStorage.setItem(KEY+'_cloud_me',JSON.stringify(CLOUD.me))}catch(e){}
   if(!(await clLoadKey())){clKeyScreen();return}clEnter()}
 /* מפתח הארגון: המידע מוצפן במפתח אקראי חזק (DEK). המפתח הזה שמור פעמיים בשרת – נעול במשפט שלך, ונעול בקוד שחזור.
@@ -4622,11 +4637,11 @@ async function clUnwrap(secret,salt,wrap){const k=await clDerive(secret,salt),u=
 async function clMetaGet(){const {data:m}=await CLOUD.sb.from('ez_meta').select('*');const meta={};(m||[]).forEach(r=>meta[r.k]=r.v);CLOUD.srvMeta=meta;return meta}
 async function clMetaPut(obj){for(const [k,v] of Object.entries(obj)){const r=await CLOUD.sb.from('ez_meta').upsert({k,v});if(r.error)throw r.error}}
 async function clKeyScreen(err){const meta=await clMetaGet();
-  if(!meta.check){if(CLOUD.me.role!=='admin'){clGate(`<h3>🔑 המערכת עוד לא הוקמה</h3><p>המנהל צריך להיכנס ראשון ולקבוע את מפתח הארגון.</p><button class="btn" onclick="clBoot()">בדוק שוב</button>`);return}
+  if(!meta.check){if(!clIsAdm()){clGate(`<h3>🔑 המערכת עוד לא הוקמה</h3><p>המנהל צריך להיכנס ראשון ולקבוע את מפתח הארגון.</p><button class="btn" onclick="clBoot()">בדוק שוב</button>`);return}
     clGate(`<h3>🔑 קביעת מפתח הארגון</h3><p class="small" style="text-align:right;line-height:1.8">המפתח נועל את כל הנתונים. אפשר <b>בעברית</b> או באנגלית.<br>• משפט שקל לזכור וקשה לנחש (לפחות 10 תווים).<br>• אומרים אותו בעל־פה רק לאנשי הצוות.<br>• אם תשכח אותו – יש <b>קוד שחזור</b> (תקבל אותו בשלב הבא).</p>
     ${clPwField('ck1','מפתח הארגון')}${clPwField('ck2','שוב – לאימות')}<div id="clErr" class="small" style="color:var(--bad);margin:6px 0;min-height:18px">${err||''}</div><button class="btn pri" onclick="clKeyCreate()">קבע מפתח והמשך</button>`);return}
   clGate(`<h3>🔑 מפתח הארגון</h3><p class="small">כותבים פעם אחת במחשב הזה את מפתח הארגון (המנהל יגיד לך אותו).</p>${clPwField('ck1','מפתח הארגון',`onkeydown="if(event.key==='Enter')clKeyEnter()"`)}<div id="clErr" class="small" style="color:var(--bad);margin:6px 0;min-height:18px">${err||''}</div>
-  <button class="btn pri" onclick="clKeyEnter()">המשך</button> <button class="btn" onclick="clSignOut()">יציאה</button>${CLOUD.me.role==='admin'?`<div style="margin-top:12px"><button class="btn" onclick="clEscrowRecover()">📧 שכחתי את המפתח – שחזור דרך המייל שלי</button>${meta.rwrap?`<div style="margin-top:6px"><a href="#" class="small" onclick="clRecoverScreen();return false">יש לי קוד שחזור</a></div>`:''}</div>`:`<div class="small muted" style="margin-top:12px">שכחת? המנהל יכול לשחזר דרך המייל שלו ולהגיד לך את המפתח.</div>`}`)}
+  <button class="btn pri" onclick="clKeyEnter()">המשך</button> <button class="btn" onclick="clSignOut()">יציאה</button>${clIsAdm()?`<div style="margin-top:12px"><button class="btn" onclick="clEscrowRecover()">📧 שכחתי את המפתח – שחזור דרך המייל שלי</button>${meta.rwrap?`<div style="margin-top:6px"><a href="#" class="small" onclick="clRecoverScreen();return false">יש לי קוד שחזור</a></div>`:''}</div>`:`<div class="small muted" style="margin-top:12px">שכחת? המנהל יכול לשחזר דרך המייל שלו ולהגיד לך את המפתח.</div>`}`)}
 async function clKeyCreate(){const a=clNorm(document.getElementById('ck1').value),b=clNorm(document.getElementById('ck2').value);if(a.length<10){clErr('לפחות 10 תווים');return}if(a!==b){clErr('שני המפתחות לא זהים – לחץ "👁 הצג" ובדוק');return}
   clErr('מכין…');const dek=crypto.getRandomValues(new Uint8Array(32));CLOUD.key=await crypto.subtle.importKey('raw',dek,{name:'AES-GCM'},true,['encrypt','decrypt']);
   const w1=await clWrap(a,dek),check=await clEnc('ezer-ok');
@@ -4634,7 +4649,7 @@ async function clKeyCreate(){const a=clNorm(document.getElementById('ck1').value
   await clStoreKey();await clEscrowSave();clEnter()}
 /* שחזור דרך המייל: עותק של מפתח הנתונים שמור בשרת, נעול לחשבון של המנהל בלבד (המייל שלו).
    שכחת את המשפט? נכנסים עם המייל (Google או קישור/סיסמה מהמייל) ← "שחזור דרך המייל" ← בוחרים משפט חדש. */
-async function clEscrowSave(){if(!CLOUD.me||CLOUD.me.role!=='admin'||!CLOUD.key)return;try{const raw=await crypto.subtle.exportKey('raw',CLOUD.key);
+async function clEscrowSave(){if(!clIsAdm()||!CLOUD.key)return;try{const raw=await crypto.subtle.exportKey('raw',CLOUD.key);
   const {data}=await CLOUD.sb.from('ez_escrow').select('email').eq('email',CLOUD.me.email).maybeSingle();if(!data)await CLOUD.sb.from('ez_escrow').upsert({email:CLOUD.me.email,dek:clB64(raw)})}catch(e){console.warn('escrow',e)}}
 async function clEscrowRecover(){clErr('משחזר דרך החשבון שלך…');const {data,error}=await CLOUD.sb.from('ez_escrow').select('dek').eq('email',CLOUD.me.email).maybeSingle();
   if(error||!data){clErr('לא נמצא גיבוי מפתח לחשבון הזה. צריך להיכנס עם אותו מייל של המנהל שהקים את המערכת.');return}
@@ -4669,8 +4684,8 @@ async function clNewRecovery(){if(!confirm('ליצור קוד שחזור חדש?
   try{await clMetaPut({rsalt:w2.salt,rwrap:w2.wrap})}catch(e){alert(e.message);return}log('ענן','נוצר קוד שחזור חדש');clShowRecovery(code,false)}
 
 /* ---------- כניסה למערכת ---------- */
-function clUser(){const m=CLOUD.me;return {id:'c:'+m.email,name:m.name,email:m.email,role:m.role,hideAmounts:m.hide,cloud:true}}
-async function clEnter(){clLoadMeta();clGateClose();CLOUD.on=true;clEscrowSave();startSession(clUser());clStatus();setInterval(()=>{clStatus();clInstallBtn()},5000);
+function clUser(){const m=CLOUD.me;return {id:'c:'+m.email,name:m.name,email:m.email,role:m.role==='owner'?'admin':m.role,hideAmounts:m.hide,cloud:true}}
+async function clEnter(){clLoadMeta();clGateClose();CLOUD.on=true;clEscrowSave();setInterval(clAccessCheck,45000);startSession(clUser());clStatus();setInterval(()=>{clStatus();clInstallBtn()},5000);
   await clContentLoad();clSync(true);clRealtime();
   setInterval(()=>clSync(),60000);window.addEventListener('online',()=>{CLOUD.online=true;clSync()});window.addEventListener('offline',()=>{CLOUD.online=false;clStatus()});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)clSync()})}
@@ -4755,22 +4770,34 @@ async function clContentPush(c){if(c.kind!=='ezer-content')throw new Error('זה
 /* ---------- ניהול: משתמשים, מצב, מפתח ---------- */
 function setCloud(){if(!CLOUD.on)return `<div class="card"><h2>☁ גרסה מקוונת משותפת</h2><p>זה הקובץ שבמחשב – הנתונים כאן נשמרים רק במחשב הזה.</p><p>בגרסה המקוונת כל הצוות עובד על אותם נתונים, מוצפנים, עם כניסה אישית – וגם בלי אינטרנט: <a href="https://mutzlach-il.github.io/ezer/" target="_blank" dir="ltr">mutzlach-il.github.io/ezer</a></p><p class="small muted">כדי להעביר לשם את הנתונים: שומרים כאן גיבוי (לשונית "גיבוי"), ובגרסה המקוונת – הגדרות ← גיבוי ← טעינת גיבוי.</p></div>`;
   setTimeout(clCardFill,0);return `<div class="card" id="clCard">טוען…</div>`}
-async function clCardFill(){const el=document.getElementById('clCard');if(!el)return;const adm=CLOUD.me.role==='admin';let U=[];
-  if(adm){const r=await CLOUD.sb.from('ez_users').select('*').order('created_at');U=r.data||[]}
-  const n=Object.keys(CLOUD.meta.synced).length;
-  el.outerHTML=`<div class="card"><h2>☁ חיבור משותף</h2><div class="strip"><div><span>מחובר כ</span><b style="font-size:15px" dir="ltr">${esc(CLOUD.me.email)}</b><span>${esc(CL_ROLES[CLOUD.me.role]||CLOUD.me.role)}</span></div><div><span>מצב</span><b style="font-size:15px">${!CLOUD.online?'📴 בלי אינטרנט':CLOUD.state==='err'?'⚠ בעיה':'☁ מסונכרן'}</b></div><div><span>פריטים בשרת</span><b>${n}</b></div></div>
-  <div class="toolbar"><button class="btn" onclick="clSync().then(()=>render())">↻ סנכרון עכשיו</button><button class="btn" onclick="clLogoutMenu()">🚪 יציאה</button><button class="btn" onclick="clNewPassScreen()">🔐 קביעת / שינוי סיסמה</button>${adm?'<button class="btn" onclick="clContentUpload()">📤 העלאת תוכן קבוע (עלונים ותמונות)</button><button class="btn" onclick="clChangeKey()">🔑 החלפת מפתח הארגון</button><button class="btn" onclick="clNewRecovery()">🧾 קוד שחזור חדש</button>':''}</div>
+const clIsAdm=()=>CLOUD.me&&(CLOUD.me.role==='admin'||CLOUD.me.role==='owner'),clIsOwner=()=>CLOUD.me&&CLOUD.me.role==='owner';
+const clDt=t=>t?esc(hebDate(localIso(t),false))+' <span class="small muted">'+esc(new Date(t).toTimeString().slice(0,5))+'</span>':'<span class="muted">עוד לא נכנס</span>';
+function clRoleSel(email,cur,dis){if(cur==='owner')return '<b>👑 בעלים</b>';return `<select ${dis?'disabled':''} onchange="clUserSet(${jsq(email)},{role:this.value})">${Object.entries(CL_ROLES).map(([k,t])=>`<option value="${k}" ${cur===k?'selected':''}>${t}</option>`).join('')}</select>`}
+async function clCardFill(){const el=document.getElementById('clCard');if(!el)return;const adm=clIsAdm();let U=[],sys=null;
+  if(adm){const r=await CLOUD.sb.from('ez_users').select('*').order('created_at');U=r.data||[];const s2=await CLOUD.sb.from('ez_system').select('*').eq('id',1).maybeSingle();sys=s2.data}
+  const n=Object.keys(CLOUD.meta.synced).length,pend=U.filter(u=>!u.active&&!u.blocked),act=U.filter(u=>u.active||u.blocked);
+  el.outerHTML=`<div class="card"><h2>☁ חיבור משותף</h2><div class="strip"><div><span>מחובר כ</span><b style="font-size:15px" dir="ltr">${esc(CLOUD.me.email)}</b><span>${clIsOwner()?'👑 בעלים':esc(CL_ROLES[CLOUD.me.role]||CLOUD.me.role)}</span></div><div><span>מצב</span><b style="font-size:15px">${!CLOUD.online?'📴 בלי אינטרנט':CLOUD.state==='err'?'⚠ בעיה':'☁ מסונכרן'}</b></div><div><span>פריטים בשרת</span><b>${n}</b></div></div>
+  <div class="toolbar"><button class="btn" onclick="clSync().then(()=>render())">↻ סנכרון עכשיו</button><button class="btn" onclick="clLogoutMenu()">🚪 יציאה</button><button class="btn" onclick="clNewPassScreen()">🔐 קביעת / שינוי סיסמה</button><button class="btn" onclick="clInstall()">💻 הורדה למחשב</button>${adm?'<button class="btn" onclick="clContentUpload()">📤 העלאת תוכן קבוע (עלונים ותמונות)</button><button class="btn" onclick="clChangeKey()">🔑 החלפת מפתח הארגון</button>':''}</div>
   <p class="small muted">🔒 כל הנתונים מוצפנים במחשב לפני שהם יוצאים לשרת, עם מפתח הארגון. מי שאין לו את המפתח – גם אם יגיע לשרת – לא יוכל לקרוא כלום.</p></div>
-  ${adm?`<div class="card"><h2>👥 מי יכול להיכנס</h2><p class="small muted">מי שנכנס בפעם הראשונה (עם Google או מייל) מופיע כאן כ"ממתין". מסמנים "מאושר" ובוחרים הרשאה. אחרי האישור צריך להגיד לו את מפתח הארגון – בעל פה.</p>
-  <table><thead><tr><th class="nosort">שם</th><th class="nosort">מייל</th><th class="nosort">הרשאה</th><th class="nosort">בלי סכומים</th><th class="nosort">מאושר</th><th class="nosort"></th></tr></thead><tbody>
-  ${U.map(u=>`<tr style="${u.active?'':'background:#fff3d6'}"><td><input type="text" value="${esc(u.name||'')}" onchange="clUserSet(${jsq(u.email)},{name:this.value})"></td><td dir="ltr" class="small">${esc(u.email)}</td>
-   <td><select onchange="clUserSet(${jsq(u.email)},{role:this.value})" ${u.email===CLOUD.me.email?'disabled':''}>${Object.entries(CL_ROLES).map(([k,t])=>`<option value="${k}" ${u.role===k?'selected':''}>${t}</option>`).join('')}</select></td>
-   <td style="text-align:center"><input type="checkbox" ${u.hide_amounts?'checked':''} onchange="clUserSet(${jsq(u.email)},{hide_amounts:this.checked})"></td>
-   <td style="text-align:center"><input type="checkbox" ${u.active?'checked':''} ${u.email===CLOUD.me.email?'disabled':''} onchange="clUserSet(${jsq(u.email)},{active:this.checked})"></td>
-   <td>${u.email===CLOUD.me.email?'(אתה)':`<button class="btn sm danger" onclick="if(confirm('להסיר את ${esc(u.email)}?'))clUserDel(${jsq(u.email)})">🗑</button>`}</td></tr>`).join('')}</tbody></table>
-  <div class="toolbar" style="margin-top:8px"><input type="email" id="clNew" placeholder="הוספה מראש לפי מייל" dir="ltr"><button class="btn" onclick="const e=document.getElementById('clNew').value.trim().toLowerCase();if(e)clUserAdd(e)">+ הוספה</button></div></div>`:''}`}
+  ${adm?`<div class="card"><h2>👥 משתמשים והרשאות</h2>
+  ${clIsOwner()?`<div class="alert ${sys&&sys.disabled?'bad':'info'}" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><div style="flex:1"><b>${sys&&sys.disabled?'⛔ המערכת מושבתת כרגע':'✔ המערכת פעילה'}</b><div class="small">${sys&&sys.disabled?'אף אחד חוץ ממך לא יכול להיכנס או לראות נתונים.':'רק אתה (בעלים) יכול להשבית את המערכת לכולם באופן זמני.'}</div></div>
+   ${sys&&sys.disabled?`<button class="btn pri" onclick="clSys(false)">הפעל את המערכת</button>`:`<input type="text" id="sysMsg" placeholder="הודעה למשתמשים (לא חובה)" style="min-width:200px"><button class="btn danger" onclick="if(confirm('להשבית את המערכת לכל המשתמשים?'))clSys(true,document.getElementById('sysMsg').value)">השבת לכולם</button>`}</div>`:''}
+  <p class="small muted">👑 בעלים – רק אתה: גם השבתת המערכת והשבתת משתמשים. <b>מנהל</b> – הכל, כולל הגדרות והוספה/הסרה של משתמשים. <b>רושם</b> – רושם ועורך, בלי הגדרות. <b>צפייה בלבד</b> – רואה ולא משנה. <b>כתובות בלבד</b> / <b>מתנדב לספירה</b> – רק המסך שלהם. "בלי סכומים" – לא רואה סכומי כסף.</p>
+  ${pend.length?`<div class="alert warn"><b>⏳ ${pend.length} ממתינים לאישור</b> – נכנסו וביקשו גישה:<table style="margin-top:6px"><tbody>${pend.map(u=>`<tr><td><b>${esc(u.name||'')}</b><div class="small" dir="ltr">${esc(u.email)}</div></td><td><select id="pr_${esc(u.email)}">${Object.entries(CL_ROLES).map(([k,t])=>`<option value="${k}" ${k==='clerk'?'selected':''}>${t}</option>`).join('')}</select></td>
+    <td style="white-space:nowrap"><button class="btn sm pri" onclick="clUserSet(${jsq(u.email)},{active:true,role:document.getElementById('pr_${esc(u.email)}').value})">✔ אשר כניסה</button> <button class="btn sm danger" onclick="if(confirm('לדחות את הבקשה?'))clUserDel(${jsq(u.email)})">דחה</button></td></tr>`).join('')}</tbody></table>
+    <div class="small">אחרי האישור אומרים לו בעל פה את מפתח הארגון.</div></div>`:''}
+  <div class="tw free"><table><thead><tr><th class="nosort">שם</th><th class="nosort">מייל</th><th class="nosort">הרשאה</th><th class="nosort">בלי סכומים</th><th class="nosort">מצב</th><th class="nosort">כניסה אחרונה</th><th class="nosort"></th></tr></thead><tbody>
+  ${act.map(u=>{const me=u.email===CLOUD.me.email,own=u.role==='owner';return `<tr style="${u.blocked?'opacity:.6':''}"><td><input type="text" value="${esc(u.name||'')}" style="min-width:110px" onchange="clUserSet(${jsq(u.email)},{name:this.value})"></td><td dir="ltr" class="small">${esc(u.email)}</td>
+   <td>${clRoleSel(u.email,u.role,me)}</td><td style="text-align:center"><input type="checkbox" ${u.hide_amounts?'checked':''} ${own?'disabled':''} onchange="clUserSet(${jsq(u.email)},{hide_amounts:this.checked})"></td>
+   <td>${u.blocked?'<span class="pill bad">מושבת</span>':'<span class="pill ok">פעיל</span>'}</td><td class="small">${clDt(u.last_login)}</td>
+   <td style="white-space:nowrap">${me?'<span class="small muted">(אתה)</span>':own?'':`${clIsOwner()?`<button class="btn sm" onclick="clUserSet(${jsq(u.email)},{blocked:${!u.blocked}})">${u.blocked?'הפעל מחדש':'⛔ השבת'}</button> `:''}<button class="btn sm danger" onclick="if(confirm('להסיר את ${esc(u.email)}? הוא לא יוכל להיכנס יותר, ומה שנשמר אצלו במחשב יימחק בפעם הבאה שיתחבר.'))clUserDel(${jsq(u.email)})">הסר</button>`}</td></tr>`}).join('')}</tbody></table></div>
+  <div class="form" style="margin-top:12px;align-items:end"><label>הוספת משתמש – מייל<input type="email" id="nuE" dir="ltr" placeholder="name@gmail.com"></label><label>שם<input type="text" id="nuN"></label>
+   <label>הרשאה<select id="nuR">${Object.entries(CL_ROLES).map(([k,t])=>`<option value="${k}" ${k==='clerk'?'selected':''}>${t}</option>`).join('')}</select></label><button class="btn pri" onclick="clUserAdd()">+ הוסף ואשר</button></div>
+  <p class="small muted">מי שתוסיף כאן נכנס מיד עם המייל שלו (Google או קוד למייל) – רק צריך להגיד לו את מפתח הארגון. מי שלא ברשימה – לא רואה כלום, ורק מופיעה כאן בקשה שלו.</p></div>`:''}`}
+async function clSys(dis,msg){const {error}=await CLOUD.sb.from('ez_system').upsert({id:1,disabled:dis,msg:msg||''});if(error){alert('השינוי נכשל: '+error.message);return}log('מערכת',dis?'הושבתה לכולם':'הופעלה מחדש');save();toast(dis?'המערכת מושבתת לכולם':'המערכת פעילה');render()}
 async function clUserSet(email,patch){const {error}=await CLOUD.sb.from('ez_users').update(patch).eq('email',email);if(error){alert('השינוי נכשל: '+error.message);return}log('משתמשים',email+' '+JSON.stringify(patch));save();toast('נשמר');render()}
-async function clUserAdd(email){const {error}=await CLOUD.sb.from('ez_users').insert({email,name:email.split('@')[0],role:'clerk',active:true});if(error){alert(error.message);return}log('משתמשים','נוסף '+email);toast('נוסף. עכשיו הוא יכול להיכנס עם המייל הזה');render()}
+async function clUserAdd(){const email=document.getElementById('nuE').value.trim().toLowerCase(),name=document.getElementById('nuN').value.trim(),role=document.getElementById('nuR').value;if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){toast('מייל לא תקין');return}
+  const {error}=await CLOUD.sb.from('ez_users').insert({email,name:name||email.split('@')[0],role,active:true});if(error){alert(/duplicate/i.test(error.message)?'המייל הזה כבר ברשימה':error.message);return}log('משתמשים','נוסף '+email);toast('נוסף. עכשיו הוא יכול להיכנס עם המייל הזה');render()}
 async function clUserDel(email){const {error}=await CLOUD.sb.from('ez_users').delete().eq('email',email);if(error){alert(error.message);return}log('משתמשים','הוסר '+email);render()}
 
 /* ---------- הפעלה ---------- */
@@ -4788,8 +4815,22 @@ async function clBoot(){if(!CLOUD_BUILD||!/^https?:/.test(location.protocol))ret
 if(CLOUD_BUILD&&'serviceWorker' in navigator&&/^https:/.test(location.protocol)){navigator.serviceWorker.register('sw.js').then(r=>{r.addEventListener('updatefound',()=>{const w=r.installing;w&&w.addEventListener('statechange',()=>{if(w.state==='installed'&&navigator.serviceWorker.controller){const b=document.createElement('div');b.style.cssText='position:fixed;bottom:14px;left:14px;z-index:9800;background:#1e7b4a;color:#fff;padding:10px 14px;border-radius:10px;cursor:pointer;box-shadow:0 4px 16px #0004';b.textContent='✔ יש גרסה חדשה – לחצו לרענון';b.onclick=()=>location.reload();document.body.appendChild(b)}})})}).catch(()=>{})}
 // התקנה כאפליקציה במחשב (סמל על שולחן העבודה, עובד גם בלי אינטרנט)
 let clInstallEvt=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();clInstallEvt=e;clInstallBtn()});
-function clInstallBtn(){const side=document.getElementById('sidefoot');if(!side||!clInstallEvt||document.getElementById('clInst'))return;const b=document.createElement('button');b.id='clInst';b.textContent='📲 התקנה במחשב';b.title='מתקין את עזר כתוכנה – סמל על שולחן העבודה, עובד גם בלי אינטרנט';
-  b.onclick=async()=>{clInstallEvt.prompt();const r=await clInstallEvt.userChoice;if(r.outcome==='accepted'){clInstallEvt=null;b.remove();toast('✔ הותקן')}};side.prepend(b)}
+function clInstallBtn(){const side=document.getElementById('sidefoot');if(!side||document.getElementById('clInst')||matchMedia('(display-mode: standalone)').matches)return;const b=document.createElement('button');b.id='clInst';b.textContent='💻 הורדה למחשב';b.title='מתקין את עזר כתוכנה – סמל על שולחן העבודה, עובד גם בלי אינטרנט';
+  b.onclick=clInstall;side.prepend(b)}
+
+// בדיקה שוטפת: הושבת / הוסר / המערכת הושבתה – יוצאים (ומי שהוסר – גם נמחק מהמחשב)
+async function clAccessCheck(){if(!CLOUD.on||!navigator.onLine||!CLOUD.sb)return;try{const {data:u,error}=await CLOUD.sb.from('ez_users').select('active,blocked,role').eq('email',CLOUD.me.email).maybeSingle();if(error)return;
+  if(!u||!u.active||u.blocked){if(!u||!u.active){try{localStorage.removeItem(KEY+'_ck_'+CLOUD.me.email);localStorage.removeItem(KEY);indexedDB.deleteDatabase('ezer_files')}catch(e){}}location.reload();return}
+  if(u.role!==CLOUD.me.role){CLOUD.me.role=u.role;try{localStorage.setItem(KEY+'_cloud_me',JSON.stringify(CLOUD.me))}catch(e){}USER=clUser();render()}
+  if(u.role!=='owner'){const {data:sy}=await CLOUD.sb.from('ez_system').select('disabled,msg').eq('id',1).maybeSingle();if(sy&&sy.disabled)location.reload()}}catch(e){}}
+// הורדה למחשב – תמיד בפס הצד
+function clInstall(){if(clInstallEvt){clInstallEvt.prompt();clInstallEvt.userChoice.then(r=>{if(r.outcome==='accepted'){clInstallEvt=null;toast('✔ הותקן – יש סמל של עזר במחשב')}});return}
+  const inst=matchMedia('(display-mode: standalone)').matches;
+  modal(`<div class="modal narrow"><div class="mh"><h2>💻 הורדה למחשב</h2><button class="x" onclick="closeModal()">×</button></div><div class="mb">
+  ${inst?'<div class="alert info">✔ אתה כבר בתוך התוכנה המותקנת.</div>':`<p>מקבלים סמל של עזר על שולחן העבודה ובתפריט התחל, חלון משלו – ועובד גם בלי אינטרנט.</p>
+  <ol style="line-height:2"><li>למעלה בצד ימין של הדפדפן לוחצים על <b>⋯</b> (שלוש נקודות).</li><li><b>Edge:</b> "אפליקציות" ← <b>"התקן את האתר הזה כאפליקציה"</b>.<br><b>Chrome:</b> "העברה, שמירה ושיתוף" ← <b>"התקנת הדף כאפליקציה"</b>.</li><li>לוחצים <b>"התקן"</b>.</li></ol>`}
+  <p class="small muted">הנתונים נשמרים במחשב ומסתנכרנים לבד כשיש אינטרנט. גם בלי להתקין – פותחים את הקישור באותו דפדפן, וזה עובד בלי אינטרנט.</p></div>
+  <div class="mf"><button class="btn" onclick="closeModal()">סגירה</button></div></div>`)}
 
 /* ====================== ניווט והפעלה ====================== */
 function views(){
@@ -4825,7 +4866,7 @@ function renderNav(){
   document.getElementById('sidefoot').innerHTML=`גיבוי אחרון: ${lb?esc(hebDate(localIso(lb))):'<b>אף פעם</b>'}${days===null||days>=7?' ⚠':''}
     ${can('settings')||USER.role==='clerk'?`<button onclick="backup()">💾 שמור גיבוי</button>`:''}${can('settings')?`<button onclick="archiveModal()">📦 תיקיית סוף שנה</button>`:''}${USER.role!=='addresses'?`<button onclick="exportAll()">📊 ייצוא לאקסל</button>`:''}
     <div class="row"><button onclick="fontSize(1)" title="אותיות גדולות">א+</button><button onclick="fontSize(-1)" title="אותיות קטנות">א−</button><button onclick="openTheme()" title="צבעים ומראה">🎨</button></div>
-    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 21.10.2026 21:28</div>`;
+    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 21.10.2026 21:35</div>`;
   const yp=document.getElementById('yearpick');yp.innerHTML=st.years.map(y=>`<option ${y===S.viewYear?'selected':''} value='${esc(y)}'>${esc(y)}${y===st.currentYear?' (נוכחית)':''}</option>`).join('');
   document.getElementById('todayHeb').textContent=hebDate(today());applyBrand();
   document.getElementById('gsWrap').style.display=USER.role==='addresses'||USER.role==='counter'?'none':'';
