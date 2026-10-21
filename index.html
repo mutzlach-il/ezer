@@ -4686,7 +4686,7 @@ async function clNewRecovery(){if(!confirm('ליצור קוד שחזור חדש?
 /* ---------- כניסה למערכת ---------- */
 function clUser(){const m=CLOUD.me;return {id:'c:'+m.email,name:m.name,email:m.email,role:m.role==='owner'?'admin':m.role,hideAmounts:m.hide,cloud:true}}
 async function clEnter(){clLoadMeta();clGateClose();CLOUD.on=true;clEscrowSave();setInterval(clAccessCheck,45000);startSession(clUser());clStatus();setInterval(()=>{clStatus();clInstallBtn()},5000);
-  await clContentLoad();clSync(true);clRealtime();
+  await clContentLoad();await clSync(true);clRealtime();if(clIsAdm()&&!(DB.people||[]).length)clEmptyPrompt();
   setInterval(()=>clSync(),60000);window.addEventListener('online',()=>{CLOUD.online=true;clSync()});window.addEventListener('offline',()=>{CLOUD.online=false;clStatus()});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)clSync()})}
 function clEnterOffline(){const me=JSON.parse(localStorage.getItem(KEY+'_cloud_me')||'null');if(!me)return false;CLOUD.me=me;
@@ -4832,6 +4832,19 @@ function clInstall(){if(clInstallEvt){clInstallEvt.prompt();clInstallEvt.userCho
   <p class="small muted">הנתונים נשמרים במחשב ומסתנכרנים לבד כשיש אינטרנט. גם בלי להתקין – פותחים את הקישור באותו דפדפן, וזה עובד בלי אינטרנט.</p></div>
   <div class="mf"><button class="btn" onclick="closeModal()">סגירה</button></div></div>`)}
 
+/* ====================== הקובץ הישן נעול – עובדים רק דרך הקישור ====================== */
+const LEGACY_LOCK=false;
+const EZ_LINK='https://mutzlach-il.github.io/ezer/';
+function legacyLockScreen(){const raw=(()=>{try{return localStorage.getItem(KEY)}catch(e){return null}})();let n=0;try{n=JSON.parse(raw||'{}').people.length}catch(e){}
+  clGate(`<h2 style="margin:6px 0">🔒 המערכת עברה לקישור</h2><p>הקובץ הזה כבר לא בשימוש. עובדים רק דרך הקישור – שם כולם רואים את אותם נתונים, מוצפנים ומעודכנים:</p>
+  <p><a class="btn pri" style="font-size:17px" href="${EZ_LINK}" target="_blank" rel="noopener">🌐 פתיחת עזר בקישור</a></p><p dir="ltr" class="small muted">${EZ_LINK}</p>
+  ${n?`<div class="alert warn" style="text-align:right;margin-top:14px"><b>יש בקובץ הזה נתונים (${n} בחורים)</b> שאולי עוד לא הועברו.<br>להעברה: לוחצים כאן "שמירת גיבוי", ובקישור – ⚙ הגדרות ← גיבוי ← "📂 טען גיבוי".<div style="margin-top:8px"><button class="btn" onclick="legacyBackup()">💾 שמירת גיבוי להעברה</button></div></div>`:''}`)}
+function legacyBackup(){const raw=localStorage.getItem(KEY);if(!raw){alert('אין נתונים בקובץ הזה');return}download('גיבוי-עזר-להעברה-'+today()+'.json',new Blob([raw],{type:'application/json'}));toast('הגיבוי ירד לתיקיית "הורדות"')}
+
+function clEmptyPrompt(){modal(`<div class="modal narrow"><div class="mh"><h2>📥 השרת עוד ריק</h2><button class="x" onclick="closeModal()">×</button></div><div class="mb">
+  <p>עוד לא הועלו נתונים. טוענים פעם אחת את קובץ הגיבוי (מהקובץ הישן) – וכל הנתונים עולים מוצפנים לשרת, לכל המחשבים.</p></div>
+  <div class="mf"><button class="btn pri" onclick="closeModal();restoreBackup()">📂 טעינת קובץ גיבוי</button><button class="btn" onclick="closeModal()">אחר כך</button></div></div>`)}
+
 /* ====================== ניווט והפעלה ====================== */
 function views(){
   const r=USER?USER.role:'admin';const all=[
@@ -4866,7 +4879,7 @@ function renderNav(){
   document.getElementById('sidefoot').innerHTML=`גיבוי אחרון: ${lb?esc(hebDate(localIso(lb))):'<b>אף פעם</b>'}${days===null||days>=7?' ⚠':''}
     ${can('settings')||USER.role==='clerk'?`<button onclick="backup()">💾 שמור גיבוי</button>`:''}${can('settings')?`<button onclick="archiveModal()">📦 תיקיית סוף שנה</button>`:''}${USER.role!=='addresses'?`<button onclick="exportAll()">📊 ייצוא לאקסל</button>`:''}
     <div class="row"><button onclick="fontSize(1)" title="אותיות גדולות">א+</button><button onclick="fontSize(-1)" title="אותיות קטנות">א−</button><button onclick="openTheme()" title="צבעים ומראה">🎨</button></div>
-    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 21.10.2026 21:35</div>`;
+    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 22.10.2026 00:39</div>`;
   const yp=document.getElementById('yearpick');yp.innerHTML=st.years.map(y=>`<option ${y===S.viewYear?'selected':''} value='${esc(y)}'>${esc(y)}${y===st.currentYear?' (נוכחית)':''}</option>`).join('');
   document.getElementById('todayHeb').textContent=hebDate(today());applyBrand();
   document.getElementById('gsWrap').style.display=USER.role==='addresses'||USER.role==='counter'?'none':'';
@@ -4896,6 +4909,7 @@ document.getElementById('lockpw').addEventListener('keydown',e=>{if(e.key==='Ent
   try{const f=+localStorage.getItem(KEY+'_fs');if(f&&!(DB.settings.theme&&DB.settings.theme.fs)){DB.settings.theme=Object.assign({},DB.settings.theme||{},{fs:f})}}catch(e){}
   applyTheme();applyBrand();
   if(CLOUD_BUILD&&/^https?:/.test(location.protocol)){clBoot();return}
+  if(!CLOUD_BUILD&&LEGACY_LOCK&&location.hash!=='#dev-unlock-ezer'){legacyLockScreen();return}
   let uidS=null;try{uidS=sessionStorage.getItem(KEY+'_user')}catch(e){}
   const u=DB.settings.users.find(x=>x.id===uidS);
   if(u)startSession(u);else if(DB.settings.noLogin)startSession(DB.settings.users.find(x=>x.role==='admin')||DB.settings.users[0]);else showLogin();
