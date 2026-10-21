@@ -2255,9 +2255,9 @@ function setPath(path,val){let o=DB.settings;const ks=path.split('.');for(let i=
 const numIn=(path,v,w=100)=>`<input type="number" value="${v??''}" onchange="setPath('${path}',this.value===''?null:+this.value)" style="width:${w}px">`;
 const listIn=(path,arr,sep=',')=>`<input type="text" style="width:100%" value="${esc((arr||[]).join(sep+' '))}" onchange="setPath('${path}',this.value.split(/[,]+/).map(s=>s.trim()).filter(Boolean))">`;
 function vSettings(){
-  const tabs=[...(CLOUD.on?[['cloud','☁ חיבור משותף']]:[]),['general','כללי ושנים'],['money','סכומים ותשלומים'],['lists','רשימות'],['features','הפעלה / השבתה'],...(CLOUD.on?[]:[['users','משתמשים'],['cloudinfo','☁ גרסה מקוונת']]),['backup','גיבוי'],['trash','סל מחזור'],['log','יומן שינויים']];
+  const tabs=[...(CLOUD.on?[['cloud','☁ חיבור משותף'],['srvbk','🕘 גיבויים בשרת']]:[]),['general','כללי ושנים'],['money','סכומים ותשלומים'],['lists','רשימות'],['features','הפעלה / השבתה'],...(CLOUD.on?[]:[['users','משתמשים'],['cloudinfo','☁ גרסה מקוונת']]),['backup','גיבוי'],['trash','סל מחזור'],['log','יומן שינויים']];
   const tab=S.tab.set||'general';
-  const f={cloud:setCloud,cloudinfo:setCloud,general:setGeneral,money:setMoney,lists:setLists,features:setFeatures,users:setUsers,backup:setBackup,trash:setTrash,log:setLog}[tab];
+  const f={srvbk:setSrvBk,cloud:setCloud,cloudinfo:setCloud,general:setGeneral,money:setMoney,lists:setLists,features:setFeatures,users:setUsers,backup:setBackup,trash:setTrash,log:setLog}[tab];
   return `<div class="tabs">${tabs.map(([k,t])=>`<button class="${tab===k?'on':''}" onclick="S.tab.set='${k}';render()">${t}</button>`).join('')}</div>${f()}`;
 }
 function setGeneral(){const st=DB.settings;return `
@@ -2321,7 +2321,7 @@ function setUsers(){const st=DB.settings;return `<div class="card"><h2>משתמ�
   <button class="btn sm" style="margin-top:8px" onclick="DB.settings.users.push({id:'u'+uid(),name:'משתמש חדש',pass:'',role:'clerk',hideAmounts:false});save();render()">+ משתמש</button>
   <h3>מה כל הרשאה יכולה</h3><table class="ht"><tbody><tr><td><b>מנהל</b></td><td>הכל, כולל הגדרות, קמפיין, נעילת שנים, משתמשים.</td></tr><tr><td><b>רושם</b></td><td>רישום כסף, בחורים, קבוצות, כתובות – בלי הגדרות.</td></tr><tr><td><b>צפייה בלבד</b></td><td>רואה הכל, לא יכול לשנות כלום.</td></tr><tr><td><b>כתובות בלבד</b></td><td>נכנס רק לכתובות ומסלולים (ולהוראות). עם "להסתיר סכומים" – לא רואה כמה כל משפחה נתנה.</td></tr></tbody></table>
   <h3>כניסה בלי סיסמה</h3><label class="chk"><input type="checkbox" ${st.noLogin?'checked':''} onchange="if(this.checked&&!confirm('כל מי שיפתח את הקובץ במחשב הזה ייכנס כמנהל הראשון. להמשיך?')){this.checked=false;return}setPath('noLogin',this.checked)"> לבטל את מסך הכניסה (נכנסים אוטומטית כמנהל הראשון)</label></div>`}
-function setBackup(){const st=DB.settings;return `<div class="card" style="border-color:var(--gold)"><h2>📦 תיקיית סוף שנה</h2><p>בלחיצה אחת יורדת תיקייה מסודרת לכל שנה – כל האקסלים, הכתובות והמסלולים, הקבוצות, המענקים, הקמפיין, המודעות (על נייר העמותה) והסיכום – כמו התיקיות שהיו לכם עד היום.</p><button class="btn pri" onclick="archiveModal()">📦 הורדת תיקיית שנה</button> <button class="btn" onclick="packModal()">📥 טעינת חבילת שנה (תמונות וחומר)</button><p class="small muted" style="margin-top:8px">חבילת שנה = קובץ ZIP עם כל התמונות והמסמכים של שנה, באותן תיקיות. טוענים אותה פעם אחת, והתמונות נכנסות לספריית התמונות ויורדות שוב בתיקיית סוף השנה.</p></div><div class="card"><h2>גיבוי</h2><p>הנתונים נשמרים רק בדפדפן של המחשב הזה. גיבוי = קובץ שאפשר לשמור בדיסק און קי ולטעון בכל מחשב.</p>
+function setBackup(){const st=DB.settings;return `<div class="card" style="border-color:var(--gold)"><h2>📦 תיקיית סוף שנה</h2><p>בלחיצה אחת יורדת תיקייה מסודרת לכל שנה – כל האקסלים, הכתובות והמסלולים, הקבוצות, המענקים, הקמפיין, המודעות (על נייר העמותה) והסיכום – כמו התיקיות שהיו לכם עד היום.</p><button class="btn pri" onclick="archiveModal()">📦 הורדת תיקיית שנה</button> <button class="btn" onclick="packModal()">📥 טעינת חבילת שנה (תמונות וחומר)</button><p class="small muted" style="margin-top:8px">חבילת שנה = קובץ ZIP עם כל התמונות והמסמכים של שנה, באותן תיקיות. טוענים אותה פעם אחת, והתמונות נכנסות לספריית התמונות ויורדות שוב בתיקיית סוף השנה.</p></div>${CLOUD.on?`<div class="card" style="border-color:var(--gold)"><h2>🕘 גיבוי אוטומטי בשרת</h2><p>בגרסה המקוונת השרת שומר גיבוי מלא בכל לילה, 30 יום אחורה. רואים ומשחזרים אותם בלשונית <b>"🕘 גיבויים בשרת"</b> (כאן למעלה).</p><button class="btn pri" onclick="S.tab.set='srvbk';render()">🕘 פתיחת הגיבויים בשרת</button></div>`:''}<div class="card"><h2>גיבוי</h2><p>${CLOUD.on?'בנוסף אפשר לשמור גיבוי כקובץ במחשב.':'הנתונים נשמרים רק בדפדפן של המחשב הזה.'} גיבוי = קובץ שאפשר לשמור בדיסק און קי ולטעון בכל מחשב.</p>
   <div class="toolbar"><button class="btn pri" onclick="backup()">💾 שמור גיבוי</button><button class="btn" onclick="backupEnc()">🔐 שמור גיבוי עם סיסמה</button><button class="btn" onclick="restoreBackup()">📂 טען גיבוי</button><button class="btn" onclick="exportAll()">📊 ייצוא הכל לאקסל</button></div>
   <div class="small muted">גיבוי אחרון: ${st.lastBackup?dtTime(st.lastBackup):'אף פעם'}</div>
   ${feat('backupReminder')?`<h3>תזכורת גיבוי</h3>תזכורת אחרי כל ${numIn('backupEvery',st.backupEvery,70)} שינויים.`:''}
@@ -2534,6 +2534,13 @@ ${feat('lottery')?'<li>הגרלה: "🎲 הגרלה על מסך מלא" – מת
 <li>דוחות ← תעודות ומכתבים: <b>🏆 לוח מצטיינים</b> לתלייה ו<b>🏅 תעודה לשיעור המצטיין</b>.</li>
 <li>הגדרות ← משתמשים: סוג משתמש <b>"מתנדב לספירה בלבד"</b> – רואה רק את מסך הספירה המהירה.</li>
 <li><b>💾 גיבוי</b>: אם עבר שבוע בלי גיבוי – מופיע בפעמון. וכשסוגרים את המערכת אחרי שינויים בלי גיבוי – הדפדפן שואל לפני שסוגר. (את ההעתקה לדיסק און קי עושים ידנית – דפדפן לא יכול לכתוב לבד לדיסק און קי.)</li></ul>`],
+['h10s','🕘 גיבויים בשרת (30 יום) ונעילת הקבצים הישנים',`<ul>
+<li><b>איפה זה:</b> ⚙ הגדרות ← לשונית <b>"🕘 גיבויים בשרת"</b> (השנייה מימין). גם בלשונית "גיבוי" יש כפתור שמוביל לשם.</li>
+<li>בכל לילה (בערך ב־2) השרת שומר לבד צילום מלא של כל הנתונים. נשמרים 30 יום אחורה – ישנים יותר נמחקים מעצמם.</li>
+<li><b>📸 שמירת צילום עכשיו</b> – לפני שינוי גדול (למשל פתיחת שנה) אפשר לשמור צילום ידני.</li>
+<li><b>↩ שחזור לכאן</b> – מחזיר את כל המערכת, אצל כולם, למצב של אותו יום. צריך לאשר ולכתוב את המילה "שחזור". לפני השחזור נשמר צילום של המצב הנוכחי (🛟 לפני שחזור) – כך שאפשר לחזור בחזרה.</li>
+<li>רק מנהל רואה ומשחזר. הצילומים מוצפנים כמו כל הנתונים.</li>
+<li><b>🔒 הקבצים הישנים נעולים:</b> קובץ "עזר" שנשלח פעם במחשב כבר לא נפתח – מופיע מסך "המערכת עברה לקישור" עם כפתור לקישור. אם היו בו נתונים – יש שם כפתור "💾 שמירת גיבוי להעברה", ואת הקובץ טוענים בקישור: ⚙ הגדרות ← גיבוי ← "📂 טען גיבוי".</li></ul>`],
 ['h10n','כלים חדשים: ספירה מהירה, קבלות, כפילויות, זכאות, תזכורות',`
 <ul><li><b>⚡ ספירה מהירה</b> (רישום כסף לשנה): לערב החפ"ק – כותבים שם ← Enter ← סכום ← Enter. רואים רשימה של מה שנרשם, ו"↶ ביטול" לטעות.</li>
 <li><b>🧾 קבלה</b>: בכרטיס הבחור, ליד כל תשלום – אישור קבלת כסף עם מספר רץ (מקור + העתק).</li>
@@ -4619,7 +4626,7 @@ async function clAfterAuth(user){const email=(user.email||'').toLowerCase(),name
   if(!u||!u.active){clGate(`<h3>⏳ ממתין לאישור</h3><p>נרשמת כ־<b dir="ltr">${esc(email)}</b>.<br>מנהל המערכת צריך לאשר אותך – ואז תוכל להיכנס.</p><div style="display:flex;gap:6px;justify-content:center"><button class="btn pri" onclick="clBoot()">בדוק שוב</button><button class="btn" onclick="clSignOut()">החלף משתמש</button></div>`);return}
   if(u.blocked){clGate(`<h3>⛔ המשתמש שלך הושבת</h3><p>פנה לבעל המערכת.</p><button class="btn" onclick="clSignOut()">יציאה</button>`);return}
   if(u.role!=='owner'){const {data:sy}=await CLOUD.sb.from('ez_system').select('disabled,msg').eq('id',1).maybeSingle();if(sy&&sy.disabled){clGate(`<h3>⛔ המערכת מושבתת זמנית</h3><p>${esc(sy.msg||'נסו שוב מאוחר יותר.')}</p><button class="btn" onclick="clBoot()">בדוק שוב</button>`);return}}
-  try{CLOUD.sb.rpc('ez_seen')}catch(e){}
+  try{CLOUD.sb.rpc('ez_seen').then(()=>{},()=>{})}catch(e){}
   CLOUD.me={email,name:u.name||name,role:u.role||'viewer',hide:!!u.hide_amounts};try{localStorage.setItem(KEY+'_cloud_me',JSON.stringify(CLOUD.me))}catch(e){}
   if(!(await clLoadKey())){clKeyScreen();return}clEnter()}
 /* מפתח הארגון: המידע מוצפן במפתח אקראי חזק (DEK). המפתח הזה שמור פעמיים בשרת – נעול במשפט שלך, ונעול בקוד שחזור.
@@ -4686,7 +4693,7 @@ async function clNewRecovery(){if(!confirm('ליצור קוד שחזור חדש?
 /* ---------- כניסה למערכת ---------- */
 function clUser(){const m=CLOUD.me;return {id:'c:'+m.email,name:m.name,email:m.email,role:m.role==='owner'?'admin':m.role,hideAmounts:m.hide,cloud:true}}
 async function clEnter(){clLoadMeta();clGateClose();CLOUD.on=true;clEscrowSave();setInterval(clAccessCheck,45000);startSession(clUser());clStatus();setInterval(()=>{clStatus();clInstallBtn()},5000);
-  await clContentLoad();await clSync(true);clRealtime();if(clIsAdm()&&!(DB.people||[]).length)clEmptyPrompt();
+  await clContentLoad();await clSync(true);clRealtime();try{CLOUD.sb.rpc('ez_snapshot',{p_manual:false}).then(()=>{},()=>{})}catch(e){}if(clIsAdm()&&!(DB.people||[]).length)clEmptyPrompt();
   setInterval(()=>clSync(),60000);window.addEventListener('online',()=>{CLOUD.online=true;clSync()});window.addEventListener('offline',()=>{CLOUD.online=false;clStatus()});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)clSync()})}
 function clEnterOffline(){const me=JSON.parse(localStorage.getItem(KEY+'_cloud_me')||'null');if(!me)return false;CLOUD.me=me;
@@ -4845,6 +4852,24 @@ function clEmptyPrompt(){modal(`<div class="modal narrow"><div class="mh"><h2>�
   <p>עוד לא הועלו נתונים. טוענים פעם אחת את קובץ הגיבוי (מהקובץ הישן) – וכל הנתונים עולים מוצפנים לשרת, לכל המחשבים.</p></div>
   <div class="mf"><button class="btn pri" onclick="closeModal();restoreBackup()">📂 טעינת קובץ גיבוי</button><button class="btn" onclick="closeModal()">אחר כך</button></div></div>`)}
 
+/* ===== גיבויים בשרת – 30 יום ===== */
+const SNAP_KIND={auto:'🌙 לילי אוטומטי',manual:'📸 ידני','before-restore':'🛟 לפני שחזור'};
+function setSrvBk(){setTimeout(srvBkFill,0);return `<div class="card" style="border-color:var(--gold)"><h2>🕘 גיבויים בשרת (30 יום)</h2>
+<p>בכל לילה (בערך ב־2 בלילה) השרת שומר לבד צילום מלא של כל הנתונים. הצילומים נשמרים <b>30 יום</b> – ישנים יותר נמחקים מעצמם.</p>
+<p class="small muted">הצילומים מוצפנים כמו כל הנתונים – רק מי שיש לו את מפתח הארגון יכול לקרוא אותם. שחזור מחזיר את כל המערכת, בכל המחשבים, למצב של אותו יום (ולפני כן נשמר צילום של המצב הנוכחי, כך שאפשר לחזור בחזרה).</p>
+${clIsAdm()?'<button class="btn pri" onclick="srvBkNow()">📸 שמירת צילום עכשיו</button>':'<div class="alert warn">רק מנהל יכול לראות ולשחזר גיבויים.</div>'}
+<div id="srvBkList" style="margin-top:12px" class="muted">טוען…</div></div>`}
+async function srvBkFill(){const el=document.getElementById('srvBkList');if(!el)return;if(!clIsAdm()){el.innerHTML='';return}
+  const {data,error}=await CLOUD.sb.from('ez_snapshots').select('id,day,kind,n,created_at,created_by').order('created_at',{ascending:false});
+  if(error){el.innerHTML='<div class="alert warn">לא הצלחתי לקרוא את רשימת הגיבויים: '+esc(error.message)+'</div>';return}
+  if(!data.length){el.innerHTML='אין עדיין גיבויים. הראשון יישמר הלילה.';return}
+  el.classList.remove('muted');el.innerHTML=`<table><thead><tr><th class="nosort">תאריך</th><th class="nosort">שעה</th><th class="nosort">סוג</th><th class="nosort">רשומות</th><th class="nosort">ע"י</th><th class="nosort"></th></tr></thead><tbody>${data.map(x=>{const d=new Date(x.created_at);return `<tr><td>${esc(hebDate(x.day))} <span class="small muted">${esc(x.day.split('-').reverse().join('.'))}</span></td><td>${d.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})}</td><td>${SNAP_KIND[x.kind]||esc(x.kind)}</td><td>${x.n}</td><td class="small">${esc(x.created_by==='nightly'||x.created_by==='setup'?'השרת':(x.created_by||''))}</td><td><button class="btn sm" onclick="srvBkRestore(${x.id},${jsq(x.day)})">↩ שחזור לכאן</button></td></tr>`}).join('')}</tbody></table>`}
+async function srvBkNow(){const {data,error}=await CLOUD.sb.rpc('ez_snapshot',{p_manual:true});if(error)return alert('לא נשמר: '+error.message);toast('📸 נשמר צילום ('+data+' רשומות)');srvBkFill()}
+async function srvBkRestore(id,day){if(!confirm('לשחזר את כל המערכת למצב של '+day+'?\n\nזה ישנה את הנתונים אצל כולם, בכל המחשבים.\nלפני השחזור נשמר צילום של המצב הנוכחי – כך שאפשר לחזור אחורה.'))return;
+  if(prompt('כדי לאשר, כתבו: שחזור')!=='שחזור')return toast('בוטל');
+  await clSync();const {data,error}=await CLOUD.sb.rpc('ez_restore',{p_id:id});if(error)return alert('השחזור נכשל: '+error.message);
+  log('שחזור מגיבוי בשרת','למצב של '+day);await clSync();toast('✅ שוחזר ('+data+' רשומות). כל המחשבים יתעדכנו תוך דקה.');render()}
+
 /* ====================== ניווט והפעלה ====================== */
 function views(){
   const r=USER?USER.role:'admin';const all=[
@@ -4879,7 +4904,7 @@ function renderNav(){
   document.getElementById('sidefoot').innerHTML=`גיבוי אחרון: ${lb?esc(hebDate(localIso(lb))):'<b>אף פעם</b>'}${days===null||days>=7?' ⚠':''}
     ${can('settings')||USER.role==='clerk'?`<button onclick="backup()">💾 שמור גיבוי</button>`:''}${can('settings')?`<button onclick="archiveModal()">📦 תיקיית סוף שנה</button>`:''}${USER.role!=='addresses'?`<button onclick="exportAll()">📊 ייצוא לאקסל</button>`:''}
     <div class="row"><button onclick="fontSize(1)" title="אותיות גדולות">א+</button><button onclick="fontSize(-1)" title="אותיות קטנות">א−</button><button onclick="openTheme()" title="צבעים ומראה">🎨</button></div>
-    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 22.10.2026 00:39</div>`;
+    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 22.10.2026 00:45</div>`;
   const yp=document.getElementById('yearpick');yp.innerHTML=st.years.map(y=>`<option ${y===S.viewYear?'selected':''} value='${esc(y)}'>${esc(y)}${y===st.currentYear?' (נוכחית)':''}</option>`).join('');
   document.getElementById('todayHeb').textContent=hebDate(today());applyBrand();
   document.getElementById('gsWrap').style.display=USER.role==='addresses'||USER.role==='counter'?'none':'';
