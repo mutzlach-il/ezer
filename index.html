@@ -2544,6 +2544,7 @@ ${feat('lottery')?'<li>הגרלה: "🎲 הגרלה על מסך מלא" – מת
 <li><b>איפה זה:</b> ⚙ הגדרות ← לשונית <b>"🔐 אבטחה ובדיקה"</b>.</li>
 <li><b>🔒 נעילה אוטומטית:</b> אחרי חצי שעה בלי פעילות המערכת ננעלת. כדי להמשיך – "📧 שלחו לי קוד למייל" (או Google). דקה לפני הנעילה מופיע פס כתום – לחיצה עליו ממשיכה. בעל המערכת יכול לשנות את הזמן (10 דקות עד שעתיים). גם מי שסגר את המערכת וחוזר אחרי יותר מחצי שעה – נכנס עם קוד.</li>
 <li><b>📜 מי שינה מה (רק מנהל):</b> ⚙ הגדרות ← "יומן שינויים". רואים כל מה שכל אחד עשה, בכל המחשבים: מי, מתי, ומה השתנה (למשל "טלפון: הישן ← החדש", "נוסף מזומן 300 ₪"). אפשר לבחור משתמש מסוים ולראות רק מה שהוא עשה. גם בכרטיס הבחור יש "📜 היסטוריה" – רק למנהל.</li>
+<li><b>🔑 כניסה בלי מפתח:</b> מי שבעל המערכת או מנהל מאשר (⚙ הגדרות ← ☁ חיבור משותף ← ✅ אישור) – נכנס עם המייל שלו, והמערכת נפתחת לו לבד, בלי לדעת שום מפתח. מי שהוסר או נחסם – מאבד את הגישה מיד, והמידע נמחק אצלו מהמחשב. מנהלים יכולים לאשר, להוסיף ולהסיר משתמשים; חסימה – רק בעל המערכת.</li>
 <li><b>🗑 מחיקת היסטוריה (רק מנהל):</b> 🗑 ליד כל שורה – מוחק שורה אחת. ☑ סימון כמה שורות ← "מחיקת המסומנים". בחירת משתמש ← "מחיקת כל מה שהוא עשה". או "מחיקת כל ההיסטוריה" (צריך לכתוב "מחיקה"). המחיקה חלה בכל המחשבים.</li>
 <li><b>🩺 בדיקה עצמית:</b> בודקת בלחיצה: אינטרנט, שרת, כניסה, הרשאה, מפתח, שינויים שלא נשלחו, גיבוי לילי, ממתינים לאישור, תמונות, מקום וגרסה. ✅ תקין · ⚠ לתשומת לב · ❌ צריך טיפול – ולידו כתוב מה לעשות.</li>
 <li><b>✉ מייל כשמישהו מבקש להצטרף:</b> נשלח לבעל המערכת, עם הסבר איך לאשר. את הכתובת משנים באותה לשונית, ויש כפתור "שליחת בדיקה".</li></ul>`],
@@ -4640,7 +4641,7 @@ async function clAfterAuth(user){const email=(user.email||'').toLowerCase(),name
   if(u.role!=='owner'){const {data:sy}=await CLOUD.sb.from('ez_system').select('disabled,msg').eq('id',1).maybeSingle();if(sy&&sy.disabled){clGate(`<h3>⛔ המערכת מושבתת זמנית</h3><p>${esc(sy.msg||'נסו שוב מאוחר יותר.')}</p><button class="btn" onclick="clBoot()">בדוק שוב</button>`);return}}
   idleUnlock();try{CLOUD.sb.rpc('ez_seen').then(()=>{},()=>{})}catch(e){}
   CLOUD.me={email,name:u.name||name,role:u.role||'viewer',hide:!!u.hide_amounts};try{localStorage.setItem(KEY+'_cloud_me',JSON.stringify(CLOUD.me))}catch(e){}
-  if(!(await clLoadKey())){clKeyScreen();return}clEnter()}
+  if(!(await clLoadKey())&&!(await clAutoKey())){clKeyScreen();return}clEnter()}
 /* מפתח הארגון: המידע מוצפן במפתח אקראי חזק (DEK). המפתח הזה שמור פעמיים בשרת – נעול במשפט שלך, ונעול בקוד שחזור.
    שכחת את המשפט? קוד השחזור (שנשלח למייל שלך / הודפס) פותח – ובוחרים משפט חדש. שום דבר לא נמחק. */
 const clNorm=s=>String(s||'').normalize('NFC').trim();
@@ -4660,7 +4661,7 @@ async function clKeyScreen(err){const meta=await clMetaGet();
     clGate(`<h3>🔑 קביעת מפתח הארגון</h3><p class="small" style="text-align:right;line-height:1.8">המפתח נועל את כל הנתונים. אפשר <b>בעברית</b> או באנגלית.<br>• משפט שקל לזכור וקשה לנחש (לפחות 10 תווים).<br>• אומרים אותו בעל־פה רק לאנשי הצוות.<br>• אם תשכח אותו – יש <b>קוד שחזור</b> (תקבל אותו בשלב הבא).</p>
     ${clPwField('ck1','מפתח הארגון')}${clPwField('ck2','שוב – לאימות')}<div id="clErr" class="small" style="color:var(--bad);margin:6px 0;min-height:18px">${err||''}</div><button class="btn pri" onclick="clKeyCreate()">קבע מפתח והמשך</button>`);return}
   clGate(`<h3>🔑 מפתח הארגון</h3><p class="small">כותבים פעם אחת במחשב הזה את מפתח הארגון (המנהל יגיד לך אותו).</p>${clPwField('ck1','מפתח הארגון',`onkeydown="if(event.key==='Enter')clKeyEnter()"`)}<div id="clErr" class="small" style="color:var(--bad);margin:6px 0;min-height:18px">${err||''}</div>
-  <button class="btn pri" onclick="clKeyEnter()">המשך</button> <button class="btn" onclick="clSignOut()">יציאה</button>${clIsAdm()?`<div style="margin-top:12px"><button class="btn" onclick="clEscrowRecover()">📧 שכחתי את המפתח – שחזור דרך המייל שלי</button>${meta.rwrap?`<div style="margin-top:6px"><a href="#" class="small" onclick="clRecoverScreen();return false">יש לי קוד שחזור</a></div>`:''}</div>`:`<div class="small muted" style="margin-top:12px">שכחת? המנהל יכול לשחזר דרך המייל שלו ולהגיד לך את המפתח.</div>`}`)}
+  <button class="btn pri" onclick="clKeyEnter()">המשך</button> <button class="btn" onclick="clSignOut()">יציאה</button>${clIsAdm()?`<div style="margin-top:12px"><button class="btn" onclick="clEscrowRecover()">📧 שכחתי את המפתח – שחזור דרך המייל שלי</button>${meta.rwrap?`<div style="margin-top:6px"><a href="#" class="small" onclick="clRecoverScreen();return false">יש לי קוד שחזור</a></div>`:''}</div>`:`<div class="alert warn" style="margin-top:12px;text-align:right">⏳ בדרך כלל לא צריך מפתח: ברגע שהמנהל מאשר אותך, הגישה עוברת אליך לבד. אם אישרו אותך עכשיו – המנהל צריך שהמערכת תהיה פתוחה אצלו רגע, ואז ללחוץ כאן:<br><button class="btn pri" style="margin-top:6px" onclick="clBoot()">↻ בדוק שוב</button></div>`}`)}
 async function clKeyCreate(){const a=clNorm(document.getElementById('ck1').value),b=clNorm(document.getElementById('ck2').value);if(a.length<10){clErr('לפחות 10 תווים');return}if(a!==b){clErr('שני המפתחות לא זהים – לחץ "👁 הצג" ובדוק');return}
   clErr('מכין…');const dek=crypto.getRandomValues(new Uint8Array(32));CLOUD.key=await crypto.subtle.importKey('raw',dek,{name:'AES-GCM'},true,['encrypt','decrypt']);
   const w1=await clWrap(a,dek),check=await clEnc('ezer-ok');
@@ -4704,7 +4705,7 @@ async function clNewRecovery(){if(!confirm('ליצור קוד שחזור חדש?
 
 /* ---------- כניסה למערכת ---------- */
 function clUser(){const m=CLOUD.me;return {id:'c:'+m.email,name:m.name,email:m.email,role:m.role==='owner'?'admin':m.role,hideAmounts:m.hide,cloud:true}}
-async function clEnter(){clLoadMeta();clGateClose();CLOUD.on=true;idleStart();clEscrowSave();setInterval(clAccessCheck,45000);startSession(clUser());clStatus();setInterval(()=>{clStatus();clInstallBtn();if(typeof medStat==='function')medStat()},5000);
+async function clEnter(){clLoadMeta();clGateClose();CLOUD.on=true;idleStart();clEscrowSave();if(typeof clGrantKeys==='function')setTimeout(clGrantKeys,3000);setInterval(clAccessCheck,45000);startSession(clUser());clStatus();setInterval(()=>{clStatus();clInstallBtn();if(typeof medStat==='function')medStat()},5000);
   await clContentLoad();await clSync(true);clRealtime();if(typeof mediaKick==='function'){mediaKick(5000);setInterval(()=>mediaKick(100),10*60000)}try{CLOUD.sb.rpc('ez_snapshot',{p_manual:false}).then(()=>{},()=>{})}catch(e){}if(clIsAdm()&&!(DB.people||[]).length)clEmptyPrompt();
   setInterval(()=>clSync(),60000);window.addEventListener('online',()=>{CLOUD.online=true;clSync()});window.addEventListener('offline',()=>{CLOUD.online=false;clStatus()});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)clSync()})}
@@ -4816,9 +4817,9 @@ async function clCardFill(){const el=document.getElementById('clCard');if(!el)re
    <label>הרשאה<select id="nuR">${Object.entries(CL_ROLES).map(([k,t])=>`<option value="${k}" ${k==='clerk'?'selected':''}>${t}</option>`).join('')}</select></label><button class="btn pri" onclick="clUserAdd()">+ הוסף ואשר</button></div>
   <p class="small muted">מי שתוסיף כאן נכנס מיד עם המייל שלו (Google או קוד למייל) – רק צריך להגיד לו את מפתח הארגון. מי שלא ברשימה – לא רואה כלום, ורק מופיעה כאן בקשה שלו.</p></div>`:''}`}
 async function clSys(dis,msg){const {error}=await CLOUD.sb.from('ez_system').upsert({id:1,disabled:dis,msg:msg||''});if(error){alert('השינוי נכשל: '+error.message);return}log('מערכת',dis?'הושבתה לכולם':'הופעלה מחדש');save();toast(dis?'המערכת מושבתת לכולם':'המערכת פעילה');render()}
-async function clUserSet(email,patch){const {error}=await CLOUD.sb.from('ez_users').update(patch).eq('email',email);if(error){alert('השינוי נכשל: '+error.message);return}log('משתמשים',email+' '+JSON.stringify(patch));save();toast('נשמר');render()}
+async function clUserSet(email,patch){const {error}=await CLOUD.sb.from('ez_users').update(patch).eq('email',email);if(error){alert('השינוי נכשל: '+error.message);return}log('משתמשים',email+' '+JSON.stringify(patch));save();toast('נשמר');if(typeof clGrantKeys==='function')clGrantKeys();render()}
 async function clUserAdd(){const email=document.getElementById('nuE').value.trim().toLowerCase(),name=document.getElementById('nuN').value.trim(),role=document.getElementById('nuR').value;if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){toast('מייל לא תקין');return}
-  const {error}=await CLOUD.sb.from('ez_users').insert({email,name:name||email.split('@')[0],role,active:true});if(error){alert(/duplicate/i.test(error.message)?'המייל הזה כבר ברשימה':error.message);return}log('משתמשים','נוסף '+email);toast('נוסף. עכשיו הוא יכול להיכנס עם המייל הזה');render()}
+  const {error}=await CLOUD.sb.from('ez_users').insert({email,name:name||email.split('@')[0],role,active:true});if(error){alert(/duplicate/i.test(error.message)?'המייל הזה כבר ברשימה':error.message);return}log('משתמשים','נוסף '+email);toast('נוסף. עכשיו הוא יכול להיכנס עם המייל הזה – בלי מפתח');if(typeof clGrantKeys==='function')clGrantKeys();render()}
 async function clUserDel(email){const {error}=await CLOUD.sb.from('ez_users').delete().eq('email',email);if(error){alert(error.message);return}log('משתמשים','הוסר '+email);render()}
 
 /* ---------- הפעלה ---------- */
@@ -5007,6 +5008,17 @@ function logDelOne(k){if(!clIsAdmLocal())return;logDelKeys([k])}
 function logDelSel(){if(!clIsAdmLocal()||!LOGSEL.size)return;if(!confirm('למחוק '+LOGSEL.size+' שורות מההיסטוריה? (בכל המחשבים)'))return;logDelKeys([...LOGSEL])}
 function logDelUser(u){if(!clIsAdmLocal())return;const K=logVisible().filter(l=>l.u===u).map(logKey);if(!confirm('למחוק את כל '+K.length+' הפעולות של '+u+'? (בכל המחשבים)'))return;logDelKeys(K)}
 
+/* ---------- גישה בלי מפתח: מי שהמנהל אישר מקבל את המפתח לבד, דרך החשבון שלו ---------- */
+async function clAutoKey(){try{const meta=await clMetaGet();if(!meta.check)return false;
+  const {data}=await CLOUD.sb.from('ez_escrow').select('dek').eq('email',CLOUD.me.email).maybeSingle();if(!data||!data.dek)return false;
+  CLOUD.key=await crypto.subtle.importKey('raw',clUb(data.dek),{name:'AES-GCM'},true,['encrypt','decrypt']);if(await clDec(meta.check)!=='ezer-ok'){CLOUD.key=null;return false}
+  await clStoreKey();return true}catch(e){CLOUD.key=null;return false}}
+async function clGrantKeys(){if(!CLOUD.on||!clIsAdm()||!CLOUD.key||!navigator.onLine)return;try{
+  const {data:U}=await CLOUD.sb.from('ez_users').select('email,active,blocked');const {data:E}=await CLOUD.sb.from('ez_escrow').select('email');
+  const have=new Set((E||[]).map(x=>x.email));const raw=clB64(await crypto.subtle.exportKey('raw',CLOUD.key));
+  const add=(U||[]).filter(u=>u.active&&!u.blocked&&!have.has(u.email)).map(u=>({email:u.email,dek:raw}));
+  if(add.length)await CLOUD.sb.from('ez_escrow').upsert(add)}catch(e){console.warn('grant',e)}}
+
 /* ====================== תמונות ומסמכים בכל המחשבים (מוצפן, דרך השרת) ======================
    כל מחשב שיש בו תמונות/מסמכים (מחבילות שנה או שהועלו ידנית) – מעלה אותם מוצפנים לשרת.
    כל מחשב אחר – מוריד לבד את מה שחסר לו. הקבצים נשמרים בכל מחשב ועובדים גם בלי אינטרנט. */
@@ -5092,7 +5104,7 @@ function renderNav(){
   document.getElementById('sidefoot').innerHTML=`גיבוי אחרון: ${lb?esc(hebDate(localIso(lb))):'<b>אף פעם</b>'}${days===null||days>=7?' ⚠':''}
     ${can('settings')||USER.role==='clerk'?`<button onclick="backup()">💾 שמור גיבוי</button>`:''}${can('settings')?`<button onclick="archiveModal()">📦 תיקיית סוף שנה</button>`:''}${USER.role!=='addresses'?`<button onclick="exportAll()">📊 ייצוא לאקסל</button>`:''}
     <div class="row"><button onclick="fontSize(1)" title="אותיות גדולות">א+</button><button onclick="fontSize(-1)" title="אותיות קטנות">א−</button><button onclick="openTheme()" title="צבעים ומראה">🎨</button></div>
-    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 22.10.2026 01:36</div>`;
+    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 23.10.2026 12:58</div>`;
   const yp=document.getElementById('yearpick');yp.innerHTML=st.years.map(y=>`<option ${y===S.viewYear?'selected':''} value='${esc(y)}'>${esc(y)}${y===st.currentYear?' (נוכחית)':''}</option>`).join('');
   document.getElementById('todayHeb').textContent=hebDate(today());applyBrand();
   document.getElementById('gsWrap').style.display=USER.role==='addresses'||USER.role==='counter'?'none':'';
