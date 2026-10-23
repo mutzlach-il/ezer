@@ -2544,6 +2544,7 @@ ${feat('lottery')?'<li>הגרלה: "🎲 הגרלה על מסך מלא" – מת
 <li><b>איפה זה:</b> ⚙ הגדרות ← לשונית <b>"🔐 אבטחה ובדיקה"</b>.</li>
 <li><b>🔒 נעילה אוטומטית:</b> אחרי חצי שעה בלי פעילות המערכת ננעלת. כדי להמשיך – "📧 שלחו לי קוד למייל" (או Google). דקה לפני הנעילה מופיע פס כתום – לחיצה עליו ממשיכה. בעל המערכת יכול לשנות את הזמן (10 דקות עד שעתיים). גם מי שסגר את המערכת וחוזר אחרי יותר מחצי שעה – נכנס עם קוד.</li>
 <li><b>📜 מי שינה מה (רק מנהל):</b> ⚙ הגדרות ← "יומן שינויים". רואים כל מה שכל אחד עשה, בכל המחשבים: מי, מתי, ומה השתנה (למשל "טלפון: הישן ← החדש", "נוסף מזומן 300 ₪"). אפשר לבחור משתמש מסוים ולראות רק מה שהוא עשה. גם בכרטיס הבחור יש "📜 היסטוריה" – רק למנהל.</li>
+<li><b>🔢 קוד קבוע למחשב:</b> בפעם הראשונה בכל מחשב נכנסים עם Google או קוד במייל (צריך אינטרנט), ואז בוחרים קוד של 4–8 ספרות למחשב הזה. מאז נכנסים עם הקוד – <b>גם בלי אינטרנט</b>, וגם אחרי הנעילה של חצי שעה. 5 טעויות – צריך שוב קוד במייל. שכחת? "שכחתי את הקוד" ← קוד במייל. להחלפה: ⚙ הגדרות ← 🔐 אבטחה ובדיקה ← "החלפת הקוד".</li>
 <li><b>🔐 כניסה רק עם Google או קוד במייל:</b> אין יותר סיסמאות – כדי שאף אחד לא ינחש סיסמה. נכנסים עם Google, או מקלידים מייל ומקבלים קוד חד־פעמי. הקבצים הישנים של עזר הוחלפו בדף ריק שמפנה לקישור, בלי שום נתון בתוכו.</li>
 <li><b>🔑 כניסה בלי מפתח:</b> מי שבעל המערכת או מנהל מאשר (⚙ הגדרות ← ☁ חיבור משותף ← ✅ אישור) – נכנס עם המייל שלו, והמערכת נפתחת לו לבד, בלי לדעת שום מפתח. מי שהוסר או נחסם – מאבד את הגישה מיד, והמידע נמחק אצלו מהמחשב. מנהלים יכולים לאשר, להוסיף ולהסיר משתמשים; חסימה – רק בעל המערכת.</li>
 <li><b>🗑 מחיקת היסטוריה (רק מנהל):</b> 🗑 ליד כל שורה – מוחק שורה אחת. ☑ סימון כמה שורות ← "מחיקת המסומנים". בחירת משתמש ← "מחיקת כל מה שהוא עשה". או "מחיקת כל ההיסטוריה" (צריך לכתוב "מחיקה"). המחיקה חלה בכל המחשבים.</li>
@@ -4706,7 +4707,7 @@ async function clNewRecovery(){if(!confirm('ליצור קוד שחזור חדש?
 /* ---------- כניסה למערכת ---------- */
 function clUser(){const m=CLOUD.me;return {id:'c:'+m.email,name:m.name,email:m.email,role:m.role==='owner'?'admin':m.role,hideAmounts:m.hide,cloud:true}}
 async function clEnter(){clLoadMeta();clGateClose();CLOUD.on=true;idleStart();clEscrowSave();if(typeof clGrantKeys==='function')setTimeout(clGrantKeys,3000);setInterval(clAccessCheck,45000);startSession(clUser());clStatus();setInterval(()=>{clStatus();clInstallBtn();if(typeof medStat==='function')medStat()},5000);
-  await clContentLoad();await clSync(true);clRealtime();if(typeof mediaKick==='function'){mediaKick(5000);setInterval(()=>mediaKick(100),10*60000)}try{CLOUD.sb.rpc('ez_snapshot',{p_manual:false}).then(()=>{},()=>{})}catch(e){}if(clIsAdm()&&!(DB.people||[]).length)clEmptyPrompt();
+  await clContentLoad();await clSync(true);clRealtime();setTimeout(()=>{if(typeof pinOffer==='function')pinOffer()},1500);if(typeof mediaKick==='function'){mediaKick(5000);setInterval(()=>mediaKick(100),10*60000)}try{CLOUD.sb.rpc('ez_snapshot',{p_manual:false}).then(()=>{},()=>{})}catch(e){}if(clIsAdm()&&!(DB.people||[]).length)clEmptyPrompt();
   setInterval(()=>clSync(),60000);window.addEventListener('online',()=>{CLOUD.online=true;clSync()});window.addEventListener('offline',()=>{CLOUD.online=false;clStatus()});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)clSync()})}
 function clEnterOffline(){if(idleLocked())return false;const me=JSON.parse(localStorage.getItem(KEY+'_cloud_me')||'null');if(!me)return false;CLOUD.me=me;
@@ -4826,10 +4827,11 @@ async function clUserDel(email){const {error}=await CLOUD.sb.from('ez_users').de
 async function clBoot(){if(!CLOUD_BUILD||!/^https?:/.test(location.protocol))return false;
   clGate('<p>טוען…</p>');
   try{if(!window.supabase)await clScript(CL_SBJS);CLOUD.sb=supabase.createClient(CL_URL,CL_KEY,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'ezer-auth'}})}
-  catch(e){if(!(await clEnterOffline()))clGate('<p>אין חיבור לאינטרנט, ובמחשב הזה עוד לא נכנסו אף פעם.</p><p class="small muted">בפעם הראשונה צריך אינטרנט. אחר כך אפשר לעבוד גם בלי.</p><button class="btn" onclick="location.reload()">נסה שוב</button>');return true}
+  catch(e){if(idleExpired()){try{localStorage.setItem(LOCK_K(),'1')}catch(x){}}if(idleLocked()&&pinHas()){pinAskScreen(()=>{idleUnlock();clBoot()});return true}if(!(await clEnterOffline()))clGate('<p>אין חיבור לאינטרנט, ובמחשב הזה עוד לא נכנסו אף פעם.</p><p class="small muted">בפעם הראשונה צריך אינטרנט. אחר כך אפשר לעבוד גם בלי.</p><button class="btn" onclick="location.reload()">נסה שוב</button>');return true}
   try{CLOUD.sb.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY')setTimeout(clNewPassScreen,300)})}catch(e){}
   let sess=null;try{sess=(await CLOUD.sb.auth.getSession()).data.session}catch(e){}
   if(idleExpired()){try{localStorage.setItem(LOCK_K(),'1')}catch(e){}}
+  if(idleLocked()&&pinHas()){pinAskScreen(()=>{idleUnlock();clBoot()});return true}
   if(idleLocked()){if(sess){try{await CLOUD.sb.auth.signOut({scope:'local'})}catch(e){}}if(!navigator.onLine){clGate('<h3>🔒 המערכת נעולה</h3><p>כדי להיכנס שוב צריך קוד שנשלח למייל – ולשם צריך אינטרנט.</p><button class="btn" onclick="location.reload()">נסה שוב</button>');return true}idleLockScreen();return true}
   if(sess&&/type=recovery/.test(location.hash)){setTimeout(clNewPassScreen,300);return true}
   if(!sess){if(!navigator.onLine&&(await clEnterOffline()))return true;clLoginScreen();return true}
@@ -4903,6 +4905,7 @@ function idleStart(){if(!CLOUD.on||idleT)return;try{localStorage.setItem(IDLE_MI
     else if(left>=60000){const w=document.getElementById('idleWarn');if(w)w.remove()}},10000)}
 async function idleLock(){if(idleLocked())return;try{localStorage.setItem(LOCK_K(),'1')}catch(e){}
   try{if(navigator.onLine&&CLOUD.sb)await Promise.race([clSync(),new Promise(r=>setTimeout(r,4000))])}catch(e){}
+  if(pinHas()){pinAskScreen(()=>{idleUnlock();clGateClose()});return}
   try{await CLOUD.sb.auth.signOut({scope:'local'})}catch(e){}location.reload()}
 function idleUnlock(){try{localStorage.removeItem(LOCK_K());localStorage.setItem(IDLE_K(),String(Date.now()))}catch(e){}}
 function idleLockScreen(){const m=+(localStorage.getItem(IDLE_MIN_K())||30);
@@ -4963,6 +4966,7 @@ async function notifyTest(){const v=(document.getElementById('ntfEm').value||'')
 function setSecure(){setTimeout(()=>{selfCheck();notifyLoad()},0);const own=clIsOwner();const m=idleMin();return `
 <div class="card" style="border-color:var(--gold)"><div class="toolbar" style="margin:0"><h2 style="margin:0;flex:1">🩺 בדיקה עצמית</h2><button class="btn" onclick="selfCheck()">↻ בדוק שוב</button></div>
 <p class="small muted">בודק שהכל תקין: אינטרנט, שרת, כניסה, מפתח, סנכרון, גיבויים, תמונות ועוד. ✅ תקין · ⚠ לתשומת לב · ❌ צריך טיפול.</p><div id="selfChk" class="muted">בודק…</div></div>
+<div class="card"><h2>🔢 קוד המחשב</h2><p>במחשב הזה נכנסים עם קוד קבוע שבחרת – גם בלי אינטרנט. ${pinHas()?'<b>✔ מוגדר.</b>':'<b style="color:var(--bad)">עוד לא הוגדר.</b>'}</p><button class="btn" onclick="pinChange()">${pinHas()?'🔁 החלפת הקוד':'➕ קביעת קוד'}</button></div>
 <div class="card"><h2>🔒 נעילה אוטומטית</h2><p>אם אין פעילות במחשב – המערכת ננעלת, וכדי להמשיך נכנסים שוב עם <b>קוד שנשלח למייל</b> (או עם Google). הנתונים לא נמחקים.</p>
 ${own?`<label>לנעול אחרי <select onchange="idleSetMin(this.value)">${[[10,'10 דקות'],[15,'רבע שעה'],[30,'חצי שעה'],[60,'שעה'],[120,'שעתיים'],[0,'אף פעם (לא מומלץ)']].map(([v,t])=>`<option value="${v}" ${m===v?'selected':''}>${t}</option>`).join('')}</select></label> <span class="small muted">חל על כל המשתמשים.</span>`:`<div>עכשיו: ${m?'אחרי '+m+' דקות':'כבוי'}. <span class="small muted">רק בעל המערכת משנה.</span></div>`}</div>
 ${own?`<div class="card"><h2>✉ הודעה במייל כשמישהו מבקש להצטרף</h2><p>כשמישהו חדש נרשם – נשלח מייל לכתובת הזאת, עם הסבר איך לאשר. הכתובת שמורה בשרת ורק בעל המערכת רואה אותה.</p>
@@ -4982,6 +4986,7 @@ async function selfCheck(){const el=document.getElementById('selfChk');if(!el)re
   try{const ph=(typeof PHOTOS!=='undefined'?PHOTOS.length:0),kb=(typeof KB!=='undefined'&&KB.faq?KB.faq.length:0);add(ph&&kb?'ok':'warn','תוכן קבוע (תמונות, שאלות ותשובות)',ph&&kb?ph+' תמונות, '+kb+' שאלות':'עוד לא הועלה – ☁ חיבור משותף ← "📤 העלאת תוכן קבוע"')}catch(e){}
   try{if(typeof mediaStatus==='function'){const s=await mediaStatus();add(s.missing?'warn':'ok','תמונות ומסמכים בכל המחשבים',s.text)}}catch(e){}
   try{const q=navigator.storage&&await navigator.storage.estimate();if(q){const p=q.usage/q.quota;add(p<.8?'ok':'warn','מקום במחשב',Math.round(q.usage/1048576)+' MB בשימוש')}}catch(e){}
+  add(pinHas()?'ok':'warn','קוד המחשב',pinHas()?'מוגדר – אפשר להיכנס גם בלי אינטרנט':'עוד לא הוגדר – ⚙ הגדרות ← 🔐 אבטחה ובדיקה');
   add('ok','נעילה אוטומטית',idleMin()?'אחרי '+idleMin()+' דקות בלי פעילות':'כבויה');
   {const v=[...document.querySelectorAll('#sidefoot div')].map(d=>d.textContent).find(t=>/^\s*גרסה:/.test(t))||'';const upd=!!document.getElementById('swUpd');add(upd?'warn':'ok','גרסה',(v.replace(/^\s*גרסה:\s*/,'')||'—')+(upd?' – יש גרסה חדשה, לחצו על הכפתור הירוק למטה':' – מעודכנת'))}
   const ic={ok:'✅',warn:'⚠',bad:'❌'};const bad=R.filter(r=>r[0]==='bad').length,warn=R.filter(r=>r[0]==='warn').length;
@@ -5018,6 +5023,36 @@ async function clGrantKeys(){if(!CLOUD.on||!clIsAdm()||!CLOUD.key||!navigator.on
   const have=new Set((E||[]).map(x=>x.email));const raw=clB64(await crypto.subtle.exportKey('raw',CLOUD.key));
   const add=(U||[]).filter(u=>u.active&&!u.blocked&&!have.has(u.email)).map(u=>({email:u.email,dek:raw}));
   if(add.length)await CLOUD.sb.from('ez_escrow').upsert(add)}catch(e){console.warn('grant',e)}}
+
+/* ---------- קוד קבוע למחשב: בפעם הראשונה – מייל; אחר כך – קוד אישי של המחשב, עובד גם בלי אינטרנט ---------- */
+const PIN_K=e=>KEY+'_pin_'+e,PIN_TRY=e=>KEY+'_pintry_'+e;
+function pinMe(){try{return CLOUD.me||JSON.parse(localStorage.getItem(KEY+'_cloud_me')||'null')}catch(e){return null}}
+function pinGet(em){try{return JSON.parse(localStorage.getItem(PIN_K(em))||'null')}catch(e){return null}}
+function pinHas(){const m=pinMe();return !!(m&&m.email&&pinGet(m.email))}
+async function pinHash(pin,salt){const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(pin),'PBKDF2',false,['deriveBits']);return clB64(await crypto.subtle.deriveBits({name:'PBKDF2',salt:new TextEncoder().encode(salt),iterations:150000,hash:'SHA-256'},k,256))}
+const pinField=(id,ph,extra='')=>`<input type="password" id="${id}" inputmode="numeric" autocomplete="new-password" maxlength="8" placeholder="${ph}" style="width:100%;font-size:22px;letter-spacing:6px;text-align:center;margin-bottom:8px" dir="ltr" ${extra}>`;
+let PIN_OK=null;
+function pinAskScreen(onOk){PIN_OK=onOk;const m=pinMe(),left=5-(+(localStorage.getItem(PIN_TRY(m.email))||0));
+  clGate(`<h3>🔒 קוד המחשב</h3><p class="small">${esc(m.name||m.email)} – הקלד את הקוד הקבוע שבחרת למחשב הזה.</p>${pinField('pin1','• • • •',`onkeydown="if(event.key==='Enter')pinCheck()"`)}
+  <div id="clErr" class="small" style="color:var(--bad);min-height:18px"></div><button class="btn pri" style="width:100%" onclick="pinCheck()">כניסה</button>
+  <div style="margin-top:12px"><a href="#" class="small" onclick="pinForgot();return false">שכחתי את הקוד – כניסה עם קוד במייל (צריך אינטרנט)</a></div>
+  <div class="small muted" style="margin-top:8px">נשארו ${left} ניסיונות. אחרי 5 טעויות – צריך להיכנס שוב דרך המייל.</div>`);setTimeout(()=>{const e=document.getElementById('pin1');if(e)e.focus()},50)}
+async function pinCheck(){const m=pinMe(),P=pinGet(m.email),v=(document.getElementById('pin1')||{}).value||'';if(!v)return;
+  if(await pinHash(v,P.salt)===P.hash){localStorage.removeItem(PIN_TRY(m.email));const f=PIN_OK;PIN_OK=null;f&&f();return}
+  const t=+(localStorage.getItem(PIN_TRY(m.email))||0)+1;localStorage.setItem(PIN_TRY(m.email),String(t));
+  if(t>=5){alert('5 טעויות. מטעמי אבטחה צריך להיכנס שוב עם קוד במייל.');pinForgot(true);return}pinAskScreen(PIN_OK)}
+async function pinForgot(auto){if(!auto&&!confirm('לבטל את הקוד של המחשב הזה ולהיכנס שוב עם קוד במייל?\nצריך אינטרנט. הנתונים לא נמחקים.'))return;const m=pinMe();
+  try{localStorage.removeItem(PIN_K(m.email));localStorage.removeItem(PIN_TRY(m.email));localStorage.setItem(LOCK_K(),'1')}catch(e){}
+  try{CLOUD.sb&&await CLOUD.sb.auth.signOut({scope:'local'})}catch(e){}location.reload()}
+function pinSetScreen(then){clGate(`<h3>🔢 קוד קבוע למחשב הזה</h3><p class="small" style="text-align:right;line-height:1.7">בחר קוד של <b>4 עד 8 ספרות</b>. מעכשיו, במחשב הזה, נכנסים איתו – <b>גם בלי אינטרנט</b>, וגם אחרי נעילה של חצי שעה. בלי מייל כל פעם.<br>הקוד שמור רק במחשב הזה. במחשב אחר – בוחרים קוד משלו.</p>
+  ${pinField('pin1','קוד חדש')}${pinField('pin2','שוב – לאימות',`onkeydown="if(event.key==='Enter')pinSave()"`)}<div id="clErr" class="small" style="color:var(--bad);min-height:18px"></div>
+  <button class="btn pri" style="width:100%" onclick="pinSave()">שמירה</button>`);window._pinThen=then;setTimeout(()=>{const e=document.getElementById('pin1');if(e)e.focus()},50)}
+async function pinSave(){const a=document.getElementById('pin1').value,b=document.getElementById('pin2').value;
+  if(!/^\d{4,8}$/.test(a))return clErr('הקוד צריך להיות 4 עד 8 ספרות');if(/^(\d)\1+$/.test(a)||'0123456789'.includes(a)||'9876543210'.includes(a))return clErr('קוד קל מדי לניחוש (כמו 1111 או 1234) – בחר אחר');if(a!==b)return clErr('שני הקודים לא זהים');
+  const m=pinMe(),salt=clB64(crypto.getRandomValues(new Uint8Array(16)));localStorage.setItem(PIN_K(m.email),JSON.stringify({salt,hash:await pinHash(a,salt),t:new Date().toISOString()}));
+  clGateClose();toast('✔ נשמר קוד קבוע למחשב הזה');const f=window._pinThen;window._pinThen=null;f&&f()}
+function pinOffer(){if(CLOUD.on&&!pinHas()&&!document.getElementById('clGate'))pinSetScreen()}
+function pinChange(){pinSetScreen()}
 
 /* ====================== תמונות ומסמכים בכל המחשבים (מוצפן, דרך השרת) ======================
    כל מחשב שיש בו תמונות/מסמכים (מחבילות שנה או שהועלו ידנית) – מעלה אותם מוצפנים לשרת.
@@ -5104,7 +5139,7 @@ function renderNav(){
   document.getElementById('sidefoot').innerHTML=`גיבוי אחרון: ${lb?esc(hebDate(localIso(lb))):'<b>אף פעם</b>'}${days===null||days>=7?' ⚠':''}
     ${can('settings')||USER.role==='clerk'?`<button onclick="backup()">💾 שמור גיבוי</button>`:''}${can('settings')?`<button onclick="archiveModal()">📦 תיקיית סוף שנה</button>`:''}${USER.role!=='addresses'?`<button onclick="exportAll()">📊 ייצוא לאקסל</button>`:''}
     <div class="row"><button onclick="fontSize(1)" title="אותיות גדולות">א+</button><button onclick="fontSize(-1)" title="אותיות קטנות">א−</button><button onclick="openTheme()" title="צבעים ומראה">🎨</button></div>
-    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 23.10.2026 15:39</div>`;
+    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 23.10.2026 15:46</div>`;
   const yp=document.getElementById('yearpick');yp.innerHTML=st.years.map(y=>`<option ${y===S.viewYear?'selected':''} value='${esc(y)}'>${esc(y)}${y===st.currentYear?' (נוכחית)':''}</option>`).join('');
   document.getElementById('todayHeb').textContent=hebDate(today());applyBrand();
   document.getElementById('gsWrap').style.display=USER.role==='addresses'||USER.role==='counter'?'none':'';
