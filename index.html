@@ -4707,7 +4707,7 @@ async function clNewRecovery(){if(!confirm('ליצור קוד שחזור חדש?
 
 /* ---------- כניסה למערכת ---------- */
 function clUser(){const m=CLOUD.me;return {id:'c:'+m.email,name:m.name,email:m.email,role:m.role==='owner'?'admin':m.role,hideAmounts:m.hide,cloud:true}}
-async function clEnter(){clLoadMeta();clGateClose();CLOUD.on=true;idleStart();clEscrowSave();if(typeof clGrantKeys==='function')setTimeout(clGrantKeys,3000);setInterval(clAccessCheck,45000);startSession(clUser());clStatus();setInterval(()=>{clStatus();clInstallBtn();if(typeof medStat==='function')medStat()},5000);
+async function clEnter(){clLoadMeta();{const M=CLOUD.meta,ns=Object.keys(M.synced||{}).length;if(!(DB.people||[]).length&&ns>20){CLOUD.meta={synced:{},lastPull:'1970-01-01T00:00:00Z',first:true,fix2:1,ver:{}};clSaveMeta()}}clGateClose();CLOUD.on=true;idleStart();clEscrowSave();if(typeof clGrantKeys==='function')setTimeout(clGrantKeys,3000);setInterval(clAccessCheck,45000);startSession(clUser());clStatus();setInterval(()=>{clStatus();clInstallBtn();if(typeof medStat==='function')medStat()},5000);
   await clContentLoad();await clSync(true);clRealtime();setTimeout(()=>{if(typeof pinOffer==='function')pinOffer()},1500);if(typeof mediaKick==='function'){mediaKick(5000);setInterval(()=>mediaKick(100),10*60000)}try{CLOUD.sb.rpc('ez_snapshot',{p_manual:false}).then(()=>{},()=>{})}catch(e){}if(clIsAdm()&&!(DB.people||[]).length&&typeof clServerPeople==='function'){clServerPeople().then(n=>{if(n===0)clEmptyPrompt();else if(n>0)clFullResync(true)})}
   setInterval(()=>clSync(),60000);window.addEventListener('online',()=>{CLOUD.online=true;clSync()});window.addEventListener('offline',()=>{CLOUD.online=false;clStatus()});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)clSync()})}
@@ -4765,6 +4765,7 @@ async function clPush(){const M=CLOUD.meta;M.ver=M.ver||{};
   for(let round=0;round<4;round++){const R=clRecords(),up=[];
     for(const k in R){const h=clHash(R[k]);if(M.synced[k]!==h)up.push({k,h,js:R[k]})}
     for(const k of Object.keys(M.synced))if(!(k in R)&&M.synced[k]!=='#del')up.push({k,h:'#del',del:true});
+    {const nd=up.filter(x=>x.del).length,ns=Object.keys(M.synced).length,byC={},delC={};Object.keys(M.synced).forEach(k=>{const c=k.split(':')[0];byC[c]=(byC[c]||0)+1});up.filter(x=>x.del).forEach(x=>{const c=x.k.split(':')[0];delC[c]=(delC[c]||0)+1});const wipeC=Object.keys(delC).some(c=>c!=='log'&&byC[c]>=10&&delC[c]>=byC[c]*0.9);if((nd>=15&&nd>ns*0.2)||wipeC){console.warn('mass delete blocked',nd,ns);CLOUD.meta={synced:{},lastPull:'1970-01-01T00:00:00Z',first:true,fix2:1,ver:{}};clSaveMeta();clStatus('err','נחסמה מחיקה גורפת – טוען מחדש מהשרת');toast('🛡 נחסמה מחיקה של '+nd+' פריטים. טוען מחדש את הנתונים מהשרת.');setTimeout(()=>clSync(true),500);return}}
     if(!up.length)return;const conf=[];
     for(let i=0;i<up.length;i+=100){const part=up.slice(i,i+100),rows=[];for(const x of part)rows.push({id:x.k,data:x.del?'':await clEnc(x.js),deleted:!!x.del,base:M.ver[x.k]||0});
       const {data,error}=await CLOUD.sb.rpc('ez_put',{p:rows});if(error)throw error;
@@ -4846,8 +4847,8 @@ function clInstallBtn(){const side=document.getElementById('sidefoot');if(!side|
   b.onclick=clInstall;side.prepend(b)}
 
 // בדיקה שוטפת: הושבת / הוסר / המערכת הושבתה – יוצאים (ומי שהוסר – גם נמחק מהמחשב)
-async function clAccessCheck(){if(!CLOUD.on||!navigator.onLine||!CLOUD.sb)return;try{const {data:u,error}=await CLOUD.sb.from('ez_users').select('active,blocked,role').eq('email',CLOUD.me.email).maybeSingle();if(error)return;
-  if(!u||!u.active||u.blocked){if(!u||!u.active){try{localStorage.removeItem(KEY+'_ck_'+CLOUD.me.email);localStorage.removeItem(KEY);indexedDB.deleteDatabase('ezer_files')}catch(e){}}location.reload();return}
+async function clAccessCheck(){if(!CLOUD.on||!navigator.onLine||!CLOUD.sb)return;try{const gu=await CLOUD.sb.auth.getUser();const ue=gu&&gu.data&&gu.data.user&&(gu.data.user.email||'').toLowerCase();if(!ue||ue!==CLOUD.me.email)return;const {data:u,error}=await CLOUD.sb.from('ez_users').select('active,blocked,role').eq('email',CLOUD.me.email).maybeSingle();if(error)return;
+  if(!u||!u.active||u.blocked){if(!u||!u.active){try{localStorage.removeItem(KEY+'_ck_'+CLOUD.me.email);localStorage.removeItem(KEY);localStorage.removeItem(clMetaKey());indexedDB.deleteDatabase('ezer_files')}catch(e){}}location.reload();return}
   if(u.role!==CLOUD.me.role){CLOUD.me.role=u.role;try{localStorage.setItem(KEY+'_cloud_me',JSON.stringify(CLOUD.me))}catch(e){}USER=clUser();render()}
   if(u.role!=='owner'){const {data:sy}=await CLOUD.sb.from('ez_system').select('disabled,msg').eq('id',1).maybeSingle();if(sy&&sy.disabled)location.reload()}}catch(e){}}
 // הורדה למחשב – תמיד בפס הצד
@@ -5147,7 +5148,7 @@ function renderNav(){
   document.getElementById('sidefoot').innerHTML=`גיבוי אחרון: ${lb?esc(hebDate(localIso(lb))):'<b>אף פעם</b>'}${days===null||days>=7?' ⚠':''}
     ${can('settings')||USER.role==='clerk'?`<button onclick="backup()">💾 שמור גיבוי</button>`:''}${can('settings')?`<button onclick="archiveModal()">📦 תיקיית סוף שנה</button>`:''}${USER.role!=='addresses'?`<button onclick="exportAll()">📊 ייצוא לאקסל</button>`:''}
     <div class="row"><button onclick="fontSize(1)" title="אותיות גדולות">א+</button><button onclick="fontSize(-1)" title="אותיות קטנות">א−</button><button onclick="openTheme()" title="צבעים ומראה">🎨</button></div>
-    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 23.10.2026 17:49</div>`;
+    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 23.10.2026 17:52</div>`;
   const yp=document.getElementById('yearpick');yp.innerHTML=st.years.map(y=>`<option ${y===S.viewYear?'selected':''} value='${esc(y)}'>${esc(y)}${y===st.currentYear?' (נוכחית)':''}</option>`).join('');
   document.getElementById('todayHeb').textContent=hebDate(today());applyBrand();
   document.getElementById('gsWrap').style.display=USER.role==='addresses'||USER.role==='counter'?'none':'';
