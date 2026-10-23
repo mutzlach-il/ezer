@@ -2548,6 +2548,7 @@ ${feat('lottery')?'<li>הגרלה: "🎲 הגרלה על מסך מלא" – מת
 <li><b>🔐 כניסה רק עם Google או קוד במייל:</b> אין יותר סיסמאות – כדי שאף אחד לא ינחש סיסמה. נכנסים עם Google, או מקלידים מייל ומקבלים קוד חד־פעמי. הקבצים הישנים של עזר הוחלפו בדף ריק שמפנה לקישור, בלי שום נתון בתוכו.</li>
 <li><b>🔑 כניסה בלי מפתח:</b> מי שבעל המערכת או מנהל מאשר (⚙ הגדרות ← ☁ חיבור משותף ← ✅ אישור) – נכנס עם המייל שלו, והמערכת נפתחת לו לבד, בלי לדעת שום מפתח. מי שהוסר או נחסם – מאבד את הגישה מיד, והמידע נמחק אצלו מהמחשב. מנהלים יכולים לאשר, להוסיף ולהסיר משתמשים; חסימה – רק בעל המערכת.</li>
 <li><b>🗑 מחיקת היסטוריה (רק מנהל):</b> 🗑 ליד כל שורה – מוחק שורה אחת. ☑ סימון כמה שורות ← "מחיקת המסומנים". בחירת משתמש ← "מחיקת כל מה שהוא עשה". או "מחיקת כל ההיסטוריה" (צריך לכתוב "מחיקה"). המחיקה חלה בכל המחשבים.</li>
+<li><b>🔄 חסרים נתונים במחשב מסוים?</b> ⚙ הגדרות ← 🔐 אבטחה ובדיקה ← "🔄 טעינה מלאה מהשרת". הבדיקה העצמית מראה כמה בחורים יש במחשב מול כמה בשרת.</li>
 <li><b>🩺 בדיקה עצמית:</b> בודקת בלחיצה: אינטרנט, שרת, כניסה, הרשאה, מפתח, שינויים שלא נשלחו, גיבוי לילי, ממתינים לאישור, תמונות, מקום וגרסה. ✅ תקין · ⚠ לתשומת לב · ❌ צריך טיפול – ולידו כתוב מה לעשות.</li>
 <li><b>✉ מייל כשמישהו מבקש להצטרף:</b> נשלח לבעל המערכת, עם הסבר איך לאשר. את הכתובת משנים באותה לשונית, ויש כפתור "שליחת בדיקה".</li></ul>`],
 ['h10m','🖼 תמונות ומסמכים בכל המחשבים',`<ul>
@@ -4707,7 +4708,7 @@ async function clNewRecovery(){if(!confirm('ליצור קוד שחזור חדש?
 /* ---------- כניסה למערכת ---------- */
 function clUser(){const m=CLOUD.me;return {id:'c:'+m.email,name:m.name,email:m.email,role:m.role==='owner'?'admin':m.role,hideAmounts:m.hide,cloud:true}}
 async function clEnter(){clLoadMeta();clGateClose();CLOUD.on=true;idleStart();clEscrowSave();if(typeof clGrantKeys==='function')setTimeout(clGrantKeys,3000);setInterval(clAccessCheck,45000);startSession(clUser());clStatus();setInterval(()=>{clStatus();clInstallBtn();if(typeof medStat==='function')medStat()},5000);
-  await clContentLoad();await clSync(true);clRealtime();setTimeout(()=>{if(typeof pinOffer==='function')pinOffer()},1500);if(typeof mediaKick==='function'){mediaKick(5000);setInterval(()=>mediaKick(100),10*60000)}try{CLOUD.sb.rpc('ez_snapshot',{p_manual:false}).then(()=>{},()=>{})}catch(e){}if(clIsAdm()&&!(DB.people||[]).length)clEmptyPrompt();
+  await clContentLoad();await clSync(true);clRealtime();setTimeout(()=>{if(typeof pinOffer==='function')pinOffer()},1500);if(typeof mediaKick==='function'){mediaKick(5000);setInterval(()=>mediaKick(100),10*60000)}try{CLOUD.sb.rpc('ez_snapshot',{p_manual:false}).then(()=>{},()=>{})}catch(e){}if(clIsAdm()&&!(DB.people||[]).length&&typeof clServerPeople==='function'){clServerPeople().then(n=>{if(n===0)clEmptyPrompt();else if(n>0)clFullResync(true)})}
   setInterval(()=>clSync(),60000);window.addEventListener('online',()=>{CLOUD.online=true;clSync()});window.addEventListener('offline',()=>{CLOUD.online=false;clStatus()});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)clSync()})}
 function clEnterOffline(){if(idleLocked())return false;const me=JSON.parse(localStorage.getItem(KEY+'_cloud_me')||'null');if(!me)return false;CLOUD.me=me;
@@ -4748,10 +4749,10 @@ async function clSync(full){if(!CLOUD.on||!CLOUD.sb||!CLOUD.key)return;if(CLOUD.
   try{await clPull();if(CLOUD.ready)await clPush();CLOUD.online=true;clStatus('ok')}
   catch(e){console.warn('sync',e);CLOUD.online=navigator.onLine&&!/fetch|network/i.test(e.message||'')?true:false;clStatus('err',e.message)}
   finally{CLOUD.busy=false;if(CLOUD.pending){CLOUD.pending=false;setTimeout(()=>clSync(),300)}}}
-async function clPull(ids){const M=CLOUD.meta;M.ver=M.ver||{};let from=0,max=M.lastPull,changed=0,rows;const loc=clRecords(),since=new Date(new Date(M.lastPull).getTime()-90000).toISOString();
-  do{let q=CLOUD.sb.from('ez_records').select('id,data,deleted,updated_at,ver');q=ids?q.in('id',ids):q.gt('updated_at',since).order('updated_at').range(from,from+499);
+async function clPull(ids){const M=CLOUD.meta;M.ver=M.ver||{};if(!ids&&M.fix2!==1){M.lastPull='1970-01-01T00:00:00Z';M.ver={};M.fix2=1}let from=0,max=M.lastPull,changed=0,rows;const loc=clRecords(),since=new Date(new Date(M.lastPull).getTime()-90000).toISOString();
+  do{let q=CLOUD.sb.from('ez_records').select('id,data,deleted,updated_at,ver');q=ids?q.in('id',ids):q.gt('updated_at',since).order('updated_at').order('id').range(from,from+499);
     const r=await q;if(r.error)throw r.error;rows=r.data||[];from+=rows.length;
-    for(const row of rows){if(!ids&&row.updated_at>max)max=row.updated_at;if((M.ver[row.id]||0)>=row.ver)continue;let val=null,js='';if(!row.deleted){js=await clDec(row.data);val=JSON.parse(js)}
+    for(const row of rows){if(!ids&&row.updated_at>max)max=row.updated_at;if((M.ver[row.id]||0)>=row.ver)continue;let val=null,js='';if(!row.deleted){try{js=await clDec(row.data);val=JSON.parse(js)}catch(e){CLOUD.badRows=(CLOUD.badRows||0)+1;console.warn('rec',row.id,e);continue}}
       const h=row.deleted?'#del':clHash(js),lj=loc[row.id],localChanged=!M.first&&(lj!==undefined?clHash(lj)!==M.synced[row.id]:(row.id in M.synced));
       M.ver[row.id]=row.ver;
       if(row.deleted){if(!localChanged){if(lj!==undefined){clApply(row.id,null,true);changed++}delete M.synced[row.id]}else M.synced[row.id]='#del';continue}
@@ -4965,7 +4966,7 @@ async function notifyTest(){const v=(document.getElementById('ntfEm').value||'')
 /* ---------- 4. בדיקה עצמית + הגדרות אבטחה ---------- */
 function setSecure(){setTimeout(()=>{selfCheck();notifyLoad()},0);const own=clIsOwner();const m=idleMin();return `
 <div class="card" style="border-color:var(--gold)"><div class="toolbar" style="margin:0"><h2 style="margin:0;flex:1">🩺 בדיקה עצמית</h2><button class="btn" onclick="selfCheck()">↻ בדוק שוב</button></div>
-<p class="small muted">בודק שהכל תקין: אינטרנט, שרת, כניסה, מפתח, סנכרון, גיבויים, תמונות ועוד. ✅ תקין · ⚠ לתשומת לב · ❌ צריך טיפול.</p><div id="selfChk" class="muted">בודק…</div></div>
+<p class="small muted"><button class="btn sm" style="float:left" onclick="clFullResync()">🔄 טעינה מלאה מהשרת</button>בודק שהכל תקין: אינטרנט, שרת, כניסה, מפתח, סנכרון, גיבויים, תמונות ועוד. ✅ תקין · ⚠ לתשומת לב · ❌ צריך טיפול.</p><div id="selfChk" class="muted">בודק…</div></div>
 <div class="card"><h2>🔢 קוד המחשב</h2><p>במחשב הזה נכנסים עם קוד קבוע שבחרת – גם בלי אינטרנט. ${pinHas()?'<b>✔ מוגדר.</b>':'<b style="color:var(--bad)">עוד לא הוגדר.</b>'}</p><button class="btn" onclick="pinChange()">${pinHas()?'🔁 החלפת הקוד':'➕ קביעת קוד'}</button></div>
 <div class="card"><h2>🔒 נעילה אוטומטית</h2><p>אם אין פעילות במחשב – המערכת ננעלת, וכדי להמשיך נכנסים שוב עם <b>קוד שנשלח למייל</b> (או עם Google). הנתונים לא נמחקים.</p>
 ${own?`<label>לנעול אחרי <select onchange="idleSetMin(this.value)">${[[10,'10 דקות'],[15,'רבע שעה'],[30,'חצי שעה'],[60,'שעה'],[120,'שעתיים'],[0,'אף פעם (לא מומלץ)']].map(([v,t])=>`<option value="${v}" ${m===v?'selected':''}>${t}</option>`).join('')}</select></label> <span class="small muted">חל על כל המשתמשים.</span>`:`<div>עכשיו: ${m?'אחרי '+m+' דקות':'כבוי'}. <span class="small muted">רק בעל המערכת משנה.</span></div>`}</div>
@@ -4979,6 +4980,7 @@ async function selfCheck(){const el=document.getElementById('selfChk');if(!el)re
   add(CLOUD.key?'ok':'bad','מפתח הארגון',CLOUD.key?'נטען – הנתונים מפוענחים':'לא נטען');
   let pend=0;try{const R2=clRecords(),M=CLOUD.meta||{synced:{}};for(const k in R2)if(clHash(R2[k])!==M.synced[k])pend++;for(const k in M.synced)if(!(k in R2)&&M.synced[k]!=='#del')pend++}catch(e){}
   add(pend?(on?'warn':'warn'):'ok','שינויים שעוד לא נשלחו',pend?pend+' פריטים ממתינים'+(on?' – יישלחו תוך רגע':' – יישלחו כשיחזור האינטרנט'):'הכל נשלח');
+  {const sp=srv?await clServerPeople():-1,lc=(DB.people||[]).length;if(sp>=0)add(lc>=sp?'ok':'bad','בחורים במחשב מול השרת',lc+' במחשב · '+sp+' בשרת'+(lc<sp?' – לחצו "🔄 טעינה מלאה מהשרת" למטה':''))}
   const lp=CLOUD.meta&&CLOUD.meta.lastPull;add(lp&&!lp.startsWith('1970')?'ok':'warn','קבלת עדכונים אחרונה',lp&&!lp.startsWith('1970')?dtTime(lp):'עוד לא');
   if(srv&&clIsAdm()){try{const {data:e}=await CLOUD.sb.from('ez_escrow').select('email').eq('email',CLOUD.me.email).maybeSingle();add(e?'ok':'warn','שחזור מפתח דרך המייל',e?'מוכן – אם שוכחים את המפתח, משחזרים דרך המייל שלך':'עוד לא נשמר במחשב הזה')}catch(x){}
     try{const {data:s}=await CLOUD.sb.from('ez_snapshots').select('created_at').order('created_at',{ascending:false}).range(0,0);const t=s&&s[0]&&s[0].created_at;const h=t?(Date.now()-new Date(t))/36e5:1e9;add(h<30?'ok':h<72?'warn':'bad','גיבוי לילי בשרת',t?'אחרון: '+dtTime(t)+' · ⚙ הגדרות ← 🕘 גיבויים בשרת':'אין עדיין')}catch(x){}
@@ -5053,6 +5055,12 @@ async function pinSave(){const a=document.getElementById('pin1').value,b=documen
   clGateClose();toast('✔ נשמר קוד קבוע למחשב הזה');const f=window._pinThen;window._pinThen=null;f&&f()}
 function pinOffer(){if(CLOUD.on&&!pinHas()&&!document.getElementById('clGate'))pinSetScreen()}
 function pinChange(){pinSetScreen()}
+
+/* ---------- טעינה מלאה מחדש מהשרת + השוואה ---------- */
+async function clServerPeople(){try{const {count,error}=await CLOUD.sb.from('ez_records').select('id',{count:'exact',head:true}).like('id','people:%').eq('deleted',false);return error?-1:count}catch(e){return -1}}
+async function clFullResync(silent){if(!CLOUD.on||!navigator.onLine)return toast('צריך אינטרנט');if(!silent&&!confirm('לטעון מחדש את כל הנתונים מהשרת?\nשינויים שעוד לא נשלחו – יאוחדו, לא יימחקו.'))return;
+  const M=CLOUD.meta;M.lastPull='1970-01-01T00:00:00Z';M.ver={};clSaveMeta();toast('⏳ טוען את כל הנתונים מהשרת…');await clSync(true);
+  const n=await clServerPeople();toast(n>=0&&(DB.people||[]).length>=n?'✅ כל הנתונים נטענו ('+DB.people.length+' בחורים)':'⚠ נטענו '+(DB.people||[]).length+' מתוך '+n+' – נסו שוב');render()}
 
 /* ====================== תמונות ומסמכים בכל המחשבים (מוצפן, דרך השרת) ======================
    כל מחשב שיש בו תמונות/מסמכים (מחבילות שנה או שהועלו ידנית) – מעלה אותם מוצפנים לשרת.
@@ -5139,7 +5147,7 @@ function renderNav(){
   document.getElementById('sidefoot').innerHTML=`גיבוי אחרון: ${lb?esc(hebDate(localIso(lb))):'<b>אף פעם</b>'}${days===null||days>=7?' ⚠':''}
     ${can('settings')||USER.role==='clerk'?`<button onclick="backup()">💾 שמור גיבוי</button>`:''}${can('settings')?`<button onclick="archiveModal()">📦 תיקיית סוף שנה</button>`:''}${USER.role!=='addresses'?`<button onclick="exportAll()">📊 ייצוא לאקסל</button>`:''}
     <div class="row"><button onclick="fontSize(1)" title="אותיות גדולות">א+</button><button onclick="fontSize(-1)" title="אותיות קטנות">א−</button><button onclick="openTheme()" title="צבעים ומראה">🎨</button></div>
-    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 23.10.2026 15:46</div>`;
+    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 23.10.2026 17:49</div>`;
   const yp=document.getElementById('yearpick');yp.innerHTML=st.years.map(y=>`<option ${y===S.viewYear?'selected':''} value='${esc(y)}'>${esc(y)}${y===st.currentYear?' (נוכחית)':''}</option>`).join('');
   document.getElementById('todayHeb').textContent=hebDate(today());applyBrand();
   document.getElementById('gsWrap').style.display=USER.role==='addresses'||USER.role==='counter'?'none':'';
