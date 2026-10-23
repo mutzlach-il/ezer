@@ -2544,6 +2544,7 @@ ${feat('lottery')?'<li>הגרלה: "🎲 הגרלה על מסך מלא" – מת
 <li><b>איפה זה:</b> ⚙ הגדרות ← לשונית <b>"🔐 אבטחה ובדיקה"</b>.</li>
 <li><b>🔒 נעילה אוטומטית:</b> אחרי חצי שעה בלי פעילות המערכת ננעלת. כדי להמשיך – "📧 שלחו לי קוד למייל" (או Google). דקה לפני הנעילה מופיע פס כתום – לחיצה עליו ממשיכה. בעל המערכת יכול לשנות את הזמן (10 דקות עד שעתיים). גם מי שסגר את המערכת וחוזר אחרי יותר מחצי שעה – נכנס עם קוד.</li>
 <li><b>📜 מי שינה מה (רק מנהל):</b> ⚙ הגדרות ← "יומן שינויים". רואים כל מה שכל אחד עשה, בכל המחשבים: מי, מתי, ומה השתנה (למשל "טלפון: הישן ← החדש", "נוסף מזומן 300 ₪"). אפשר לבחור משתמש מסוים ולראות רק מה שהוא עשה. גם בכרטיס הבחור יש "📜 היסטוריה" – רק למנהל.</li>
+<li><b>🔐 כניסה רק עם Google או קוד במייל:</b> אין יותר סיסמאות – כדי שאף אחד לא ינחש סיסמה. נכנסים עם Google, או מקלידים מייל ומקבלים קוד חד־פעמי. הקבצים הישנים של עזר הוחלפו בדף ריק שמפנה לקישור, בלי שום נתון בתוכו.</li>
 <li><b>🔑 כניסה בלי מפתח:</b> מי שבעל המערכת או מנהל מאשר (⚙ הגדרות ← ☁ חיבור משותף ← ✅ אישור) – נכנס עם המייל שלו, והמערכת נפתחת לו לבד, בלי לדעת שום מפתח. מי שהוסר או נחסם – מאבד את הגישה מיד, והמידע נמחק אצלו מהמחשב. מנהלים יכולים לאשר, להוסיף ולהסיר משתמשים; חסימה – רק בעל המערכת.</li>
 <li><b>🗑 מחיקת היסטוריה (רק מנהל):</b> 🗑 ליד כל שורה – מוחק שורה אחת. ☑ סימון כמה שורות ← "מחיקת המסומנים". בחירת משתמש ← "מחיקת כל מה שהוא עשה". או "מחיקת כל ההיסטוריה" (צריך לכתוב "מחיקה"). המחיקה חלה בכל המחשבים.</li>
 <li><b>🩺 בדיקה עצמית:</b> בודקת בלחיצה: אינטרנט, שרת, כניסה, הרשאה, מפתח, שינויים שלא נשלחו, גיבוי לילי, ממתינים לאישור, תמונות, מקום וגרסה. ✅ תקין · ⚠ לתשומת לב · ❌ צריך טיפול – ולידו כתוב מה לעשות.</li>
@@ -4589,10 +4590,9 @@ function clGate(html){let g=document.getElementById('clGate');if(!g){g=document.
 function clGateClose(){const g=document.getElementById('clGate');if(g)g.remove()}
 function clLoginScreen(msg){
   clGate(`<div id="gBtn" style="display:flex;justify-content:center;min-height:44px"></div><div id="gMsg" class="small muted"></div>
-  <div class="small muted" style="margin:14px 0 8px">— או עם מייל וסיסמה —</div>
-  <input type="email" id="clEm" placeholder="מייל" style="width:100%;margin-bottom:6px" dir="ltr"><input type="password" id="clPw" placeholder="סיסמה" style="width:100%" dir="ltr" onkeydown="if(event.key==='Enter')clEmailIn()">
-  <div style="display:flex;gap:6px;margin-top:8px"><button class="btn pri" style="flex:1" onclick="clEmailIn()">כניסה</button><button class="btn" onclick="clEmailUp()">הרשמה חדשה</button></div>
-  <button class="btn" style="width:100%;margin-top:8px" onclick="clOtpStart()">📧 כניסה עם קוד שנשלח למייל (גם אם שכחת סיסמה)</button>
+  <div class="small muted" style="margin:14px 0 8px">— או —</div>
+  <button class="btn pri" style="width:100%;margin-top:4px" onclick="clOtpStart()">📧 כניסה עם קוד שנשלח למייל</button>
+  <div class="small muted" style="margin-top:6px">גם בפעם הראשונה – מכניסים את המייל, מקבלים קוד, ומחכים לאישור המנהל.</div>
   <div id="clErr" class="small" style="color:var(--bad);margin-top:10px;min-height:18px">${msg||''}</div>
   <div class="small muted" style="margin-top:10px">🔒 רק מי שהמנהל אישר יכול להיכנס. הנתונים מוצפנים.</div>`);clInitGoogle()}
 let clNonce='';
@@ -5104,7 +5104,7 @@ function renderNav(){
   document.getElementById('sidefoot').innerHTML=`גיבוי אחרון: ${lb?esc(hebDate(localIso(lb))):'<b>אף פעם</b>'}${days===null||days>=7?' ⚠':''}
     ${can('settings')||USER.role==='clerk'?`<button onclick="backup()">💾 שמור גיבוי</button>`:''}${can('settings')?`<button onclick="archiveModal()">📦 תיקיית סוף שנה</button>`:''}${USER.role!=='addresses'?`<button onclick="exportAll()">📊 ייצוא לאקסל</button>`:''}
     <div class="row"><button onclick="fontSize(1)" title="אותיות גדולות">א+</button><button onclick="fontSize(-1)" title="אותיות קטנות">א−</button><button onclick="openTheme()" title="צבעים ומראה">🎨</button></div>
-    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 23.10.2026 12:58</div>`;
+    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 23.10.2026 15:39</div>`;
   const yp=document.getElementById('yearpick');yp.innerHTML=st.years.map(y=>`<option ${y===S.viewYear?'selected':''} value='${esc(y)}'>${esc(y)}${y===st.currentYear?' (נוכחית)':''}</option>`).join('');
   document.getElementById('todayHeb').textContent=hebDate(today());applyBrand();
   document.getElementById('gsWrap').style.display=USER.role==='addresses'||USER.role==='counter'?'none':'';
