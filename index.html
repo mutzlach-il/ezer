@@ -783,8 +783,9 @@ function nextPrize(p,y){const c=camp(y);if(!c)return null;const t=campTotal(p,y)
   return best}
 // בחור שהתחתן יורד אוטומטית מהרשימות (נשאר במסך החתנים ובחיפוש)
 function activePeople(withMarried){return DB.people.filter(p=>p.active!==false&&(withMarried||!p.married))}
-const yOrder=y=>{const i=DB.settings.yeshivot.indexOf(y);return i<0?99:i};
-const sOrder=(y,s)=>{const l=DB.settings.shiurim[y]||[];const i=l.indexOf(s);return i<0?(s?50:99):i};
+const yOrder=y=>{const i=DB.settings.yeshivot.indexOf(y);return i<0?999:100-i};// מהגדולים לקטנים
+const sOrder=(y,s)=>{const l=DB.settings.shiurim[y]||[];const i=l.indexOf(s);return i<0?(s?500:999):100-i};// קיבוץ, ג', ב', א'
+const canSeeReq=()=>!!(USER&&USER.role==='admin');
 function groupSort(rows){return [...rows].sort((a,b)=>yOrder(a.yeshiva)-yOrder(b.yeshiva)||sOrder(a.yeshiva,a.shiur)-sOrder(b.yeshiva,b.shiur)||((a.last||'')+(a.first||'')).localeCompare((b.last||'')+(b.first||''),'he'))}
 const yName=y=>DB.settings.yeshivaNames[y]||y;
 function promoteOne(p){const st=DB.settings,order=st.yeshivot;const list=st.shiurim[p.yeshiva]||[];const i=list.indexOf(p.shiur);if(i<0)return;if(i<list.length-1){p.shiur=list[i+1];return}const yi=order.indexOf(p.yeshiva);if(yi>=0&&yi<order.length-1){p.yeshiva=order[yi+1];p.shiur=(st.shiurim[p.yeshiva]||[''])[0]}}
@@ -873,7 +874,7 @@ function vPeople(){
   const shSel=p=>`<select class="inl" onchange="setInline('${p.id}','shiur',this.value)">${['',...(st.shiurim[p.yeshiva]||[])].concat(p.shiur&&!(st.shiurim[p.yeshiva]||[]).includes(p.shiur)?[p.shiur]:[]).map(x=>`<option ${x===p.shiur?'selected':''}>${esc(x)}</option>`).join('')}</select>`;
   const yeSel=p=>`<select class="inl" onchange="setInline('${p.id}','yeshiva',this.value)">${st.yeshivot.map(x=>`<option ${x===p.yeshiva?'selected':''}>${esc(x)}</option>`).join('')}</select>`;
   const showNum=feat('personalNum');
-  const ncol=8+ys.length+(showNum?1:0);
+  const SR=canSeeReq(),ncol=(SR?8:6)+ys.length+(showNum?1:0);
   return `
   <div class="strip clickstrip">
     <div class="${!S.filter.status?'on':''}" onclick="setF('status','')" title="להציג את כולם"><span>בחורים</span><b>${ps.length}</b><span class="small muted">כולם</span></div>
@@ -895,19 +896,19 @@ function vPeople(){
   <div class="tw"><table class="main-t">
     <thead><tr>${showNum?th('people','num','מס\'','num'):''}${th('people','first','שם')}${th('people','last','משפחה')}${th('people','yeshiva','ישיבה')}${th('people','shiur','שיעור')}
       ${ys.map(y=>th('people','y'+y,esc(y),'num yc')).join('')}
-      ${th('people','counted','נספר למענק','num sep')}${th('people','req','צריך','num')}${th('people','miss','חסר','num')}<th class="nosort">זכאי?</th></tr></thead>
+      ${th('people','counted','נספר למענק','num sep')}${SR?th('people','req','צריך','num')+th('people','miss','חסר','num'):''}<th class="nosort">זכאי?</th></tr></thead>
     <tbody>${rows.map((p,i)=>{const s=status(p),prev=rows[i-1];let head='';
       if(!sorted){
         if(!prev||prev.yeshiva!==p.yeshiva){const grp=rows.filter(x=>x.yeshiva===p.yeshiva);head+=`<tr class="g1"><td colspan="${ncol}">${esc(yName(p.yeshiva))} <span>${grp.length} בחורים · זכאים ${grp.filter(x=>status(x).miss<=0).length}</span></td></tr>`}
-        if(!prev||prev.yeshiva!==p.yeshiva||prev.shiur!==p.shiur){const grp=rows.filter(x=>x.yeshiva===p.yeshiva&&x.shiur===p.shiur);head+=`<tr class="g2"><td colspan="${ncol}">${p.shiur?"שיעור "+esc(p.shiur)+"'":'בלי שיעור'} <span>(${grp.length})</span></td></tr>`}
+        if(!prev||prev.yeshiva!==p.yeshiva||prev.shiur!==p.shiur){const grp=rows.filter(x=>x.yeshiva===p.yeshiva&&x.shiur===p.shiur);head+=`<tr class="g2"><td colspan="${ncol}">${p.shiur==='ק'?'קיבוץ':p.shiur?"שיעור "+esc(p.shiur)+"'":'בלי שיעור'} <span>(${grp.length})</span></td></tr>`}
       }
       return head+`<tr>${showNum?`<td class="num muted">${p.num||''}</td>`:''}<td class="name" onclick="openCard('${p.id}')">${esc(p.first)}</td><td class="name" onclick="openCard('${p.id}')">${esc(p.last)}${feat('siblings')&&siblings(p).length?' <span class="muted small" title="יש אחים">👥</span>':''}</td><td>${yeSel(p)}</td><td>${shSel(p)}</td>
       ${ys.map(y=>{const v=yearTotal(p,y);return `<td class="num yc">${v?fmt(v):''}</td>`}).join('')}
-      <td class="num sep"><b>${fmt(countedTotal(p))}</b></td><td class="num">${fmt(requirement(p))}</td>
-      <td class="num" style="color:${s.miss>0?'var(--bad)':'var(--ok)'}">${s.miss>0?fmt(s.miss):'0'}</td>
+      <td class="num sep"><b>${fmt(countedTotal(p))}</b></td>${SR?`<td class="num">${fmt(requirement(p))}</td>
+      <td class="num" style="color:${s.miss>0?'var(--bad)':'var(--ok)'}">${s.miss>0?fmt(s.miss):'0'}</td>`:''}
       <td>${s.miss<=0?'<b style="color:var(--ok)">✔ זכאי</b>':'<span style="color:var(--bad)">✘ לא</span>'}${p.married?' 💍':''}</td></tr>`}).join('')}
     </tbody>
-    <tfoot><tr><td colspan="${showNum?5:4}">${rows.length} בחורים</td>${ys.map(y=>`<td class="num yc">${fmt(rows.reduce((a,p)=>a+yearTotal(p,y),0))}</td>`).join('')}<td class="num sep">${fmt(rows.reduce((a,p)=>a+countedTotal(p),0))}</td><td></td><td></td><td></td></tr></tfoot>
+    <tfoot><tr><td colspan="${showNum?5:4}">${rows.length} בחורים</td>${ys.map(y=>`<td class="num yc">${fmt(rows.reduce((a,p)=>a+yearTotal(p,y),0))}</td>`).join('')}<td class="num sep">${fmt(rows.reduce((a,p)=>a+countedTotal(p),0))}</td>${SR?'<td></td><td></td>':''}<td></td></tr></tfoot>
   </table></div>
   <div class="small muted" style="margin-top:8px">לחיצה על שם פותחת את כל הפרטים. "נספר למענק" – לבחורי המבצע נספר מ־${esc(st.campaignYear)} והלאה.</div>`;
 }
@@ -930,10 +931,10 @@ function openCard(id,openYear){
     <table class="sumt"><tbody>
       ${ys.map(y=>{const v=yearTotal(p,y);return `<tr><td>${esc(y)}</td><td class="num">${v?shek(v):'–'}</td><td class="small muted">${prizesFor(p,y).map(x=>esc(x.name)).join(', ')}</td></tr>`}).join('')}
       <tr class="tot"><td>נספר למענק</td><td class="num">${shek(t)}</td><td class="small muted">${campaignRule(p)?'מ־'+esc(st.campaignYear)+' והלאה':'כל השנים'}</td></tr>
-      <tr><td>צריך לאסוף</td><td class="num">${shek(r)}</td><td class="small muted wrap" style="max-width:260px">${esc(reqSource(p))}</td></tr>
+      ${canSeeReq()?`<tr><td>צריך לאסוף</td><td class="num">${shek(r)}</td><td class="small muted wrap" style="max-width:260px">${esc(reqSource(p))}</td></tr>`:''}
       ${DB.settings.groupRule&&DB.settings.groupRule.enabled?`<tr><td>שנים עם ${DB.settings.groupRule.perYear}+ קבוצות</td><td class="num">${groupYearsCount(p)} / ${DB.settings.groupRule.years}</td><td class="small muted">${groupRuleOk(p)?'✔':'עוד לא'}</td></tr>`:''}
       ${DB.settings.loan&&DB.settings.loan.enabled?`<tr><td>הלוואה בדולרים</td><td class="num">${loanUsd(p)?'<b style="color:var(--ok)">'+fmt(loanUsd(p))+' $</b>':'–'}</td><td class="small muted">${loanUsd(p)?'זכאי – אסף '+loanYears(p)+' שנים':'אסף '+loanYears(p)+' שנים – זכאי מ־'+(DB.settings.loan.minYears||3)+' שנים'}</td></tr>`:''}
-      <tr class="tot"><td>${s.miss>0?'חסר':'מצב'}</td><td class="num" style="color:${s.miss>0?'var(--bad)':'var(--ok)'}">${s.key==='groups'?'חסרות שנות קבוצות':s.miss>0?shek(s.miss):'✔ זכאי למענק'}</td><td>${p.married?'💍 התחתן'+(p.weddingDate?' – '+dt(p.weddingDate):'')+(p.grantPaid?' · קיבל מענק':''):''}</td></tr>
+      <tr class="tot"><td>${s.miss>0?(canSeeReq()?'חסר':'מצב'):'מצב'}</td><td class="num" style="color:${s.miss>0?'var(--bad)':'var(--ok)'}">${s.key==='groups'?'חסרות שנות קבוצות':s.miss>0?(canSeeReq()?shek(s.miss):'עוד לא זכאי'):'✔ זכאי למענק'}</td><td>${p.married?'💍 התחתן'+(p.weddingDate?' – '+dt(p.weddingDate):'')+(p.grantPaid?' · קיבל מענק':''):''}</td></tr>
     </tbody></table>
     ${p.engaged&&!p.married?`<div class="alert info" style="margin:6px 0">💐 מאורס${p.engDate?' מ־'+esc(hebDate(p.engDate)):''}${p.planDate?' · החתונה: <b>'+esc(dayName(p.planDate))+' '+esc(hebDate(p.planDate))+'</b> ('+inDays(daysTo(p.planDate))+')':''}${p.engNote?' · '+esc(p.engNote):''}</div>`:''}
     ${goalOf(p,S.viewYear)?`<div class="small" style="margin:4px 0">🎯 יעד אישי ${esc(S.viewYear)}: ${shek(yearTotal(p,S.viewYear))} מתוך ${shek(goalOf(p,S.viewYear))}${pctBar(yearTotal(p,S.viewYear),goalOf(p,S.viewYear))}</div>`:''}
@@ -2562,6 +2563,7 @@ ${feat('lottery')?'<li>הגרלה: "🎲 הגרלה על מסך מלא" – מת
 <li><b>תזכורת אוטומטית:</b> מכ"ד אדר (בשנה מעוברת – כ"ד אדר ב') מופיעה למנהלים הודעה עם ההוראות המדויקות. היא חוזרת כל יום, עד שמורידים את התיקייה של השנה (עם התמונות והמסמכים).</li>
 <li>אחרי ההורדה: קליק ימני על הקובץ ← "חלץ הכל", ומעתיקים לדיסק החיצוני.</li></ul>`],
 ['h10r','💬 סכום מיוחד לבחור – עם סיבה',`<ul><li>⚙ הגדרות ← סכומים ותשלומים ← "סכום מיוחד לבחור מסוים": ליד כל בחור יש שדה <b>"למה?"</b> – כותבים את הסיבה או הוראות (למשל: "אח שלו כבר קיבל מענק", "סוכם עם המנהל"). נשמר לבד.</li><li>כשמוסיפים בחור חדש לרשימה – אפשר לכתוב את הסיבה כבר בשורת ההוספה.</li><li>הסיבה מופיעה גם בכרטיס הבחור (למה הוא צריך את הסכום) ונרשמת ביומן השינויים.</li></ul>`],
+['h10o','📋 סדר הבחורים ומי רואה "צריך"',`<ul><li>הרשימות מסודרות <b>מהגדולים לקטנים</b>: ישיבה גדולה – קיבוץ, שיעור ג', ב', א' – ואחר כך ישיבה קטנה ג', ב', א' – ובסוף חיידר.</li><li>העמודות <b>"צריך"</b> ו<b>"חסר"</b> (כמה כל בחור צריך להביא, וכמה סוכם איתו) – <b>רק מנהל רואה</b>. שאר המשתמשים רואים רק כמה נאסף והאם זכאי.</li></ul>`],
 ['h10n','כלים חדשים: ספירה מהירה, קבלות, כפילויות, זכאות, תזכורות',`
 <ul><li><b>⚡ ספירה מהירה</b> (רישום כסף לשנה): לערב החפ"ק – כותבים שם ← Enter ← סכום ← Enter. רואים רשימה של מה שנרשם, ו"↶ ביטול" לטעות.</li>
 <li><b>🧾 קבלה</b>: בכרטיס הבחור, ליד כל תשלום – אישור קבלת כסף עם מספר רץ (מקור + העתק).</li>
@@ -5178,7 +5180,7 @@ function renderNav(){
   document.getElementById('sidefoot').innerHTML=`גיבוי אחרון: ${lb?esc(hebDate(localIso(lb))):'<b>אף פעם</b>'}${days===null||days>=7?' ⚠':''}
     ${can('settings')||USER.role==='clerk'?`<button onclick="backup()">💾 שמור גיבוי</button>`:''}${can('settings')?`<button onclick="archiveModal()">📦 תיקיית סוף שנה</button>`:''}${USER.role!=='addresses'?`<button onclick="exportAll()">📊 ייצוא לאקסל</button>`:''}
     <div class="row"><button onclick="fontSize(1)" title="אותיות גדולות">א+</button><button onclick="fontSize(-1)" title="אותיות קטנות">א−</button><button onclick="openTheme()" title="צבעים ומראה">🎨</button></div>
-    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 24.10.2026 22:46</div>`;
+    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 24.10.2026 22:59</div>`;
   const yp=document.getElementById('yearpick');yp.innerHTML=st.years.map(y=>`<option ${y===S.viewYear?'selected':''} value='${esc(y)}'>${esc(y)}${y===st.currentYear?' (נוכחית)':''}</option>`).join('');
   document.getElementById('todayHeb').textContent=hebDate(today());applyBrand();
   document.getElementById('gsWrap').style.display=USER.role==='addresses'||USER.role==='counter'?'none':'';
