@@ -880,13 +880,13 @@ function vPeople(){
   const shSel=p=>`<select class="inl" onchange="setInline('${p.id}','shiur',this.value)">${['',...(st.shiurim[p.yeshiva]||[])].concat(p.shiur&&!(st.shiurim[p.yeshiva]||[]).includes(p.shiur)?[p.shiur]:[]).map(x=>`<option ${x===p.shiur?'selected':''}>${esc(x)}</option>`).join('')}</select>`;
   const yeSel=p=>`<select class="inl" onchange="setInline('${p.id}','yeshiva',this.value)">${st.yeshivot.map(x=>`<option ${x===p.yeshiva?'selected':''}>${esc(x)}</option>`).join('')}</select>`;
   const showNum=feat('personalNum');
-  const SR=canSeeReq(),ncol=(SR?8:6)+ys.length+(showNum?1:0);
+  const SR=false,ncol=(SR?8:6)+ys.length+(showNum?1:0);
   return `
   <div class="strip clickstrip">
     <div class="${!S.filter.status?'on':''}" onclick="setF('status','')" title="להציג את כולם"><span>בחורים</span><b>${ps.length}</b><span class="small muted">כולם</span></div>
     <div class="${S.filter.status==='elig'?'on':''}" onclick="setF('status',S.filter.status==='elig'?'':'elig')" title="לחיצה – רק מי שזכאי"><span>זכאים למענק</span><b style="color:var(--ok)">${nElig}</b><span class="small muted">${S.filter.status==='elig'?'✔ מוצגים רק הם':'לחצו להצגה'}</span></div>
     <div class="${S.filter.status==='notyet'?'on':''}" onclick="setF('status',S.filter.status==='notyet'?'':'notyet')" title="לחיצה – רק מי שלא זכאי"><span>לא זכאים עדיין</span><b style="color:var(--bad)">${ps.length-nElig}</b><span class="small muted">${S.filter.status==='notyet'?'✔ מוצגים רק הם':'לחצו להצגה'}</span></div>
-    <div class="${S.filter.status==='nopay'?'on':''}" onclick="setF('status',S.filter.status==='nopay'?'':'nopay')" title="לחיצה – מי שלא שילם השנה"><span>${canSeeReq()?'נאסף בשנה הנוכחית ('+esc(cur)+')':'מי שלא שילם השנה ('+esc(cur)+')'}</span><b>${canSeeReq()?shek(curTot):'🔍'}</b><span class="small muted">${S.filter.status==='nopay'?'✔ מוצגים מי שלא שילמו':'לחצו – מי שלא שילם'}</span></div>
+    <div class="${S.filter.status==='nopay'?'on':''}" onclick="setF('status',S.filter.status==='nopay'?'':'nopay')" title="לחיצה – מי שלא שילם השנה"><span>מי שלא שילם השנה (${esc(cur)})</span><b>🔍</b><span class="small muted">${S.filter.status==='nopay'?'✔ מוצגים מי שלא שילמו':'לחצו – מי שלא שילם'}</span></div>
   </div>
   <div class="toolbar">
     <input type="search" id="q" placeholder="חיפוש שם, מספר, טלפון…" value="${esc(S.filter.q)}" oninput="setF('q',this.value)">
@@ -2565,7 +2565,7 @@ ${feat('lottery')?'<li>הגרלה: "🎲 הגרלה על מסך מלא" – מת
 <li><b>איפה זה:</b> ⚙ הגדרות ← לשונית <b>"🔐 אבטחה ובדיקה"</b>.</li>
 <li><b>🔒 נעילה אוטומטית:</b> אחרי חצי שעה בלי פעילות המערכת ננעלת. כדי להמשיך – "📧 שלחו לי קוד למייל" (או Google). דקה לפני הנעילה מופיע פס כתום – לחיצה עליו ממשיכה. בעל המערכת יכול לשנות את הזמן (10 דקות עד שעתיים). גם מי שסגר את המערכת וחוזר אחרי יותר מחצי שעה – נכנס עם קוד.</li>
 <li><b>📜 מי שינה מה (רק מנהל):</b> ⚙ הגדרות ← "יומן שינויים". רואים כל מה שכל אחד עשה, בכל המחשבים: מי, מתי, ומה השתנה (למשל "טלפון: הישן ← החדש", "נוסף מזומן 300 ₪"). אפשר לבחור משתמש מסוים ולראות רק מה שהוא עשה. גם בכרטיס הבחור יש "📜 היסטוריה" – רק למנהל.</li>
-<li><b>🔢 קוד קבוע למחשב:</b> בפעם הראשונה בכל מחשב נכנסים עם Google או קוד במייל (צריך אינטרנט), ואז בוחרים קוד של 4–8 ספרות למחשב הזה. מאז נכנסים עם הקוד – <b>גם בלי אינטרנט</b>, וגם אחרי הנעילה של חצי שעה. בכל כניסה אפשר לבחור: <b>קוד המחשב</b> (עובד גם בלי אינטרנט) <b>או</b> "📧 כניסה דרך המייל" (צריך אינטרנט). 5 טעויות בקוד – צריך שוב קוד במייל. שכחת? "שכחתי את הקוד" ← קוד במייל. להחלפה: ⚙ הגדרות ← 🔐 אבטחה ובדיקה ← "החלפת הקוד".</li>
+<li><b>🔢 קוד כניסה לכל המחשבים:</b> המנהל קובע קוד אחד (4–12 ספרות) ב⚙ הגדרות ← 🔐 אבטחה ובדיקה. בכל כניסה בוחרים: <b>קוד הכניסה</b> (עובד גם בלי אינטרנט) <b>או</b> "📧 כניסה דרך המייל" (קוד חד־פעמי למייל המאושר). לא צריך את שניהם. מנהל יכול לראות את הקוד (👁 הצג), לשנות או להסיר. שכחת? נכנסים דרך המייל ורואים בהגדרות. 5 טעויות – רק דרך המייל. <b>מחשב חדש:</b> בפעם הראשונה נכנסים דרך המייל (כדי שהנתונים יירדו), ומאז עם הקוד.</li>
 <li><b>🔐 כניסה רק עם Google או קוד במייל:</b> אין יותר סיסמאות – כדי שאף אחד לא ינחש סיסמה. נכנסים עם Google, או מקלידים מייל ומקבלים קוד חד־פעמי. הקבצים הישנים של עזר הוחלפו בדף ריק שמפנה לקישור, בלי שום נתון בתוכו.</li>
 <li><b>🔑 כניסה בלי מפתח:</b> מי שבעל המערכת או מנהל מאשר (⚙ הגדרות ← ☁ חיבור משותף ← ✅ אישור) – נכנס עם המייל שלו, והמערכת נפתחת לו לבד, בלי לדעת שום מפתח. מי שהוסר או נחסם – מאבד את הגישה מיד, והמידע נמחק אצלו מהמחשב. מנהלים יכולים לאשר, להוסיף ולהסיר משתמשים; חסימה – רק בעל המערכת.</li>
 <li><b>🗑 מחיקת היסטוריה (רק מנהל):</b> 🗑 ליד כל שורה – מוחק שורה אחת. ☑ סימון כמה שורות ← "מחיקת המסומנים". בחירת משתמש ← "מחיקת כל מה שהוא עשה". או "מחיקת כל ההיסטוריה" (צריך לכתוב "מחיקה"). המחיקה חלה בכל המחשבים.</li>
@@ -2583,7 +2583,7 @@ ${feat('lottery')?'<li>הגרלה: "🎲 הגרלה על מסך מלא" – מת
 <li><b>תזכורת אוטומטית:</b> מכ"ד אדר (בשנה מעוברת – כ"ד אדר ב') מופיעה למנהלים הודעה עם ההוראות המדויקות. היא חוזרת כל יום, עד שמורידים את התיקייה של השנה (עם התמונות והמסמכים).</li>
 <li>אחרי ההורדה: קליק ימני על הקובץ ← "חלץ הכל", ומעתיקים לדיסק החיצוני.</li></ul>`],
 ['h10r','💬 סכום מיוחד לבחור – עם סיבה',`<ul><li>⚙ הגדרות ← סכומים ותשלומים ← "סכום מיוחד לבחור מסוים": ליד כל בחור יש שדה <b>"למה?"</b> – כותבים את הסיבה או הוראות (למשל: "אח שלו כבר קיבל מענק", "סוכם עם המנהל"). נשמר לבד.</li><li>כשמוסיפים בחור חדש לרשימה – אפשר לכתוב את הסיבה כבר בשורת ההוספה.</li><li>הסיבה מופיעה גם בכרטיס הבחור (למה הוא צריך את הסכום) ונרשמת ביומן השינויים.</li></ul>`],
-['h10o','📋 סדר הבחורים ומי רואה "צריך"',`<ul><li>הרשימות מסודרות <b>מהגדולים לקטנים</b>: ישיבה גדולה – קיבוץ, שיעור ג', ב', א' – ואחר כך ישיבה קטנה ג', ב', א' – ובסוף חיידר.</li><li>העמודות <b>"צריך"</b> ו<b>"חסר"</b> (כמה כל בחור צריך להביא, וכמה סוכם איתו) – <b>רק מנהל רואה</b>. שאר המשתמשים רואים רק כמה כל בחור הביא והאם זכאי.</li><li>גם <b>סכומי הכסף הכוללים</b> – "נאסף בשנה הנוכחית", שורת הסיכום למטה ברשימה, ו<b>💰 כספים</b> – <b>רק מנהל רואה</b>.</li></ul>`],
+['h10o','📋 סדר הבחורים ומי רואה "צריך"',`<ul><li>הרשימות מסודרות <b>מהגדולים לקטנים</b>: ישיבה גדולה – קיבוץ, שיעור ג', ב', א' – ואחר כך ישיבה קטנה ג', ב', א' – ובסוף חיידר.</li><li>בדף <b>בחורים</b> (שמראים לפעמים לבחורים) <b>אין</b> "צריך", "חסר" או סכום כולל של השנה – <b>גם לא למנהל</b>. המנהל רואה אותם בכרטיס הבחור, בדוחות ובכספים.</li><li>גם <b>סכומי הכסף הכוללים</b> – "נאסף בשנה הנוכחית", שורת הסיכום למטה ברשימה, ו<b>💰 כספים</b> – <b>רק מנהל רואה</b>.</li></ul>`],
 ['h10g','👥 קבוצות פורים לפי שנה',`<ul><li><b>איפה:</b> ⚙ הגדרות ← סכומים ותשלומים ← <b>"👥 קבוצות פורים לפי שנה"</b>. בוחרים שנה למעלה.</li><li>לכל קבוצה (ליל בני ברק, יום בני ברק, ליל ירושלים, יום ירושלים…): <b>"יוצאת?"</b> – מסמנים אם יוצאת השנה; <b>"זיכוי לבחור"</b> – כמה נזקף לכל בחור שהלך <b>באותה שנה</b>.</li><li>שינוי בשנה אחת <b>לא משנה</b> שנים אחרות: מי שהלך בתשפ"ד מקבל לפי תשפ"ד, ומי שהלך בתשפ"ו – לפי תשפ"ו.</li><li>קבוצה חדשה (למשל "ליל ביתר") – מוסיפים בשורה למטה; היא נוספת רק לשנה שנבחרה.</li><li>בפתיחת שנה חדשה – הקבוצות והסכומים מועתקים מהשנה הקודמת, ומשנים לפי ההחלטה.</li></ul>`],
 ['h10n','כלים חדשים: ספירה מהירה, קבלות, כפילויות, זכאות, תזכורות',`
 <ul><li><b>⚡ ספירה מהירה</b> (רישום כסף לשנה): לערב החפ"ק – כותבים שם ← Enter ← סכום ← Enter. רואים רשימה של מה שנרשם, ו"↶ ביטול" לטעות.</li>
@@ -5003,7 +5003,8 @@ async function notifyTest(){const v=(document.getElementById('ntfEm').value||'')
 function setSecure(){setTimeout(()=>{selfCheck();notifyLoad()},0);const own=clIsOwner();const m=idleMin();return `
 <div class="card" style="border-color:var(--gold)"><div class="toolbar" style="margin:0"><h2 style="margin:0;flex:1">🩺 בדיקה עצמית</h2><button class="btn" onclick="selfCheck()">↻ בדוק שוב</button></div>
 <p class="small muted"><button class="btn sm" style="float:left" onclick="clFullResync()">🔄 טעינה מלאה מהשרת</button>בודק שהכל תקין: אינטרנט, שרת, כניסה, מפתח, סנכרון, גיבויים, תמונות ועוד. ✅ תקין · ⚠ לתשומת לב · ❌ צריך טיפול.</p><div id="selfChk" class="muted">בודק…</div></div>
-<div class="card"><h2>🔢 קוד המחשב</h2><p>במחשב הזה נכנסים עם קוד קבוע שבחרת – גם בלי אינטרנט. ${pinHas()?'<b>✔ מוגדר.</b>':'<b style="color:var(--bad)">עוד לא הוגדר.</b>'}</p><button class="btn" onclick="pinChange()">${pinHas()?'🔁 החלפת הקוד':'➕ קביעת קוד'}</button></div>
+<div class="card"><h2>🔢 קוד כניסה לכל המחשבים</h2><p>בכל המחשבים נכנסים <b>או</b> עם הקוד הזה (גם בלי אינטרנט), <b>או</b> דרך המייל המאושר. לא צריך את שניהם.</p>
+${orgCode()?`<div class="toolbar"><span>הקוד: <b id="orgPinV" dir="ltr" style="font-size:20px;letter-spacing:4px">••••••</b></span><button class="btn sm" onclick="pinShow(this)">👁 הצג</button><button class="btn" onclick="pinChange()">🔁 שינוי הקוד</button><button class="btn" style="color:var(--bad)" onclick="pinRemove()">🗑 הסרת הקוד</button></div><div class="small muted">נקבע ${dtTime(DB.settings.orgPin.t)}${DB.settings.orgPin.by?' ע"י '+esc(DB.settings.orgPin.by):''}. מחשב חדש – בפעם הראשונה נכנסים דרך המייל, ומאז עם הקוד.</div>`:'<p><b style="color:var(--bad)">עוד לא נקבע קוד.</b> בינתיים נכנסים רק דרך המייל.</p><button class="btn pri" onclick="pinChange()">➕ קביעת קוד</button>'}</div>
 <div class="card"><h2>🔒 נעילה אוטומטית</h2><p>אם אין פעילות במחשב – המערכת ננעלת, וכדי להמשיך נכנסים שוב עם <b>קוד שנשלח למייל</b> (או עם Google). הנתונים לא נמחקים.</p>
 ${own?`<label>לנעול אחרי <select onchange="idleSetMin(this.value)">${[[10,'10 דקות'],[15,'רבע שעה'],[30,'חצי שעה'],[60,'שעה'],[120,'שעתיים'],[0,'אף פעם (לא מומלץ)']].map(([v,t])=>`<option value="${v}" ${m===v?'selected':''}>${t}</option>`).join('')}</select></label> <span class="small muted">חל על כל המשתמשים.</span>`:`<div>עכשיו: ${m?'אחרי '+m+' דקות':'כבוי'}. <span class="small muted">רק בעל המערכת משנה.</span></div>`}</div>
 ${own?`<div class="card"><h2>✉ הודעה במייל כשמישהו מבקש להצטרף</h2><p>כשמישהו חדש נרשם – נשלח מייל לכתובת הזאת, עם הסבר איך לאשר. הכתובת שמורה בשרת ורק בעל המערכת רואה אותה.</p>
@@ -5025,7 +5026,7 @@ async function selfCheck(){const el=document.getElementById('selfChk');if(!el)re
   try{if(typeof mediaStatus==='function'){const s=await mediaStatus();add(s.missing?'warn':'ok','תמונות ומסמכים בכל המחשבים',s.text)}}catch(e){}
   try{const q=navigator.storage&&await navigator.storage.estimate();if(q){const p=q.usage/q.quota;add(p<.8?'ok':'warn','מקום במחשב',Math.round(q.usage/1048576)+' MB בשימוש')}}catch(e){}
   {const ad=arcDue();add(ad?'warn':'ok','תיקיית סוף שנה',ad?'עוד לא הורדה התיקייה של '+ad+' – ⚙ הגדרות ← גיבוי ← "📦 הורדת תיקיית שנה"':'מעודכן')}
-  add(pinHas()?'ok':'warn','קוד המחשב',pinHas()?'מוגדר – אפשר להיכנס גם בלי אינטרנט':'עוד לא הוגדר – ⚙ הגדרות ← 🔐 אבטחה ובדיקה');
+  add(orgCode()?'ok':'warn','קוד כניסה',orgCode()?'מוגדר – בכל המחשבים, גם בלי אינטרנט':'עוד לא נקבע – ⚙ הגדרות ← 🔐 אבטחה ובדיקה');
   add('ok','נעילה אוטומטית',idleMin()?'אחרי '+idleMin()+' דקות בלי פעילות':'כבויה');
   {const v=[...document.querySelectorAll('#sidefoot div')].map(d=>d.textContent).find(t=>/^\s*גרסה:/.test(t))||'';const upd=!!document.getElementById('swUpd');add(upd?'warn':'ok','גרסה',(v.replace(/^\s*גרסה:\s*/,'')||'—')+(upd?' – מתעדכנת עכשיו לגרסה חדשה':' – מעודכנת'))}
   const ic={ok:'✅',warn:'⚠',bad:'❌'};const bad=R.filter(r=>r[0]==='bad').length,warn=R.filter(r=>r[0]==='warn').length;
@@ -5067,31 +5068,33 @@ async function clGrantKeys(){if(!CLOUD.on||!clIsAdm()||!CLOUD.key||!navigator.on
 const PIN_K=e=>KEY+'_pin_'+e,PIN_TRY=e=>KEY+'_pintry_'+e;
 function pinMe(){try{return CLOUD.me||JSON.parse(localStorage.getItem(KEY+'_cloud_me')||'null')}catch(e){return null}}
 function pinGet(em){try{return JSON.parse(localStorage.getItem(PIN_K(em))||'null')}catch(e){return null}}
-function pinHas(){const m=pinMe();return !!(m&&m.email&&pinGet(m.email))}
-async function pinHash(pin,salt){const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(pin),'PBKDF2',false,['deriveBits']);return clB64(await crypto.subtle.deriveBits({name:'PBKDF2',salt:new TextEncoder().encode(salt),iterations:150000,hash:'SHA-256'},k,256))}
-const pinField=(id,ph,extra='')=>`<input type="password" id="${id}" inputmode="numeric" autocomplete="new-password" maxlength="8" placeholder="${ph}" style="width:100%;font-size:22px;letter-spacing:6px;text-align:center;margin-bottom:8px" dir="ltr" ${extra}>`;
+function orgCode(){try{return (DB&&DB.settings&&DB.settings.orgPin&&DB.settings.orgPin.code)||''}catch(e){return ''}}
+function pinHas(){const m=pinMe();return !!(m&&m.email&&orgCode())}
+const pinField=(id,ph,extra='')=>`<input type="password" id="${id}" inputmode="numeric" autocomplete="new-password" maxlength="12" placeholder="${ph}" style="width:100%;font-size:22px;letter-spacing:6px;text-align:center;margin-bottom:8px" dir="ltr" ${extra}>`;
 let PIN_OK=null;
 function pinAskScreen(onOk){PIN_OK=onOk;const m=pinMe(),left=5-(+(localStorage.getItem(PIN_TRY(m.email))||0));
-  clGate(`<h3>🔒 קוד המחשב</h3><p class="small">${esc(m.name||m.email)} – הקלד את הקוד הקבוע שבחרת למחשב הזה.</p>${pinField('pin1','• • • •',`onkeydown="if(event.key==='Enter')pinCheck()"`)}
-  <div id="clErr" class="small" style="color:var(--bad);min-height:18px"></div><button class="btn pri" style="width:100%" onclick="pinCheck()">כניסה</button>
-  <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px"><a href="#" class="small" onclick="pinViaEmail();return false">📧 כניסה דרך המייל במקום הקוד (צריך אינטרנט)</a><a href="#" class="small muted" onclick="pinForgot();return false">שכחתי את הקוד – לבטל אותו ולבחור חדש</a></div>
-  <div class="small muted" style="margin-top:8px">נשארו ${left} ניסיונות. אחרי 5 טעויות – צריך להיכנס שוב דרך המייל.</div>`);setTimeout(()=>{const e=document.getElementById('pin1');if(e)e.focus()},50)}
-async function pinCheck(){const m=pinMe(),P=pinGet(m.email),v=(document.getElementById('pin1')||{}).value||'';if(!v)return;
-  if(await pinHash(v,P.salt)===P.hash){localStorage.removeItem(PIN_TRY(m.email));const f=PIN_OK;PIN_OK=null;f&&f();return}
+  clGate(`<h3>🔒 כניסה לעזר</h3><p class="small">${esc(m.name||m.email)} – אפשר להיכנס באחת משתי הדרכים:</p>
+  <div style="text-align:right;font-weight:600;margin:6px 0 4px">1. קוד הכניסה (עובד גם בלי אינטרנט)</div>${pinField('pin1','• • • • • •',`onkeydown="if(event.key==='Enter')pinCheck()"`)}
+  <div id="clErr" class="small" style="color:var(--bad);min-height:18px"></div><button class="btn pri" style="width:100%" onclick="pinCheck()">כניסה עם הקוד</button>
+  <div style="text-align:right;font-weight:600;margin:16px 0 6px">2. או: קוד חד־פעמי למייל (צריך אינטרנט)</div><button class="btn" style="width:100%" onclick="pinViaEmail()">📧 כניסה דרך המייל</button>
+  <div class="small muted" style="margin-top:10px">שכחת את קוד הכניסה? נכנסים דרך המייל – ומנהל רואה ומשנה את הקוד ב⚙ הגדרות ← 🔐 אבטחה ובדיקה.<br>נשארו ${left} ניסיונות. אחרי 5 טעויות – רק דרך המייל.</div>`);setTimeout(()=>{const e=document.getElementById('pin1');if(e)e.focus()},50)}
+async function pinCheck(){const m=pinMe(),v=((document.getElementById('pin1')||{}).value||'').trim();if(!v)return;
+  if(v===orgCode()){localStorage.removeItem(PIN_TRY(m.email));const f=PIN_OK;PIN_OK=null;f&&f();return}
   const t=+(localStorage.getItem(PIN_TRY(m.email))||0)+1;localStorage.setItem(PIN_TRY(m.email),String(t));
-  if(t>=5){alert('5 טעויות. מטעמי אבטחה צריך להיכנס שוב עם קוד במייל.');pinForgot(true);return}pinAskScreen(PIN_OK)}
-async function pinForgot(auto){if(!auto&&!confirm('לבטל את הקוד של המחשב הזה ולהיכנס שוב עם קוד במייל?\nצריך אינטרנט. הנתונים לא נמחקים.'))return;const m=pinMe();
-  try{localStorage.removeItem(PIN_K(m.email));localStorage.removeItem(PIN_TRY(m.email));localStorage.setItem(LOCK_K(),'1')}catch(e){}
-  try{CLOUD.sb&&await CLOUD.sb.auth.signOut({scope:'local'})}catch(e){}location.reload()}
-function pinSetScreen(then){clGate(`<h3>🔢 קוד קבוע למחשב הזה</h3><p class="small" style="text-align:right;line-height:1.7">בחר קוד של <b>4 עד 8 ספרות</b>. מעכשיו, במחשב הזה, נכנסים איתו – <b>גם בלי אינטרנט</b>, וגם אחרי נעילה של חצי שעה. בלי מייל כל פעם.<br>הקוד שמור רק במחשב הזה. במחשב אחר – בוחרים קוד משלו.</p>
+  if(t>=5){alert('5 טעויות. מטעמי אבטחה – נכנסים עכשיו דרך המייל.');localStorage.removeItem(PIN_TRY(m.email));pinViaEmail(true);return}pinAskScreen(PIN_OK)}
+async function pinForgot(){pinViaEmail()}
+function pinSetScreen(then){if(!(CLOUD.on?clIsAdm():(USER&&USER.role==='admin')))return toast('רק מנהל קובע את קוד הכניסה');const cur=orgCode();
+  clGate(`<h3>🔢 קוד כניסה לכל המחשבים</h3><p class="small" style="text-align:right;line-height:1.7">בחר קוד של <b>4 עד 12 ספרות</b>. איתו נכנסים לעזר <b>בכל המחשבים</b> – גם בלי אינטרנט, וגם אחרי נעילה של חצי שעה.<br>מי שלא יודע את הקוד – נכנס דרך המייל המאושר שלו.<br>הקוד שמור בהגדרות (מוצפן), ומנהל יכול לראות ולשנות אותו.<br><b>מחשב חדש</b> – בפעם הראשונה נכנסים דרך המייל (כדי להוריד את הנתונים), ומאז – עם הקוד.</p>
   ${pinField('pin1','קוד חדש')}${pinField('pin2','שוב – לאימות',`onkeydown="if(event.key==='Enter')pinSave()"`)}<div id="clErr" class="small" style="color:var(--bad);min-height:18px"></div>
-  <button class="btn pri" style="width:100%" onclick="pinSave()">שמירה</button>`);window._pinThen=then;setTimeout(()=>{const e=document.getElementById('pin1');if(e)e.focus()},50)}
-async function pinSave(){const a=document.getElementById('pin1').value,b=document.getElementById('pin2').value;
-  if(!/^\d{4,8}$/.test(a))return clErr('הקוד צריך להיות 4 עד 8 ספרות');if(/^(\d)\1+$/.test(a)||'0123456789'.includes(a)||'9876543210'.includes(a))return clErr('קוד קל מדי לניחוש (כמו 1111 או 1234) – בחר אחר');if(a!==b)return clErr('שני הקודים לא זהים');
-  const m=pinMe(),salt=clB64(crypto.getRandomValues(new Uint8Array(16)));localStorage.setItem(PIN_K(m.email),JSON.stringify({salt,hash:await pinHash(a,salt),t:new Date().toISOString()}));
-  clGateClose();toast('✔ נשמר קוד קבוע למחשב הזה');const f=window._pinThen;window._pinThen=null;f&&f()}
-function pinOffer(){if(CLOUD.on&&!pinHas()&&!document.getElementById('clGate'))pinSetScreen()}
+  <button class="btn pri" style="width:100%" onclick="pinSave()">שמירה</button>${cur?'':'<button class="btn" style="width:100%;margin-top:6px" onclick="clGateClose()">אחר כך</button>'}${cur?'<button class="btn" style="width:100%;margin-top:6px" onclick="clGateClose()">ביטול</button>':''}`);window._pinThen=then;setTimeout(()=>{const e=document.getElementById('pin1');if(e)e.focus()},50)}
+async function pinSave(){const a=document.getElementById('pin1').value.trim(),b=document.getElementById('pin2').value.trim();
+  if(!/^\d{4,12}$/.test(a))return clErr('הקוד צריך להיות 4 עד 12 ספרות');if(/^(\d)\1+$/.test(a)||'01234567890123'.includes(a)||'98765432109876'.includes(a))return clErr('קוד קל מדי לניחוש (כמו 1111 או 123456) – בחר אחר');if(a!==b)return clErr('שני הקודים לא זהים');
+  DB.settings.orgPin={code:a,t:new Date().toISOString(),by:USER?USER.name:''};log('אבטחה','נקבע קוד כניסה לכל המחשבים');save();
+  clGateClose();toast('✔ נשמר – הקוד יעבוד בכל המחשבים');const f=window._pinThen;window._pinThen=null;f&&f();render()}
+function pinOffer(){if(CLOUD.on&&!orgCode()&&clIsAdm()&&!document.getElementById('clGate')&&!localStorage.getItem(KEY+'_pinLater_'+today())){try{localStorage.setItem(KEY+'_pinLater_'+today(),'1')}catch(e){}pinSetScreen()}}
 function pinChange(){pinSetScreen()}
+function pinRemove(){if(!confirm('להסיר את קוד הכניסה?\nמעכשיו ייכנסו רק דרך המייל (צריך אינטרנט).'))return;delete DB.settings.orgPin;log('אבטחה','הוסר קוד הכניסה');save();render();toast('הוסר')}
+function pinShow(b){const e=document.getElementById('orgPinV');if(!e)return;const sh=e.dataset.sh==='1';e.textContent=sh?'••••••':orgCode();e.dataset.sh=sh?'0':'1';b.textContent=sh?'👁 הצג':'🙈 הסתר'}
 
 /* ---------- טעינה מלאה מחדש מהשרת + השוואה ---------- */
 async function clServerPeople(){try{const {count,error}=await CLOUD.sb.from('ez_records').select('id',{count:'exact',head:true}).like('id','people:%').eq('deleted',false);return error?-1:count}catch(e){return -1}}
@@ -5117,7 +5120,7 @@ function arcShowOnce(){if(window._arcShown||!USER||!can('settings'))return;windo
   const tryShow=(n)=>{if(document.querySelector('.ov')||document.getElementById('clGate')){if(n<40)setTimeout(()=>tryShow(n+1),3000);return}arcModal(y)};setTimeout(()=>tryShow(0),2500)}
 
 function pinViaEmailOn(){try{return localStorage.getItem(KEY+'_viaEmail')==='1'}catch(e){return false}}
-async function pinViaEmail(){if(!navigator.onLine)return toast('כניסה דרך המייל צריכה אינטרנט. בלי אינטרנט – נכנסים עם קוד המחשב.');try{localStorage.setItem(KEY+'_viaEmail','1');localStorage.setItem(LOCK_K(),'1')}catch(e){}try{CLOUD.sb&&await CLOUD.sb.auth.signOut({scope:'local'})}catch(e){}location.reload()}
+async function pinViaEmail(auto){if(!navigator.onLine&&!auto)return toast('כניסה דרך המייל צריכה אינטרנט. בלי אינטרנט – נכנסים עם קוד הכניסה.');try{localStorage.setItem(KEY+'_viaEmail','1');localStorage.setItem(LOCK_K(),'1')}catch(e){}try{CLOUD.sb&&await CLOUD.sb.auth.signOut({scope:'local'})}catch(e){}location.reload()}
 
 /* ====================== תמונות ומסמכים בכל המחשבים (מוצפן, דרך השרת) ======================
    כל מחשב שיש בו תמונות/מסמכים (מחבילות שנה או שהועלו ידנית) – מעלה אותם מוצפנים לשרת.
@@ -5204,7 +5207,7 @@ function renderNav(){
   document.getElementById('sidefoot').innerHTML=`גיבוי אחרון: ${lb?esc(hebDate(localIso(lb))):'<b>אף פעם</b>'}${days===null||days>=7?' ⚠':''}
     ${can('settings')||USER.role==='clerk'?`<button onclick="backup()">💾 שמור גיבוי</button>`:''}${can('settings')?`<button onclick="archiveModal()">📦 תיקיית סוף שנה</button>`:''}${USER.role!=='addresses'?`<button onclick="exportAll()">📊 ייצוא לאקסל</button>`:''}
     <div class="row"><button onclick="fontSize(1)" title="אותיות גדולות">א+</button><button onclick="fontSize(-1)" title="אותיות קטנות">א−</button><button onclick="openTheme()" title="צבעים ומראה">🎨</button></div>
-    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 24.10.2026 23:09</div>`;
+    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 24.10.2026 23:17</div>`;
   const yp=document.getElementById('yearpick');yp.innerHTML=st.years.map(y=>`<option ${y===S.viewYear?'selected':''} value='${esc(y)}'>${esc(y)}${y===st.currentYear?' (נוכחית)':''}</option>`).join('');
   document.getElementById('todayHeb').textContent=hebDate(today());applyBrand();
   document.getElementById('gsWrap').style.display=USER.role==='addresses'||USER.role==='counter'?'none':'';
