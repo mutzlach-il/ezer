@@ -4939,25 +4939,27 @@ async function srvBkRestore(id,day){if(!confirm('לשחזר את כל המערכ
 
 function clWelcomeText(name,code){return `שלום ${name||''},
 
-צורפת למערכת "עזר" של קרן עזר נישואין ביאלה.
+הנך מצורף בזאת למערכת הניהול של קרן עזר נישואין שע"י מוסדות ביאלה ב"ב.
 
 הקישור למערכת:
 ${EZ_LINK}
 
-איך נכנסים (עם אינטרנט):
+אופן הכניסה (בחיבור לאינטרנט):
 1. פותחים את הקישור.
-2. לוחצים "כניסה עם Google" – או מקלידים את כתובת המייל הזו ולוחצים "שלחו לי קוד למייל".
-3. אם בחרתם קוד למייל – מקבלים מייל עם קוד של 6 ספרות, מקלידים אותו – ונכנסים.
-לא צריך סיסמה ולא צריך מפתח. רק כתובת המייל הזו.
+2. לוחצים על "כניסה עם Google", או מקלידים את כתובת המייל הזו ולוחצים "שלחו לי קוד למייל".
+3. אם נבחר קוד למייל – יתקבל מייל ובו קוד בן 6 ספרות. מקלידים אותו ונכנסים.
 
-בלי אינטרנט:
-אפשר לעבוד גם בלי אינטרנט, אבל רק במחשב שכבר נכנסו ממנו פעם אחת עם אינטרנט. אז נכנסים עם קוד הכניסה של המערכת.
-${code?'קוד הכניסה: '+code+'\n(שמרו אותו במקום בטוח, ואל תעבירו אותו לאחרים)':'את קוד הכניסה מקבלים מהמנהל.'}
+אין צורך בסיסמה או במפתח – רק בכתובת מייל זו.
 
-כדאי לשמור את המייל הזה.
-בהצלחה!`}
+עבודה ללא אינטרנט:
+במחשב שכבר נכנסו ממנו פעם אחת בחיבור לאינטרנט, ניתן להיכנס גם בלי אינטרנט עם קוד הכניסה של המערכת.
+${code?'קוד הכניסה: '+code+' (נא לשמור במקום בטוח ולא להעבירו לאחרים)':'את קוד הכניסה ניתן לקבל מהנהלת הקרן.'}
+
+בברכה,
+הנהלת קרן עזר נישואין
+מוסדות ביאלה ב"ב`}
 async function clWelcome(email,name,withCode){try{const code=withCode&&typeof orgCode==='function'?orgCode():'';
-  const r=await fetch('https://api.emailjs.com/api/v1.0/email/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({service_id:EZ_MAIL.service,template_id:EZ_MAIL.template,user_id:EZ_MAIL.key,template_params:{from_name:'מערכת עזר',reply_to:(CLOUD.me&&CLOUD.me.email)||'',to_email:email,to_name:name||email,name:name||email,subject:'צורפת למערכת עזר – הקישור והוראות הכניסה',message:clWelcomeText(name,code)}})});
+  const r=await fetch('https://api.emailjs.com/api/v1.0/email/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({service_id:EZ_MAIL.service,template_id:EZ_MAIL.template,user_id:EZ_MAIL.key,template_params:{from_name:'קרן עזר נישואין – ביאלה',sender:'קרן עזר נישואין – ביאלה',reply_to:'bnyytmrkwt@gmail.com',to_email:email,to_name:name||email,name:'קרן עזר נישואין – ביאלה',subject:'הצטרפות למערכת קרן עזר נישואין – קישור והוראות כניסה',message:clWelcomeText(name,code)}})});
   if(r.ok)log('משתמשים','נשלח מייל הוראות ל־'+email+(code?' (כולל קוד הכניסה)':''));return r.ok}catch(e){return false}}
 async function clWelcomeAsk(email,name){if(!navigator.onLine)return toast('צריך אינטרנט כדי לשלוח מייל');const wc=typeof orgCode==='function'&&orgCode()?confirm('לצרף למייל גם את קוד הכניסה (לעבודה בלי אינטרנט)?\n\nאישור = כן, לצרף\nביטול = בלי הקוד'):false;toast('שולח…');const ok=await clWelcome(email,name,wc);toast(ok?'✉ נשלח ל־'+email:'השליחה נכשלה – נסו שוב')}
 
@@ -5028,7 +5030,7 @@ const clIsAdmLocal=()=>CLOUD.on?clIsAdm():(USER&&USER.role==='admin');
 const EZ_MAIL={service:'service_nybca58',template:'template_gzcqacc',key:'6G0YaH5dH_TKKk_hu'};
 async function joinNotify(email,name){try{const {data:to}=await CLOUD.sb.rpc('ez_join_target');if(!to)return;
   const msg='שלום,\n\n'+name+' ('+email+') ביקש/ה להצטרף למערכת עזר.\n\nכדי לאשר: נכנסים לעזר ← ⚙ הגדרות ← ☁ חיבור משותף ← "ממתינים לאישור" ← ✅ אישור.\n'+EZ_LINK+'\n\nאם אינך מכיר/ה את המבקש – לא מאשרים (אפשר ללחוץ "חסימה").';
-  await fetch('https://api.emailjs.com/api/v1.0/email/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({service_id:EZ_MAIL.service,template_id:EZ_MAIL.template,user_id:EZ_MAIL.key,template_params:{from_name:'מערכת עזר',reply_to:email,to_email:to,to_name:'מנהל עזר',name:'מנהל עזר',subject:'בקשת הצטרפות חדשה לעזר – '+name,message:msg}})})}catch(e){}}
+  await fetch('https://api.emailjs.com/api/v1.0/email/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({service_id:EZ_MAIL.service,template_id:EZ_MAIL.template,user_id:EZ_MAIL.key,template_params:{from_name:'קרן עזר נישואין – ביאלה',reply_to:email,to_email:to,to_name:'מנהל עזר',name:'מנהל עזר',subject:'בקשת הצטרפות חדשה לעזר – '+name,message:msg}})})}catch(e){}}
 async function notifyLoad(){const el=document.getElementById('ntfEm');if(!el)return;const {data}=await CLOUD.sb.from('ez_notify').select('email').eq('id',1).maybeSingle();el.value=(data&&data.email)||''}
 async function notifySave(){const v=(document.getElementById('ntfEm').value||'').trim();if(v&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v))return toast('המייל לא תקין');
   const {error}=await CLOUD.sb.from('ez_notify').upsert({id:1,email:v});if(error)return alert('לא נשמר: '+error.message);toast('נשמר');log('אבטחה','עודכן המייל להודעות הצטרפות')}
@@ -5377,7 +5379,7 @@ function renderNav(){
   document.getElementById('sidefoot').innerHTML=`גיבוי אחרון: ${lb?esc(hebDate(localIso(lb))):'<b>אף פעם</b>'}${days===null||days>=7?' ⚠':''}
     ${can('settings')||USER.role==='clerk'?`<button onclick="backup()">💾 שמור גיבוי</button>`:''}${can('settings')?`<button onclick="archiveModal()">📦 תיקיית סוף שנה</button>`:''}${USER.role!=='addresses'?`<button onclick="exportAll()">📊 ייצוא לאקסל</button>`:''}
     <div class="row"><button onclick="fontSize(1)" title="אותיות גדולות">א+</button><button onclick="fontSize(-1)" title="אותיות קטנות">א−</button><button onclick="openTheme()" title="צבעים ומראה">🎨</button></div>
-    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 25.10.2026 00:29</div>`;
+    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 25.10.2026 01:08</div>`;
   const yp=document.getElementById('yearpick');yp.innerHTML=st.years.map(y=>`<option ${y===S.viewYear?'selected':''} value='${esc(y)}'>${esc(y)}${y===st.currentYear?' (נוכחית)':''}</option>`).join('');
   document.getElementById('todayHeb').textContent=hebDate(today());applyBrand();
   document.getElementById('gsWrap').style.display=USER.role==='addresses'||USER.role==='counter'?'none':'';
