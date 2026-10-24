@@ -880,7 +880,7 @@ function vPeople(){
     <div class="${!S.filter.status?'on':''}" onclick="setF('status','')" title="להציג את כולם"><span>בחורים</span><b>${ps.length}</b><span class="small muted">כולם</span></div>
     <div class="${S.filter.status==='elig'?'on':''}" onclick="setF('status',S.filter.status==='elig'?'':'elig')" title="לחיצה – רק מי שזכאי"><span>זכאים למענק</span><b style="color:var(--ok)">${nElig}</b><span class="small muted">${S.filter.status==='elig'?'✔ מוצגים רק הם':'לחצו להצגה'}</span></div>
     <div class="${S.filter.status==='notyet'?'on':''}" onclick="setF('status',S.filter.status==='notyet'?'':'notyet')" title="לחיצה – רק מי שלא זכאי"><span>לא זכאים עדיין</span><b style="color:var(--bad)">${ps.length-nElig}</b><span class="small muted">${S.filter.status==='notyet'?'✔ מוצגים רק הם':'לחצו להצגה'}</span></div>
-    <div class="${S.filter.status==='nopay'?'on':''}" onclick="setF('status',S.filter.status==='nopay'?'':'nopay')" title="לחיצה – מי שלא שילם השנה"><span>נאסף בשנה הנוכחית (${esc(cur)})</span><b>${shek(curTot)}</b><span class="small muted">${S.filter.status==='nopay'?'✔ מוצגים מי שלא שילמו':'לחצו – מי שלא שילם'}</span></div>
+    <div class="${S.filter.status==='nopay'?'on':''}" onclick="setF('status',S.filter.status==='nopay'?'':'nopay')" title="לחיצה – מי שלא שילם השנה"><span>${canSeeReq()?'נאסף בשנה הנוכחית ('+esc(cur)+')':'מי שלא שילם השנה ('+esc(cur)+')'}</span><b>${canSeeReq()?shek(curTot):'🔍'}</b><span class="small muted">${S.filter.status==='nopay'?'✔ מוצגים מי שלא שילמו':'לחצו – מי שלא שילם'}</span></div>
   </div>
   <div class="toolbar">
     <input type="search" id="q" placeholder="חיפוש שם, מספר, טלפון…" value="${esc(S.filter.q)}" oninput="setF('q',this.value)">
@@ -908,7 +908,7 @@ function vPeople(){
       <td class="num" style="color:${s.miss>0?'var(--bad)':'var(--ok)'}">${s.miss>0?fmt(s.miss):'0'}</td>`:''}
       <td>${s.miss<=0?'<b style="color:var(--ok)">✔ זכאי</b>':'<span style="color:var(--bad)">✘ לא</span>'}${p.married?' 💍':''}</td></tr>`}).join('')}
     </tbody>
-    <tfoot><tr><td colspan="${showNum?5:4}">${rows.length} בחורים</td>${ys.map(y=>`<td class="num yc">${fmt(rows.reduce((a,p)=>a+yearTotal(p,y),0))}</td>`).join('')}<td class="num sep">${fmt(rows.reduce((a,p)=>a+countedTotal(p),0))}</td>${SR?'<td></td><td></td>':''}<td></td></tr></tfoot>
+    <tfoot><tr><td colspan="${showNum?5:4}">${rows.length} בחורים</td>${ys.map(y=>`<td class="num yc">${SR?fmt(rows.reduce((a,p)=>a+yearTotal(p,y),0)):''}</td>`).join('')}<td class="num sep">${SR?fmt(rows.reduce((a,p)=>a+countedTotal(p),0)):''}</td>${SR?'<td></td><td></td>':''}<td></td></tr></tfoot>
   </table></div>
   <div class="small muted" style="margin-top:8px">לחיצה על שם פותחת את כל הפרטים. "נספר למענק" – לבחורי המבצע נספר מ־${esc(st.campaignYear)} והלאה.</div>`;
 }
@@ -2545,7 +2545,7 @@ ${feat('lottery')?'<li>הגרלה: "🎲 הגרלה על מסך מלא" – מת
 <li><b>איפה זה:</b> ⚙ הגדרות ← לשונית <b>"🔐 אבטחה ובדיקה"</b>.</li>
 <li><b>🔒 נעילה אוטומטית:</b> אחרי חצי שעה בלי פעילות המערכת ננעלת. כדי להמשיך – "📧 שלחו לי קוד למייל" (או Google). דקה לפני הנעילה מופיע פס כתום – לחיצה עליו ממשיכה. בעל המערכת יכול לשנות את הזמן (10 דקות עד שעתיים). גם מי שסגר את המערכת וחוזר אחרי יותר מחצי שעה – נכנס עם קוד.</li>
 <li><b>📜 מי שינה מה (רק מנהל):</b> ⚙ הגדרות ← "יומן שינויים". רואים כל מה שכל אחד עשה, בכל המחשבים: מי, מתי, ומה השתנה (למשל "טלפון: הישן ← החדש", "נוסף מזומן 300 ₪"). אפשר לבחור משתמש מסוים ולראות רק מה שהוא עשה. גם בכרטיס הבחור יש "📜 היסטוריה" – רק למנהל.</li>
-<li><b>🔢 קוד קבוע למחשב:</b> בפעם הראשונה בכל מחשב נכנסים עם Google או קוד במייל (צריך אינטרנט), ואז בוחרים קוד של 4–8 ספרות למחשב הזה. מאז נכנסים עם הקוד – <b>גם בלי אינטרנט</b>, וגם אחרי הנעילה של חצי שעה. 5 טעויות – צריך שוב קוד במייל. שכחת? "שכחתי את הקוד" ← קוד במייל. להחלפה: ⚙ הגדרות ← 🔐 אבטחה ובדיקה ← "החלפת הקוד".</li>
+<li><b>🔢 קוד קבוע למחשב:</b> בפעם הראשונה בכל מחשב נכנסים עם Google או קוד במייל (צריך אינטרנט), ואז בוחרים קוד של 4–8 ספרות למחשב הזה. מאז נכנסים עם הקוד – <b>גם בלי אינטרנט</b>, וגם אחרי הנעילה של חצי שעה. בכל כניסה אפשר לבחור: <b>קוד המחשב</b> (עובד גם בלי אינטרנט) <b>או</b> "📧 כניסה דרך המייל" (צריך אינטרנט). 5 טעויות בקוד – צריך שוב קוד במייל. שכחת? "שכחתי את הקוד" ← קוד במייל. להחלפה: ⚙ הגדרות ← 🔐 אבטחה ובדיקה ← "החלפת הקוד".</li>
 <li><b>🔐 כניסה רק עם Google או קוד במייל:</b> אין יותר סיסמאות – כדי שאף אחד לא ינחש סיסמה. נכנסים עם Google, או מקלידים מייל ומקבלים קוד חד־פעמי. הקבצים הישנים של עזר הוחלפו בדף ריק שמפנה לקישור, בלי שום נתון בתוכו.</li>
 <li><b>🔑 כניסה בלי מפתח:</b> מי שבעל המערכת או מנהל מאשר (⚙ הגדרות ← ☁ חיבור משותף ← ✅ אישור) – נכנס עם המייל שלו, והמערכת נפתחת לו לבד, בלי לדעת שום מפתח. מי שהוסר או נחסם – מאבד את הגישה מיד, והמידע נמחק אצלו מהמחשב. מנהלים יכולים לאשר, להוסיף ולהסיר משתמשים; חסימה – רק בעל המערכת.</li>
 <li><b>🗑 מחיקת היסטוריה (רק מנהל):</b> 🗑 ליד כל שורה – מוחק שורה אחת. ☑ סימון כמה שורות ← "מחיקת המסומנים". בחירת משתמש ← "מחיקת כל מה שהוא עשה". או "מחיקת כל ההיסטוריה" (צריך לכתוב "מחיקה"). המחיקה חלה בכל המחשבים.</li>
@@ -2563,7 +2563,7 @@ ${feat('lottery')?'<li>הגרלה: "🎲 הגרלה על מסך מלא" – מת
 <li><b>תזכורת אוטומטית:</b> מכ"ד אדר (בשנה מעוברת – כ"ד אדר ב') מופיעה למנהלים הודעה עם ההוראות המדויקות. היא חוזרת כל יום, עד שמורידים את התיקייה של השנה (עם התמונות והמסמכים).</li>
 <li>אחרי ההורדה: קליק ימני על הקובץ ← "חלץ הכל", ומעתיקים לדיסק החיצוני.</li></ul>`],
 ['h10r','💬 סכום מיוחד לבחור – עם סיבה',`<ul><li>⚙ הגדרות ← סכומים ותשלומים ← "סכום מיוחד לבחור מסוים": ליד כל בחור יש שדה <b>"למה?"</b> – כותבים את הסיבה או הוראות (למשל: "אח שלו כבר קיבל מענק", "סוכם עם המנהל"). נשמר לבד.</li><li>כשמוסיפים בחור חדש לרשימה – אפשר לכתוב את הסיבה כבר בשורת ההוספה.</li><li>הסיבה מופיעה גם בכרטיס הבחור (למה הוא צריך את הסכום) ונרשמת ביומן השינויים.</li></ul>`],
-['h10o','📋 סדר הבחורים ומי רואה "צריך"',`<ul><li>הרשימות מסודרות <b>מהגדולים לקטנים</b>: ישיבה גדולה – קיבוץ, שיעור ג', ב', א' – ואחר כך ישיבה קטנה ג', ב', א' – ובסוף חיידר.</li><li>העמודות <b>"צריך"</b> ו<b>"חסר"</b> (כמה כל בחור צריך להביא, וכמה סוכם איתו) – <b>רק מנהל רואה</b>. שאר המשתמשים רואים רק כמה נאסף והאם זכאי.</li></ul>`],
+['h10o','📋 סדר הבחורים ומי רואה "צריך"',`<ul><li>הרשימות מסודרות <b>מהגדולים לקטנים</b>: ישיבה גדולה – קיבוץ, שיעור ג', ב', א' – ואחר כך ישיבה קטנה ג', ב', א' – ובסוף חיידר.</li><li>העמודות <b>"צריך"</b> ו<b>"חסר"</b> (כמה כל בחור צריך להביא, וכמה סוכם איתו) – <b>רק מנהל רואה</b>. שאר המשתמשים רואים רק כמה כל בחור הביא והאם זכאי.</li><li>גם <b>סכומי הכסף הכוללים</b> – "נאסף בשנה הנוכחית", שורת הסיכום למטה ברשימה, ו<b>💰 כספים</b> – <b>רק מנהל רואה</b>.</li></ul>`],
 ['h10n','כלים חדשים: ספירה מהירה, קבלות, כפילויות, זכאות, תזכורות',`
 <ul><li><b>⚡ ספירה מהירה</b> (רישום כסף לשנה): לערב החפ"ק – כותבים שם ← Enter ← סכום ← Enter. רואים רשימה של מה שנרשם, ו"↶ ביטול" לטעות.</li>
 <li><b>🧾 קבלה</b>: בכרטיס הבחור, ליד כל תשלום – אישור קבלת כסף עם מספר רץ (מקור + העתק).</li>
@@ -4836,11 +4836,11 @@ async function clUserDel(email){const {error}=await CLOUD.sb.from('ez_users').de
 async function clBoot(){if(!CLOUD_BUILD||!/^https?:/.test(location.protocol))return false;
   clGate('<p>טוען…</p>');
   try{if(!window.supabase)await clScript(CL_SBJS);CLOUD.sb=supabase.createClient(CL_URL,CL_KEY,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'ezer-auth'}})}
-  catch(e){if(idleExpired()){try{localStorage.setItem(LOCK_K(),'1')}catch(x){}}if(idleLocked()&&pinHas()){pinAskScreen(()=>{idleUnlock();clBoot()});return true}if(!(await clEnterOffline()))clGate('<p>אין חיבור לאינטרנט, ובמחשב הזה עוד לא נכנסו אף פעם.</p><p class="small muted">בפעם הראשונה צריך אינטרנט. אחר כך אפשר לעבוד גם בלי.</p><button class="btn" onclick="location.reload()">נסה שוב</button>');return true}
+  catch(e){if(idleExpired()){try{localStorage.setItem(LOCK_K(),'1')}catch(x){}}if(idleLocked()&&pinHas()&&!pinViaEmailOn()){pinAskScreen(()=>{idleUnlock();clBoot()});return true}if(!(await clEnterOffline()))clGate('<p>אין חיבור לאינטרנט, ובמחשב הזה עוד לא נכנסו אף פעם.</p><p class="small muted">בפעם הראשונה צריך אינטרנט. אחר כך אפשר לעבוד גם בלי.</p><button class="btn" onclick="location.reload()">נסה שוב</button>');return true}
   try{CLOUD.sb.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY')setTimeout(clNewPassScreen,300)})}catch(e){}
   let sess=null;try{sess=(await CLOUD.sb.auth.getSession()).data.session}catch(e){}
   if(idleExpired()){try{localStorage.setItem(LOCK_K(),'1')}catch(e){}}
-  if(idleLocked()&&pinHas()){pinAskScreen(()=>{idleUnlock();clBoot()});return true}
+  if(idleLocked()&&pinHas()&&!pinViaEmailOn()){pinAskScreen(()=>{idleUnlock();clBoot()});return true}
   if(idleLocked()){if(sess){try{await CLOUD.sb.auth.signOut({scope:'local'})}catch(e){}}if(!navigator.onLine){clGate('<h3>🔒 המערכת נעולה</h3><p>כדי להיכנס שוב צריך קוד שנשלח למייל – ולשם צריך אינטרנט.</p><button class="btn" onclick="location.reload()">נסה שוב</button>');return true}idleLockScreen();return true}
   if(sess&&/type=recovery/.test(location.hash)){setTimeout(clNewPassScreen,300);return true}
   if(!sess){if(!navigator.onLine&&(await clEnterOffline()))return true;clLoginScreen();return true}
@@ -4923,7 +4923,7 @@ async function idleLock(){if(idleLocked())return;try{localStorage.setItem(LOCK_K
   try{if(navigator.onLine&&CLOUD.sb)await Promise.race([clSync(),new Promise(r=>setTimeout(r,4000))])}catch(e){}
   if(pinHas()){pinAskScreen(()=>{idleUnlock();clGateClose()});return}
   try{await CLOUD.sb.auth.signOut({scope:'local'})}catch(e){}location.reload()}
-function idleUnlock(){try{localStorage.removeItem(LOCK_K());localStorage.setItem(IDLE_K(),String(Date.now()))}catch(e){}}
+function idleUnlock(){try{localStorage.removeItem(LOCK_K());localStorage.removeItem(KEY+'_viaEmail');localStorage.setItem(IDLE_K(),String(Date.now()))}catch(e){}}
 function idleLockScreen(){const m=+(localStorage.getItem(IDLE_MIN_K())||30);
   clGate(`<h3>🔒 המערכת ננעלה</h3><p>לא הייתה פעילות ${m} דקות, ולכן המערכת ננעלה כדי לשמור על הפרטיות.</p><p class="small muted">כל הנתונים שמורים. כדי להמשיך – נכנסים שוב עם קוד שנשלח למייל, או עם חשבון Google.</p>
   <button class="btn pri" style="width:100%;margin:6px 0" onclick="clOtpStart()">📧 שלחו לי קוד למייל</button>
@@ -5053,7 +5053,7 @@ let PIN_OK=null;
 function pinAskScreen(onOk){PIN_OK=onOk;const m=pinMe(),left=5-(+(localStorage.getItem(PIN_TRY(m.email))||0));
   clGate(`<h3>🔒 קוד המחשב</h3><p class="small">${esc(m.name||m.email)} – הקלד את הקוד הקבוע שבחרת למחשב הזה.</p>${pinField('pin1','• • • •',`onkeydown="if(event.key==='Enter')pinCheck()"`)}
   <div id="clErr" class="small" style="color:var(--bad);min-height:18px"></div><button class="btn pri" style="width:100%" onclick="pinCheck()">כניסה</button>
-  <div style="margin-top:12px"><a href="#" class="small" onclick="pinForgot();return false">שכחתי את הקוד – כניסה עם קוד במייל (צריך אינטרנט)</a></div>
+  <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px"><a href="#" class="small" onclick="pinViaEmail();return false">📧 כניסה דרך המייל במקום הקוד (צריך אינטרנט)</a><a href="#" class="small muted" onclick="pinForgot();return false">שכחתי את הקוד – לבטל אותו ולבחור חדש</a></div>
   <div class="small muted" style="margin-top:8px">נשארו ${left} ניסיונות. אחרי 5 טעויות – צריך להיכנס שוב דרך המייל.</div>`);setTimeout(()=>{const e=document.getElementById('pin1');if(e)e.focus()},50)}
 async function pinCheck(){const m=pinMe(),P=pinGet(m.email),v=(document.getElementById('pin1')||{}).value||'';if(!v)return;
   if(await pinHash(v,P.salt)===P.hash){localStorage.removeItem(PIN_TRY(m.email));const f=PIN_OK;PIN_OK=null;f&&f();return}
@@ -5094,6 +5094,9 @@ function arcModal(y){modal(`<div class="modal narrow"><div class="mh"><h2>📦 �
   <div class="mf"><button class="btn pri" onclick="closeModal();archiveModal()">📦 להוריד עכשיו</button><button class="btn" onclick="closeModal()">תזכיר לי מחר</button></div></div>`)}
 function arcShowOnce(){if(window._arcShown||!USER||!can('settings'))return;window._arcShown=true;const y=arcDue();if(!y)return;const k=KEY+'_arcRem_'+today();try{if(localStorage.getItem(k))return;localStorage.setItem(k,'1')}catch(e){}
   const tryShow=(n)=>{if(document.querySelector('.ov')||document.getElementById('clGate')){if(n<40)setTimeout(()=>tryShow(n+1),3000);return}arcModal(y)};setTimeout(()=>tryShow(0),2500)}
+
+function pinViaEmailOn(){try{return localStorage.getItem(KEY+'_viaEmail')==='1'}catch(e){return false}}
+async function pinViaEmail(){if(!navigator.onLine)return toast('כניסה דרך המייל צריכה אינטרנט. בלי אינטרנט – נכנסים עם קוד המחשב.');try{localStorage.setItem(KEY+'_viaEmail','1');localStorage.setItem(LOCK_K(),'1')}catch(e){}try{CLOUD.sb&&await CLOUD.sb.auth.signOut({scope:'local'})}catch(e){}location.reload()}
 
 /* ====================== תמונות ומסמכים בכל המחשבים (מוצפן, דרך השרת) ======================
    כל מחשב שיש בו תמונות/מסמכים (מחבילות שנה או שהועלו ידנית) – מעלה אותם מוצפנים לשרת.
@@ -5160,7 +5163,7 @@ function views(){
     ['attendance','אישורי הגעה','☎',vAttendance,feat('attendance')],
     ['events','כנס וטיול','🎪',vEvents,true],
     ['tasks','משימות','☑',vTasks,feat('tasks')],
-    ['finance','כספים','💰',vFinance,feat('finance')||feat('donors')],
+    ['finance','כספים','💰',vFinance,(feat('finance')||feat('donors'))&&r==='admin'],
     ['reports','דוחות','📊',vReports,feat('reports')],
     ['alon','עלון ומודעות','📰',vAlon,feat('alon')&&can('edit')],
     ['calendar','לוח שנה','📅',vCalendar,feat('calendar')],
@@ -5180,7 +5183,7 @@ function renderNav(){
   document.getElementById('sidefoot').innerHTML=`גיבוי אחרון: ${lb?esc(hebDate(localIso(lb))):'<b>אף פעם</b>'}${days===null||days>=7?' ⚠':''}
     ${can('settings')||USER.role==='clerk'?`<button onclick="backup()">💾 שמור גיבוי</button>`:''}${can('settings')?`<button onclick="archiveModal()">📦 תיקיית סוף שנה</button>`:''}${USER.role!=='addresses'?`<button onclick="exportAll()">📊 ייצוא לאקסל</button>`:''}
     <div class="row"><button onclick="fontSize(1)" title="אותיות גדולות">א+</button><button onclick="fontSize(-1)" title="אותיות קטנות">א−</button><button onclick="openTheme()" title="צבעים ומראה">🎨</button></div>
-    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 24.10.2026 22:59</div>`;
+    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 24.10.2026 23:03</div>`;
   const yp=document.getElementById('yearpick');yp.innerHTML=st.years.map(y=>`<option ${y===S.viewYear?'selected':''} value='${esc(y)}'>${esc(y)}${y===st.currentYear?' (נוכחית)':''}</option>`).join('');
   document.getElementById('todayHeb').textContent=hebDate(today());applyBrand();
   document.getElementById('gsWrap').style.display=USER.role==='addresses'||USER.role==='counter'?'none':'';
