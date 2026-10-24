@@ -1771,7 +1771,7 @@ function routesView(){
   const y=S.viewYear,st=DB.settings,rs=DB.routes.filter(r=>r.year===y).sort((a,b)=>(a.city+a.name).localeCompare(b.city+b.name,'he'));
   const py=[...st.years,...new Set(DB.routes.map(r=>r.year))].filter(x=>hebVal(x)<hebVal(y)).sort((a,b)=>hebVal(b)-hebVal(a)).find(x=>DB.routes.some(r=>r.year===x));
   const geoN=DB.households.filter(h=>h.lat!=null).length;
-  return `<div class="toolbar edit-only"><button class="btn pri" onclick="editRoute()">+ מסלול חדש</button>
+  return `<div class="toolbar edit-only"><button class="btn pri" onclick="routeWizard()" title="עיר ← אזורים ושכונות ← סדר הליכה הכי קצר ← מסלולים">🧭 בניית מסלול שלב אחרי שלב</button><button class="btn" onclick="editRoute()">+ מסלול חדש</button>
     ${py?`<button class="btn" onclick="copyRoutes(${jsq(py)},${jsq(y)})">⧉ העתק מסלולים מ־${esc(py)}</button>`:''}
     <button class="btn" onclick="autoSplit()">⚡ חלוקה מהירה</button>
     <button class="btn pri" onclick="smartSplitModal()" title="המערכת מחלקת לאזורים ומסדרת את ההליכה לפי המפה">✨ חלוקה חכמה לפי מפה</button>
@@ -2573,7 +2573,7 @@ ${feat('lottery')?'<li>הגרלה: "🎲 הגרלה על מסך מלא" – מת
 <li><b>איפה זה:</b> ⚙ הגדרות ← לשונית <b>"🔐 אבטחה ובדיקה"</b>.</li>
 <li><b>🔒 נעילה אוטומטית:</b> אחרי חצי שעה בלי פעילות המערכת ננעלת. כדי להמשיך – "📧 שלחו לי קוד למייל" (או Google). דקה לפני הנעילה מופיע פס כתום – לחיצה עליו ממשיכה. בעל המערכת יכול לשנות את הזמן (10 דקות עד שעתיים). גם מי שסגר את המערכת וחוזר אחרי יותר מחצי שעה – נכנס עם קוד.</li>
 <li><b>📜 מי שינה מה (רק מנהל):</b> ⚙ הגדרות ← "יומן שינויים". רואים כל מה שכל אחד עשה, בכל המחשבים: מי, מתי, ומה השתנה (למשל "טלפון: הישן ← החדש", "נוסף מזומן 300 ₪"). אפשר לבחור משתמש מסוים ולראות רק מה שהוא עשה. גם בכרטיס הבחור יש "📜 היסטוריה" – רק למנהל.</li>
-<li><b>✉ מייל למשתמש חדש:</b> כשמוסיפים משתמש (⚙ הגדרות ← משתמשים והרשאות ← "+ הוסף ואשר") או מאשרים בקשה – נשלח אליו לבד מייל עם הקישור למערכת והוראות כניסה. אפשר לסמן "לצרף למייל את קוד הכניסה". הכפתור "✉ שלח הוראות" ליד כל משתמש שולח את המייל שוב. מי שהמייל שלו ברשימה – נכנס דרך המייל וזהו (בלי סיסמה ובלי מפתח). בלי אינטרנט – צריך את קוד הכניסה, ורק במחשב שכבר נכנסו ממנו פעם עם אינטרנט.</li><li><b>🔢 כניסה רק עם קוד:</b> במסך הכניסה יש 3 אפשרויות – Google, "📧 כניסה עם קוד שנשלח למייל", או "🔢 כניסה רק עם קוד הכניסה". הקוד לבד עובד רק במחשב שכבר נכנסו ממנו פעם אחת עם המייל (שם שמורים הנתונים). כשנכנסים רק עם הקוד והמחשב לא מחובר לשרת – עובדים על הנתונים שבמחשב, וכדי לסנכרן נכנסים פעם אחת במייל. כשהמחשב כבר מחובר (רוב הזמן) – הקוד פותח את המערכת כרגיל, עם סנכרון.</li><li><b>🔢 קוד כניסה לכל המחשבים:</b> המנהל קובע קוד אחד (4–12 ספרות) ב⚙ הגדרות ← 🔐 אבטחה ובדיקה. בכל כניסה בוחרים: <b>קוד הכניסה</b> (עובד גם בלי אינטרנט) <b>או</b> "📧 כניסה דרך המייל" (קוד חד־פעמי למייל המאושר). לא צריך את שניהם. מנהל יכול לראות את הקוד (👁 הצג), לשנות או להסיר. שכחת? נכנסים דרך המייל ורואים בהגדרות. 5 טעויות – רק דרך המייל. <b>מחשב חדש:</b> בפעם הראשונה נכנסים דרך המייל (כדי שהנתונים יירדו), ומאז עם הקוד.</li>
+<li><b>🧭 בניית מסלול שלב אחרי שלב</b> (כתובות ← מסלולים): <b>1.</b> בוחרים עיר. <b>2.</b> מחלקים את כל הרחובות של העיר לאזורים/שכונות (מסמנים רחובות ← בוחרים אזור ← "שייך"); הבתים מקבלים את שם האזור כ"שכונה" אם השדה היה ריק. <b>3.</b> בוחרים אזור – והמערכת מציעה כמה סדרי הליכה: "הכי קצר" (לפי מיקומי הבתים), "כמו בשנים הקודמות", והסדר שנשמר. לכל אחד רואים ק"מ וזמן. בוחרים אחד ומשנים כרצונכם: ▲▼ לסדר הרחובות, ובכל רחוב – עולה / יורד / "צד אחד הלוך, צד שני חזור". אפשר לבחור מאיזה רחוב מתחילים ולסמן "לחזור לנקודת ההתחלה". "💾 שמור את הסדר" – לפעם הבאה. <b>4.</b> בוחרים לכמה מסלולים לחלק – והם נוצרים לפי הסדר, מאוזנים בזמן.</li><li><b>✉ מייל למשתמש חדש:</b> כשמוסיפים משתמש (⚙ הגדרות ← משתמשים והרשאות ← "+ הוסף ואשר") או מאשרים בקשה – נשלח אליו לבד מייל עם הקישור למערכת והוראות כניסה. אפשר לסמן "לצרף למייל את קוד הכניסה". הכפתור "✉ שלח הוראות" ליד כל משתמש שולח את המייל שוב. מי שהמייל שלו ברשימה – נכנס דרך המייל וזהו (בלי סיסמה ובלי מפתח). בלי אינטרנט – צריך את קוד הכניסה, ורק במחשב שכבר נכנסו ממנו פעם עם אינטרנט.</li><li><b>🔢 כניסה רק עם קוד:</b> במסך הכניסה יש 3 אפשרויות – Google, "📧 כניסה עם קוד שנשלח למייל", או "🔢 כניסה רק עם קוד הכניסה". הקוד לבד עובד רק במחשב שכבר נכנסו ממנו פעם אחת עם המייל (שם שמורים הנתונים). כשנכנסים רק עם הקוד והמחשב לא מחובר לשרת – עובדים על הנתונים שבמחשב, וכדי לסנכרן נכנסים פעם אחת במייל. כשהמחשב כבר מחובר (רוב הזמן) – הקוד פותח את המערכת כרגיל, עם סנכרון.</li><li><b>🔢 קוד כניסה לכל המחשבים:</b> המנהל קובע קוד אחד (4–12 ספרות) ב⚙ הגדרות ← 🔐 אבטחה ובדיקה. בכל כניסה בוחרים: <b>קוד הכניסה</b> (עובד גם בלי אינטרנט) <b>או</b> "📧 כניסה דרך המייל" (קוד חד־פעמי למייל המאושר). לא צריך את שניהם. מנהל יכול לראות את הקוד (👁 הצג), לשנות או להסיר. שכחת? נכנסים דרך המייל ורואים בהגדרות. 5 טעויות – רק דרך המייל. <b>מחשב חדש:</b> בפעם הראשונה נכנסים דרך המייל (כדי שהנתונים יירדו), ומאז עם הקוד.</li>
 <li><b>🔐 כניסה רק עם Google או קוד במייל:</b> אין יותר סיסמאות – כדי שאף אחד לא ינחש סיסמה. נכנסים עם Google, או מקלידים מייל ומקבלים קוד חד־פעמי. הקבצים הישנים של עזר הוחלפו בדף ריק שמפנה לקישור, בלי שום נתון בתוכו.</li>
 <li><b>🔑 כניסה בלי מפתח:</b> מי שבעל המערכת או מנהל מאשר (⚙ הגדרות ← ☁ חיבור משותף ← ✅ אישור) – נכנס עם המייל שלו, והמערכת נפתחת לו לבד, בלי לדעת שום מפתח. מי שהוסר או נחסם – מאבד את הגישה מיד, והמידע נמחק אצלו מהמחשב. מנהלים יכולים לאשר, להוסיף ולהסיר משתמשים; חסימה – רק בעל המערכת.</li>
 <li><b>🗑 מחיקת היסטוריה (רק מנהל):</b> 🗑 ליד כל שורה – מוחק שורה אחת. ☑ סימון כמה שורות ← "מחיקת המסומנים". בחירת משתמש ← "מחיקת כל מה שהוא עשה". או "מחיקת כל ההיסטוריה" (צריך לכתוב "מחיקה"). המחיקה חלה בכל המחשבים.</li>
@@ -5208,6 +5208,141 @@ async function mediaStatus(){const loc=(await userPhotos()).length+(await yearFi
 if(typeof packImport==='function'){const _pi=packImport;packImport=async function(...a){const r=await _pi(...a);mediaKick(2000);return r}}
 if(typeof addUserPhotos==='function'){const _ap=addUserPhotos;addUserPhotos=async function(...a){const r=await _ap(...a);mediaKick(2000);return r}}
 
+/* ====================== 🧭 בניית מסלול שלב אחרי שלב ======================
+   1. בוחרים עיר  2. מחלקים את הרחובות לאזורים/שכונות  3. המערכת מציעה סדר הליכה (הכי קצר / כמו בשנים קודמות / לפי הסדר ששמרתם)
+   – ואפשר לשנות הכל: סדר הרחובות, כיוון בכל רחוב, מאיפה מתחילים, חזרה לנקודת ההתחלה  4. יוצרים מסלול אחד או כמה. */
+const RW_MODES={up:'⬆ ממספר נמוך לגבוה',down:'⬇ ממספר גבוה לנמוך',loop:'↕ צד אחד הלוך, צד שני חזור'};
+function rwAreas(city){const st=DB.settings;st.areas=st.areas||{};return st.areas[city]=st.areas[city]||[]}
+function rwCities(){return [...new Set([...(DB.settings.cities||[]),...DB.households.map(h=>h.city).filter(Boolean)])]}
+function rwStreets(city){const by={};DB.households.filter(h=>h.city===city&&h.active!==false&&h.street&&String(h.street).trim()).forEach(h=>{const k=streetKey(h.street);(by[k]=by[k]||{k,name:String(h.street).trim(),hs:[]}).hs.push(h)});
+  return Object.values(by).sort((a,b)=>a.name.localeCompare(b.name,'he'))}
+function rwAreaOf(city,k){return rwAreas(city).find(a=>a.streets.includes(k))||null}
+function routeWizard(){const st=DB.settings;const c=(window._rw&&window._rw.city)||st.cities[0]||rwCities()[0]||'';window._rw={step:1,city:c,area:null,sel:new Set(),q:'',opts:null,plan:null,start:'',round:false,n:1,shift:'לילה',skipNo:true,onlyFree:true};rwDraw()}
+function rwHead(t){const s=window._rw,steps=['עיר','אזורים ושכונות','סדר ההליכה','יצירת מסלולים'];
+  return `<div class="mh"><h2>🧭 בניית מסלול – ${t}</h2><button class="x" onclick="closeModal()">×</button></div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;padding:8px 16px 0">${steps.map((x,i)=>`<span class="pill ${i+1===s.step?'ok':''}" style="cursor:pointer;${i+1===s.step?'font-weight:700':'opacity:.7'}" onclick="rwGo(${i+1})">${i+1}. ${x}</span>`).join('<span class="muted">←</span>')}</div>`}
+function rwGo(n){const s=window._rw;if(n>=3&&!rwAreas(s.city).length){toast('קודם יוצרים לפחות אזור אחד');n=2}if(n===3&&!s.area)s.area=(rwAreas(s.city)[0]||{}).id||null;if(n===4&&!s.plan){toast('קודם בוחרים סדר הליכה');n=3}s.step=n;rwDraw()}
+function rwDraw(){const s=window._rw;if(s.step===1)return rwStep1();if(s.step===2)return rwStep2();if(s.step===3)return rwStep3();return rwStep4()}
+/* ---------- שלב 1: עיר ---------- */
+function rwStep1(){const s=window._rw,cs=rwCities();
+  modal(`<div class="modal">${rwHead('בחירת עיר')}<div class="mb">
+  <p>באיזו עיר בונים את המסלול?</p>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">${cs.map(c=>{const n=rwStreets(c);return `<button class="btn ${c===s.city?'pri':''}" style="min-width:150px;padding:10px" onclick="window._rw.city=${jsq(c)};window._rw.area=null;window._rw.plan=null;rwGo(2)"><b>${esc(c)}</b><div class="small">${n.length} רחובות · ${n.reduce((a,x)=>a+x.hs.length,0)} בתים · ${rwAreas(c).length} אזורים</div></button>`}).join('')}</div>
+  <div class="small muted" style="margin-top:12px">הרחובות נלקחים מכל הכתובות שרשומות במערכת בעיר הזו.</div></div>
+  <div class="mf"><button class="btn pri" onclick="rwGo(2)">הבא ←</button><button class="btn" onclick="closeModal()">סגירה</button></div></div>`)}
+/* ---------- שלב 2: אזורים ---------- */
+function rwStep2(){const s=window._rw,A=rwAreas(s.city),L=rwStreets(s.city),q=s.q.trim();
+  const shown=L.filter(x=>!q||x.name.includes(q)),free=L.filter(x=>!rwAreaOf(s.city,x.k));
+  modal(`<div class="modal wide">${rwHead('אזורים ושכונות – '+esc(s.city))}<div class="mb">
+  <div class="alert info small">מחלקים את הרחובות של ${esc(s.city)} לאזורים (שכונות). כל אזור = קבוצת רחובות שהולכים בהם יחד. מסמנים רחובות ← בוחרים אזור ← "שייך". רחוב יכול להיות רק באזור אחד.</div>
+  <div class="toolbar"><input type="text" id="rwNewA" placeholder="שם אזור / שכונה חדשה" style="min-width:200px" onkeydown="if(event.key==='Enter')rwAddArea()"><button class="btn pri" onclick="rwAddArea()">+ הוספת אזור</button></div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px">${A.map(a=>{const nh=L.filter(x=>a.streets.includes(x.k)).reduce((t,x)=>t+x.hs.length,0);return `<span class="pill" style="padding:6px 10px"><b>${esc(a.name)}</b> · ${a.streets.length} רחובות · ${nh} בתים <a href="#" title="שינוי שם" onclick="rwRenArea('${a.id}');return false">✏</a> <a href="#" title="מחיקה" onclick="rwDelArea('${a.id}');return false">🗑</a></span>`}).join('')||'<span class="muted">עוד אין אזורים – מוסיפים למעלה.</span>'}</div>
+  <div class="toolbar"><input type="text" placeholder="🔍 חיפוש רחוב" value="${esc(s.q)}" oninput="window._rw.q=this.value;clearTimeout(window._rwT);window._rwT=setTimeout(()=>{rwDraw();const e=document.querySelector('[placeholder=\\'🔍 חיפוש רחוב\\']');if(e){e.focus();e.setSelectionRange(e.value.length,e.value.length)}},250)">
+   <button class="btn sm" onclick="window._rw.sel=new Set(rwStreets(window._rw.city).filter(x=>!rwAreaOf(window._rw.city,x.k)).map(x=>x.k));rwDraw()">סמן את כל מה שבלי אזור (${free.length})</button><button class="btn sm" onclick="window._rw.sel=new Set();rwDraw()">נקה סימון</button>
+   <span class="small">מסומנים: <b>${s.sel.size}</b></span>
+   ${A.length?`<select id="rwTo">${A.map(a=>`<option value="${a.id}">${esc(a.name)}</option>`).join('')}<option value="">— בלי אזור —</option></select><button class="btn pri" onclick="rwAssign(document.getElementById('rwTo').value)">✔ שייך את המסומנים</button>`:''}</div>
+  <div class="tw" style="max-height:46vh"><table><thead><tr><th class="nosort" style="width:30px"></th><th class="nosort">רחוב</th><th class="nosort num">בתים</th><th class="nosort">אזור</th></tr></thead><tbody>
+  ${shown.map(x=>{const a=rwAreaOf(s.city,x.k);return `<tr><td><input type="checkbox" ${s.sel.has(x.k)?'checked':''} onchange="window._rw.sel[this.checked?'add':'delete'](${jsq(x.k)});rwDraw()"></td><td><b>${esc(x.name)}</b></td><td class="num">${x.hs.length}</td>
+   <td><select onchange="window._rw.sel=new Set([${jsq(x.k)}]);rwAssign(this.value)"><option value="">— בלי אזור —</option>${A.map(b=>`<option value="${b.id}" ${a&&a.id===b.id?'selected':''}>${esc(b.name)}</option>`).join('')}</select></td></tr>`}).join('')}</tbody></table></div>
+  <div class="small muted" style="margin-top:6px">${free.length?`עוד ${free.length} רחובות בלי אזור.`:'✔ כל הרחובות משויכים לאזורים.'} הבתים ברחובות של אזור מקבלים את שם האזור בשדה "שכונה" (אם השדה היה ריק).</div></div>
+  <div class="mf"><button class="btn pri" onclick="rwGo(3)">הבא: סדר ההליכה ←</button><button class="btn" onclick="rwGo(1)">→ חזרה</button><button class="btn" onclick="closeModal()">סגירה</button></div></div>`)}
+function rwAddArea(){const s=window._rw,v=(document.getElementById('rwNewA').value||'').trim();if(!v)return toast('כותבים שם לאזור');const A=rwAreas(s.city);if(A.some(a=>a.name===v))return toast('כבר יש אזור בשם הזה');
+  A.push({id:'a'+uid(),name:v,streets:[],order:null,modes:{}});log('אזורים',s.city+': נוסף '+v);save();rwDraw()}
+function rwRenArea(id){const s=window._rw,a=rwAreas(s.city).find(x=>x.id===id);const v=prompt('שם חדש לאזור:',a.name);if(!v||!v.trim()||v.trim()===a.name)return;const old=a.name;a.name=v.trim();
+  DB.households.forEach(h=>{if(h.city===s.city&&h.neighborhood===old)h.neighborhood=a.name});log('אזורים',old+' ← '+a.name);save();rwDraw()}
+function rwDelArea(id){const s=window._rw,A=rwAreas(s.city),i=A.findIndex(x=>x.id===id);if(i<0||!confirm('למחוק את האזור "'+A[i].name+'"? (הבתים והמסלולים לא נמחקים)'))return;log('אזורים','נמחק '+A[i].name);A.splice(i,1);if(s.area===id){s.area=null;s.plan=null}save();rwDraw()}
+function rwAssign(aid){const s=window._rw,A=rwAreas(s.city);if(!s.sel.size)return toast('לא סומנו רחובות');const to=A.find(a=>a.id===aid)||null;
+  A.forEach(a=>{a.streets=a.streets.filter(k=>!s.sel.has(k));if(a.order)a.order=a.order.filter(k=>!s.sel.has(k))});
+  if(to){s.sel.forEach(k=>{to.streets.push(k)});const names=new Set(A.map(a=>a.name));DB.households.forEach(h=>{if(h.city===s.city&&s.sel.has(streetKey(h.street))&&(!h.neighborhood||names.has(h.neighborhood)))h.neighborhood=to.name})}
+  else{const names=new Set(A.map(a=>a.name));DB.households.forEach(h=>{if(h.city===s.city&&s.sel.has(streetKey(h.street))&&names.has(h.neighborhood))h.neighborhood=''})}
+  log('אזורים',`${s.sel.size} רחובות ← ${to?to.name:'בלי אזור'}`);s.sel=new Set();s.plan=null;save();rwDraw()}
+/* ---------- שלב 3: סדר ההליכה ---------- */
+function rwArea(){const s=window._rw;return rwAreas(s.city).find(a=>a.id===s.area)||null}
+function rwHouses(a){const s=window._rw,y=S.viewYear;const used=new Set(DB.routes.filter(r=>r.year===y&&r.shift===s.shift).flatMap(r=>r.stops||[]));
+  return DB.households.filter(h=>h.city===s.city&&h.active!==false&&h.street&&a.streets.includes(streetKey(h.street))&&(!s.skipNo||!h.noVisit)&&(!s.onlyFree||!used.has(h.id)))}
+const rwNum=h=>parseInt(h.house)||0,rwApt=h=>parseInt(h.apt)||0;
+function rwStreetHouses(hs,k,mode){const L=hs.filter(h=>streetKey(h.street)===k);const up=(a,b)=>rwNum(a)-rwNum(b)||rwApt(a)-rwApt(b);
+  if(mode==='down')return L.sort((a,b)=>-up(a,b));if(mode==='loop'){const odd=L.filter(h=>rwNum(h)%2===1).sort(up),even=L.filter(h=>rwNum(h)%2!==1).sort((a,b)=>-up(a,b));return [...odd,...even]}return L.sort(up)}
+function rwSeq(hs,order,modes){return order.flatMap(k=>rwStreetHouses(hs,k,modes[k]||'up'))}
+// קצוות של רחוב (לחישוב מרחקים): מתחילת הרחוב לסופו
+function rwEnds(hs,k){const g=hs.filter(h=>streetKey(h.street)===k&&h.lat!=null).sort((a,b)=>rwNum(a)-rwNum(b));if(!g.length)return null;return {lo:[g[0].lat,g[0].lon],hi:[g[g.length-1].lat,g[g.length-1].lon],len:havm([g[0].lat,g[0].lon],[g[g.length-1].lat,g[g.length-1].lon])}}
+function rwStartEnd(e,mode){return mode==='down'?[e.hi,e.lo]:mode==='loop'?[e.lo,e.lo]:[e.lo,e.hi]}
+function rwKm(hs,order,modes,round){let m=0,first=null,prev=null;for(const k of order){const e=rwEnds(hs,k);if(!e)continue;const [a,b]=rwStartEnd(e,modes[k]||'up');if(!first)first=a;if(prev)m+=havm(prev,a)*1.3;m+=(modes[k]==='loop'?2:1)*e.len*1.1;prev=b}
+  if(round&&first&&prev)m+=havm(prev,first)*1.3;return m/1000}
+function rwMin(hs,order,km){const T=DB.settings.routeTime;const fl=hs.reduce((a,h)=>a+(parseInt(h.floor)||0),0);return Math.round(hs.length*T.perStop+fl*T.perFloor+order.length*T.perStreet+km*T.perKm)}
+// הכי קצר: סדר + כיוון לכל רחוב (שכן קרוב מכל נקודת התחלה + שיפורים)
+function rwShortest(hs,keys,start,round){const E={};keys.forEach(k=>{const e=rwEnds(hs,k);if(e)E[k]=e});const geo=keys.filter(k=>E[k]),nog=keys.filter(k=>!E[k]);if(!geo.length)return null;
+  const D=(p,q)=>havm(p,q);const cost=(ord,md)=>{let c=0,f=null,pv=null;for(const k of ord){const [a,b]=rwStartEnd(E[k],md[k]);if(!f)f=a;if(pv)c+=D(pv,a);c+=md[k]==='loop'?E[k].len:0;pv=b}if(round&&f)c+=D(pv,f);return c};
+  const fixDirs=(ord,md)=>{for(let it=0;it<3;it++)ord.forEach(k=>{let best=md[k],bc=Infinity;for(const m of ['up','down','loop']){md[k]=m;const c=cost(ord,md);if(c<bc-0.01){bc=c;best=m}}md[k]=best})};
+  let best=null,bc=Infinity;const starts=start&&E[start]?[start]:geo;
+  for(const s0 of starts.slice(0,25))for(const m0 of ['up','down']){const used=new Set([s0]),ord=[s0],md={};geo.forEach(k=>md[k]='up');md[s0]=m0;let pv=rwStartEnd(E[s0],m0)[1];
+    while(ord.length<geo.length){let bk=null,bm='up',bd=Infinity;for(const k of geo){if(used.has(k))continue;for(const m of ['up','down']){const d=D(pv,rwStartEnd(E[k],m)[0]);if(d<bd){bd=d;bk=k;bm=m}}}used.add(bk);ord.push(bk);md[bk]=bm;pv=rwStartEnd(E[bk],bm)[1]}
+    // שיפור: היפוך קטעים (2-opt) + בדיקת כיוונים
+    let imp=true,g=0;while(imp&&g++<40){imp=false;for(let i=1;i<ord.length-1;i++)for(let j=i+1;j<ord.length;j++){const o2=[...ord.slice(0,i),...ord.slice(i,j+1).reverse(),...ord.slice(j+1)],m2={...md};ord.slice(i,j+1).forEach(k=>{m2[k]=m2[k]==='up'?'down':m2[k]==='down'?'up':'loop'});if(cost(o2,m2)<cost(ord,md)-0.5){ord.splice(0,ord.length,...o2);Object.assign(md,m2);imp=true}}}
+    if(!round)fixDirs(ord,md);const c=cost(ord,md);if(c<bc){bc=c;best={order:ord.slice(),modes:{...md}}}}
+  best.order.push(...nog);nog.forEach(k=>best.modes[k]='up');best.noGeo=nog;return best}
+async function rwEnsureGeo(hs){const s=window._rw;let M=null;try{M=await mapLoad(s.city)}catch(e){}if(M)hs.filter(h=>h.lat==null).forEach(h=>{const g=geoFromMap(M,h);if(g){h.lat=g.lat;h.lon=g.lon;h.geoSrc=g.src}});return M}
+async function rwOptions(){const s=window._rw,a=rwArea();if(!a)return;const hs=rwHouses(a),keys=[...new Set(hs.map(h=>streetKey(h.street)))];s.opts=[];if(!keys.length){rwDraw();return}
+  s.M=await rwEnsureGeo(hs);const mk=(id,title,desc,order,modes)=>{const km=rwKm(hs,order,modes,s.round);s.opts.push({id,title,desc,order,modes,km,min:rwMin(hs,order,km)})};
+  const sh=rwShortest(hs,keys,s.start,s.round);if(sh)mk('short','🗺 הכי קצר',(s.start?'מתחיל ב'+(rwStreets(s.city).find(x=>x.k===s.start)||{}).name+'. ':'')+(s.round?'חוזר לנקודת ההתחלה. ':'')+'המערכת בדקה את כל האפשרויות לפי המיקומים'+(sh.noGeo.length?` (${sh.noGeo.length} רחובות בלי מיקום – בסוף)`:''),sh.order,sh.modes);
+  const lr=smartOrderList(hs,s.city,null).list;const lo=[...new Set(lr.map(h=>streetKey(h.street)))],lm={};lo.forEach(k=>{const g=lr.filter(h=>streetKey(h.street)===k);lm[k]=g.length>1&&rwNum(g[0])>rwNum(g[g.length-1])?'down':'up'});
+  mk('learn','🧠 כמו שהלכו בשנים הקודמות','לפי המסלולים שנבנו בעבר (בלי אינטרנט)',lo,lm);
+  if(a.order&&a.order.length){const o=[...a.order.filter(k=>keys.includes(k)),...keys.filter(k=>!a.order.includes(k))];mk('saved','💾 הסדר ששמרתם לאזור','הסדר שנשמר בפעם הקודמת',o,{...a.modes})}
+  const so=(DB.settings.streetOrder||{})[s.city]||[];if(so.length){const idx={};so.forEach((x,i)=>idx[streetKey(x)]=i);const o=keys.slice().sort((x,y)=>(idx[x]??999)-(idx[y]??999));mk('so','📋 לפי "סדר הרחובות" של העיר','הסדר שנקבע ב🗺 סדר הרחובות',o,{})}
+  rwDraw()}
+function rwPick(id){const s=window._rw,o=s.opts.find(x=>x.id===id);s.plan={order:o.order.slice(),modes:{...o.modes},from:o.title};rwDraw()}
+function rwMv(i,d){const p=window._rw.plan.order,j=d===-99?0:d===99?p.length-1:i+d;if(j<0||j>=p.length)return;const [x]=p.splice(i,1);p.splice(j,0,x);rwDraw()}
+function rwMode(k,m){window._rw.plan.modes[k]=m;rwDraw()}
+function rwPlanSvg(hs,seq){const g=seq.filter(h=>h.lat!=null);if(g.length<2)return '';const la=g.map(h=>h.lat),lo=g.map(h=>h.lon);let a0=Math.min(...la),a1=Math.max(...la),o0=Math.min(...lo),o1=Math.max(...lo);const pa=(a1-a0)*.08+.0003,po=(o1-o0)*.08+.0003;a0-=pa;a1+=pa;o0-=po;o1+=po;
+  const kx=Math.cos(a0*Math.PI/180),W=620,H=Math.min(460,Math.max(220,Math.round(W*(a1-a0)/((o1-o0)*kx))));const x=v=>((v-o0)/(o1-o0))*W,y=v=>H-((v-a0)/(a1-a0))*H;
+  const pts=g.map(h=>`${x(h.lon).toFixed(1)},${y(h.lat).toFixed(1)}`).join(' ');
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:${W}px;background:#fbf8f1;border:1px solid var(--line,#ddd);border-radius:8px"><polyline points="${pts}" fill="none" stroke="#c0392b" stroke-width="2.5" stroke-linejoin="round" opacity=".8"/>
+   ${g.map((h,i)=>`<circle cx="${x(h.lon).toFixed(1)}" cy="${y(h.lat).toFixed(1)}" r="${i===0?7:4}" fill="${i===0?'#1e7b4a':i===g.length-1?'#1f6fb2':'#c0392b'}" stroke="#fff"><title>${i+1}. ${esc(h.street+' '+(h.house||''))}</title></circle>`).join('')}</svg>
+   <div class="small muted">🟢 התחלה · 🔵 סוף · הקו = סדר ההליכה (בקו אווירי, בערך)</div>`}
+function rwStep3(){const s=window._rw,A=rwAreas(s.city),a=rwArea();const hs=a?rwHouses(a):[];const keys=[...new Set(hs.map(h=>streetKey(h.street)))],names={};rwStreets(s.city).forEach(x=>names[x.k]=x.name);
+  if(a&&!s.opts)setTimeout(rwOptions,0);
+  let planHtml='';if(s.plan){const P=s.plan;P.order=P.order.filter(k=>keys.includes(k));keys.forEach(k=>{if(!P.order.includes(k))P.order.push(k)});const seq=rwSeq(hs,P.order,P.modes),km=rwKm(hs,P.order,P.modes,s.round),mn=rwMin(hs,P.order,km);
+    planHtml=`<h3 style="margin-top:14px">✏ הסדר שבחרת <span class="small muted">(${esc(P.from)} – אפשר לשנות)</span></h3>
+    <div class="strip"><div><span>רחובות</span><b>${P.order.length}</b></div><div><span>בתים</span><b>${seq.length}</b></div><div><span>הליכה בערך</span><b>${km.toFixed(1)} ק"מ</b></div><div><span>זמן משוער</span><b>${Math.floor(mn/60)}:${String(mn%60).padStart(2,'0')}</b></div></div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start"><div class="tw free" style="flex:1 1 560px;min-width:330px;max-height:48vh"><table><tbody>${P.order.map((k,i)=>{const n=hs.filter(h=>streetKey(h.street)===k);const e=rwEnds(hs,k);
+      return `<tr><td class="muted">${i+1}</td><td><b>${esc(names[k]||k)}</b><div class="small muted">${n.length} בתים${n.length?' · מס\' '+Math.min(...n.map(rwNum))+'–'+Math.max(...n.map(rwNum)):''}${e?'':' · ⚠ בלי מיקום'}</div></td>
+      <td><select onchange="rwMode(${jsq(k)},this.value)">${Object.entries(RW_MODES).map(([m,t])=>`<option value="${m}" ${(P.modes[k]||'up')===m?'selected':''}>${t}</option>`).join('')}</select></td>
+      <td style="white-space:nowrap"><button class="btn sm" onclick="rwMv(${i},-99)" title="להתחיל ממנו">⤒</button><button class="btn sm" onclick="rwMv(${i},-1)">▲</button><button class="btn sm" onclick="rwMv(${i},1)">▼</button><button class="btn sm" onclick="rwMv(${i},99)" title="לסוף">⤓</button></td></tr>`}).join('')}</tbody></table></div>
+    <div style="flex:1 1 300px;min-width:280px">${rwPlanSvg(hs,seq)}</div></div>
+    <div class="toolbar" style="margin-top:8px"><button class="btn" onclick="rwSaveOrder()">💾 שמור את הסדר לאזור "${esc(a.name)}"</button><span class="small muted">בפעם הבאה הוא יופיע כאפשרות "💾 הסדר ששמרתם".</span></div>`}
+  modal(`<div class="modal wide">${rwHead('סדר ההליכה – '+esc(s.city))}<div class="mb">
+  <div class="form"><label>אזור<select onchange="window._rw.area=this.value;window._rw.opts=null;window._rw.plan=null;window._rw.start='';rwDraw()">${A.map(x=>`<option value="${x.id}" ${x.id===s.area?'selected':''}>${esc(x.name)} (${x.streets.length} רחובות)</option>`).join('')}</select></label>
+   <label>להתחיל מרחוב<select onchange="window._rw.start=this.value;window._rw.opts=null;rwDraw()"><option value="">— המערכת תבחר —</option>${keys.map(k=>`<option value="${esc(k)}" ${k===s.start?'selected':''}>${esc(names[k]||k)}</option>`).join('')}</select></label>
+   <label>משמרת<select onchange="window._rw.shift=this.value;window._rw.opts=null;rwDraw()">${['לילה','בוקר','יום ירושלים','לפני פורים'].map(x=>`<option ${x===s.shift?'selected':''}>${x}</option>`).join('')}</select></label>
+   <label class="chk"><input type="checkbox" ${s.round?'checked':''} onchange="window._rw.round=this.checked;window._rw.opts=null;rwDraw()"> לחזור בסוף לנקודת ההתחלה (הלוך־חזור)</label>
+   <label class="chk"><input type="checkbox" ${s.onlyFree?'checked':''} onchange="window._rw.onlyFree=this.checked;window._rw.opts=null;rwDraw()"> רק בתים שעוד לא במסלול השנה (באותה משמרת)</label>
+   <label class="chk"><input type="checkbox" ${s.skipNo?'checked':''} onchange="window._rw.skipNo=this.checked;window._rw.opts=null;rwDraw()"> בלי בתים שביקשו לא לבוא</label></div>
+  ${!a?'<div class="alert warn">בוחרים אזור.</div>':!hs.length?'<div class="alert warn">אין באזור הזה בתים לבחירה (אולי כולם כבר במסלולים השנה – אפשר להוריד את הסימון "רק בתים שעוד לא במסלול").</div>':
+   `<h3>אפשרויות לסדר ההליכה <span class="small muted">(${hs.length} בתים ב־${keys.length} רחובות)</span></h3>
+   ${!s.opts?'<div class="muted">מחשב…</div>':`<div style="display:flex;gap:10px;flex-wrap:wrap">${s.opts.map((o,i)=>{const best=Math.min(...s.opts.map(x=>x.km));return `<div class="card" style="flex:1;min-width:240px;margin:0;${s.plan&&s.plan.from===o.title?'outline:2px solid var(--ok)':''}"><b>${o.title}</b>${o.km===best&&s.opts.length>1?' <span class="pill ok">הכי קצר</span>':''}
+     <div class="small muted" style="margin:4px 0">${esc(o.desc)}</div><div><b>${o.km.toFixed(1)} ק"מ</b> · ${Math.floor(o.min/60)}:${String(o.min%60).padStart(2,'0')} שעות</div>
+     <div class="small" style="margin:6px 0;line-height:1.6">${o.order.map(k=>esc(names[k]||k)).join(' ← ')}</div><button class="btn sm pri" onclick="rwPick('${o.id}')">בחר את זה ✔</button></div>`}).join('')}</div>`}`}
+  ${a&&hs.length&&s.opts&&!s.opts.some(o=>o.id==='short')?`<div class="alert warn" style="margin-top:10px">כדי שהמערכת תחשב את <b>הדרך הכי קצרה</b>, היא צריכה לדעת איפה כל בית נמצא. עושים את זה פעם אחת: <a href="#" onclick="closeModal();mapModal();return false"><b>🗺 התקנת מפת ${esc(s.city)}</b></a> (צריך אינטרנט, כמה דקות) – ואז חוזרים לכאן. בינתיים אפשר לבחור "כמו בשנים הקודמות" ולסדר ידנית.</div>`:''}
+  ${planHtml}
+  ${s.M?'':'<div class="small muted" style="margin-top:8px">💡 מרחקים לפי מיקומי הבתים (קו אווירי). אם מתקינים מפת רחובות (🗺 מפות) – המיקומים מדויקים יותר, ובמסלול עצמו מקבלים הוראות הליכה.</div>'}</div>
+  <div class="mf"><button class="btn pri" onclick="rwGo(4)" ${s.plan?'':'disabled'}>הבא: יצירת מסלולים ←</button><button class="btn" onclick="rwGo(2)">→ חזרה</button><button class="btn" onclick="closeModal()">סגירה</button></div></div>`)}
+function rwSaveOrder(){const s=window._rw,a=rwArea();a.order=s.plan.order.slice();a.modes={...s.plan.modes};log('אזורים','נשמר סדר הליכה ל'+a.name);save();toast('✔ נשמר');s.opts=null;rwDraw()}
+/* ---------- שלב 4: יצירה ---------- */
+function rwChunks(seq,n){const T=DB.settings.routeTime,w=h=>T.perStop+(parseInt(h.floor)||0)*T.perFloor;const tot=seq.reduce((a,h)=>a+w(h),0),per=tot/n;const parts=[[]];let acc=0;
+  seq.forEach((h,i)=>{const prev=seq[i-1];if(acc>=per&&parts.length<n&&!(prev&&bldKey(prev)===bldKey(h))){parts.push([]);acc=0}parts[parts.length-1].push(h);acc+=w(h)});return parts.filter(p=>p.length)}
+function rwStep4(){const s=window._rw,a=rwArea(),hs=rwHouses(a),P=s.plan,seq=rwSeq(hs,P.order,P.modes),parts=rwChunks(seq,s.n);
+  modal(`<div class="modal wide">${rwHead('יצירת מסלולים – '+esc(a.name))}<div class="mb">
+  <div class="form"><label>לכמה מסלולים (קבוצות) לחלק?<input type="number" min="1" max="20" value="${s.n}" onchange="window._rw.n=Math.max(1,Math.min(20,+this.value||1));rwDraw()"></label>
+   <label>שם<input type="text" id="rwBase" value="${esc(s.base||a.name)}" oninput="window._rw.base=this.value"></label><label>שנה<input type="text" value="${esc(S.viewYear)}" disabled></label><label>משמרת<input type="text" value="${esc(s.shift)}" disabled></label></div>
+  <div class="small muted">החלוקה שומרת על סדר ההליכה שבחרת: כל מסלול הוא קטע רצוף, והזמן מאוזן בין המסלולים.</div>
+  <table style="margin-top:8px"><tbody>${parts.map((p,i)=>{const ks=[...new Set(p.map(h=>streetKey(h.street)))],km=rwKm(p,ks,P.modes,false),mn=rwMin(p,ks,km);return `<tr><td><span class="colorDot" style="background:${SS_COLORS[i%10]}"></span><b>${esc((s.base||a.name)+(parts.length>1?' '+(i+1):''))}</b></td><td class="num">${p.length} בתים</td><td class="num">${Math.floor(mn/60)}:${String(mn%60).padStart(2,'0')}</td><td class="small" style="white-space:normal">${esc(p[0].street+' '+p[0].house)} ← … ← ${esc(p[p.length-1].street+' '+p[p.length-1].house)}</td></tr>`}).join('')}</tbody></table></div>
+  <div class="mf"><button class="btn pri" onclick="rwCreate()">✔ צור ${parts.length>1?parts.length+' מסלולים':'מסלול'}</button><button class="btn" onclick="rwGo(3)">→ חזרה</button><button class="btn" onclick="closeModal()">ביטול</button></div></div>`)}
+function rwCreate(){const s=window._rw,a=rwArea(),hs=rwHouses(a),P=s.plan,parts=rwChunks(rwSeq(hs,P.order,P.modes),s.n),base=(s.base||a.name).trim()||a.name,M=s.M;
+  parts.forEach((p,i)=>{const r={id:'r'+uid(),year:S.viewYear,name:base+(parts.length>1?' '+(i+1):''),city:s.city,neighborhood:a.name,shift:s.shift,stops:p.map(h=>h.id),directions:'',mapKey:null};
+    if(M&&typeof walkDirections==='function'){try{const bl=routeBlds(r);bl.forEach(b=>b.node=nearNode(M,[b.h.lat,b.h.lon]));const d=walkDirections(M,bl.filter(b=>b.node>=0));r.walk={meters:Math.round(d.meters),steps:d.steps.map(x=>({t:x.t,txt:x.txt})),at:new Date().toISOString()};r.directions=walkText(r.walk)}catch(e){}}
+    DB.routes.push(r)});
+  log('מסלולים',`נבנו ${parts.length} מסלולים לאזור ${a.name} (${s.city})`);save();closeModal();toast(`✔ נוצרו ${parts.length} מסלולים – אפשר לפתוח כל אחד ולשנות`);render()}
+
 /* ====================== ניווט והפעלה ====================== */
 function views(){
   const r=USER?USER.role:'admin';const all=[
@@ -5242,7 +5377,7 @@ function renderNav(){
   document.getElementById('sidefoot').innerHTML=`גיבוי אחרון: ${lb?esc(hebDate(localIso(lb))):'<b>אף פעם</b>'}${days===null||days>=7?' ⚠':''}
     ${can('settings')||USER.role==='clerk'?`<button onclick="backup()">💾 שמור גיבוי</button>`:''}${can('settings')?`<button onclick="archiveModal()">📦 תיקיית סוף שנה</button>`:''}${USER.role!=='addresses'?`<button onclick="exportAll()">📊 ייצוא לאקסל</button>`:''}
     <div class="row"><button onclick="fontSize(1)" title="אותיות גדולות">א+</button><button onclick="fontSize(-1)" title="אותיות קטנות">א−</button><button onclick="openTheme()" title="צבעים ומראה">🎨</button></div>
-    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 25.10.2026 00:21</div>`;
+    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 25.10.2026 00:29</div>`;
   const yp=document.getElementById('yearpick');yp.innerHTML=st.years.map(y=>`<option ${y===S.viewYear?'selected':''} value='${esc(y)}'>${esc(y)}${y===st.currentYear?' (נוכחית)':''}</option>`).join('');
   document.getElementById('todayHeb').textContent=hebDate(today());applyBrand();
   document.getElementById('gsWrap').style.display=USER.role==='addresses'||USER.role==='counter'?'none':'';
