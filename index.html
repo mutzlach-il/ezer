@@ -880,7 +880,7 @@ function vPeople(){
   const shSel=p=>`<select class="inl" onchange="setInline('${p.id}','shiur',this.value)">${['',...(st.shiurim[p.yeshiva]||[])].concat(p.shiur&&!(st.shiurim[p.yeshiva]||[]).includes(p.shiur)?[p.shiur]:[]).map(x=>`<option ${x===p.shiur?'selected':''}>${esc(x)}</option>`).join('')}</select>`;
   const yeSel=p=>`<select class="inl" onchange="setInline('${p.id}','yeshiva',this.value)">${st.yeshivot.map(x=>`<option ${x===p.yeshiva?'selected':''}>${esc(x)}</option>`).join('')}</select>`;
   const showNum=feat('personalNum');
-  const SR=false,ncol=(SR?8:6)+ys.length+(showNum?1:0);
+  const SR=false,ncol=(SR?7:6)+ys.length+(showNum?1:0);
   return `
   <div class="strip clickstrip">
     <div class="${!S.filter.status?'on':''}" onclick="setF('status','')" title="להציג את כולם"><span>בחורים</span><b>${ps.length}</b><span class="small muted">כולם</span></div>
@@ -902,7 +902,7 @@ function vPeople(){
   <div class="tw"><table class="main-t">
     <thead><tr>${showNum?th('people','num','מס\'','num'):''}${th('people','first','שם')}${th('people','last','משפחה')}${th('people','yeshiva','ישיבה')}${th('people','shiur','שיעור')}
       ${ys.map(y=>th('people','y'+y,esc(y),'num yc')).join('')}
-      ${th('people','counted','נספר למענק','num sep')}${SR?th('people','req','צריך','num')+th('people','miss','חסר','num'):''}<th class="nosort">זכאי?</th></tr></thead>
+      ${th('people','miss','חסר למענק','num sep')}<th class="nosort">זכאי?</th></tr></thead>
     <tbody>${rows.map((p,i)=>{const s=status(p),prev=rows[i-1];let head='';
       if(!sorted){
         if(!prev||prev.yeshiva!==p.yeshiva){const grp=rows.filter(x=>x.yeshiva===p.yeshiva);head+=`<tr class="g1"><td colspan="${ncol}">${esc(yName(p.yeshiva))} <span>${grp.length} בחורים · זכאים ${grp.filter(x=>status(x).miss<=0).length}</span></td></tr>`}
@@ -910,17 +910,17 @@ function vPeople(){
       }
       return head+`<tr>${showNum?`<td class="num muted">${p.num||''}</td>`:''}<td class="name" onclick="openCard('${p.id}')">${esc(p.first)}</td><td class="name" onclick="openCard('${p.id}')">${esc(p.last)}${feat('siblings')&&siblings(p).length?' <span class="muted small" title="יש אחים">👥</span>':''}</td><td>${yeSel(p)}</td><td>${shSel(p)}</td>
       ${ys.map(y=>{const v=yearTotal(p,y);return `<td class="num yc">${v?fmt(v):''}</td>`}).join('')}
-      <td class="num sep"><b>${fmt(countedTotal(p))}</b></td>${SR?`<td class="num">${fmt(requirement(p))}</td>
+<td class="num sep">${(m=>status(p).key==='groups'?'<span class="small">שנות קבוצות</span>':m>0?'<b>'+fmt(m)+'</b>':'–')(status(p).miss)}</td>${SR?`<td class="num">${fmt(requirement(p))}</td>
       <td class="num" style="color:${s.miss>0?'var(--bad)':'var(--ok)'}">${s.miss>0?fmt(s.miss):'0'}</td>`:''}
       <td>${s.miss<=0?'<b style="color:var(--ok)">✔ זכאי</b>':'<span style="color:var(--bad)">✘ לא</span>'}${p.married?' 💍':''}</td></tr>`}).join('')}
     </tbody>
-    <tfoot><tr><td colspan="${showNum?5:4}">${rows.length} בחורים</td>${ys.map(y=>`<td class="num yc">${SR?fmt(rows.reduce((a,p)=>a+yearTotal(p,y),0)):''}</td>`).join('')}<td class="num sep">${SR?fmt(rows.reduce((a,p)=>a+countedTotal(p),0)):''}</td>${SR?'<td></td><td></td>':''}<td></td></tr></tfoot>
+    <tfoot><tr><td colspan="${showNum?5:4}">${rows.length} בחורים</td>${ys.map(y=>`<td class="num yc">${SR?fmt(rows.reduce((a,p)=>a+yearTotal(p,y),0)):''}</td>`).join('')}<td class="sep"></td>${SR?'<td></td><td></td>':''}<td></td></tr></tfoot>
   </table></div>
-  <div class="small muted" style="margin-top:8px">לחיצה על שם פותחת את כל הפרטים. "נספר למענק" – לבחורי המבצע נספר מ־${esc(st.campaignYear)} והלאה.</div>`;
+  <div class="small muted" style="margin-top:8px">לחיצה על שם פותחת את כל הפרטים.</div>`;
 }
 
 /* ====================== כרטיס בחור ====================== */
-function openCard(id,openYear){
+function openCard(id,openYear){const CM=canSeeReq()&&window._cardMoneyId===id;window._cardMoneyId='';
   const p=byId(id);if(!p)return;const st=DB.settings,s=status(p),t=countedTotal(p),r=requirement(p),ys=allYears(p);
   const sib=feat('siblings')?siblings(p):[];
   modal(`<div class="modal"><div class="mh"><h2>${esc(p.title||'')} ${esc(fullName(p))} ${feat('personalNum')&&p.num?`<span class="muted small">מס' ${p.num}</span>`:''}</h2>
@@ -935,12 +935,13 @@ function openCard(id,openYear){
     </div>
     <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start">
     <table class="sumt"><tbody>
+      ${canSeeReq()?`<tr><td colspan="3"><a href="#" class="small" onclick="window._cardMoneyId=${CM?"''":"'"+p.id+"'"};openCard('${p.id}');return false">${CM?'🙈 הסתר סכומי מענק':'👁 הצג סכומי מענק (רק למנהל)'}</a></td></tr>`:''}
       ${ys.map(y=>{const v=yearTotal(p,y);return `<tr><td>${esc(y)}</td><td class="num">${v?shek(v):'–'}</td><td class="small muted">${prizesFor(p,y).map(x=>esc(x.name)).join(', ')}</td></tr>`}).join('')}
-      <tr class="tot"><td>נספר למענק</td><td class="num">${shek(t)}</td><td class="small muted">${campaignRule(p)?'מ־'+esc(st.campaignYear)+' והלאה':'כל השנים'}</td></tr>
-      ${canSeeReq()?`<tr><td>צריך לאסוף</td><td class="num">${shek(r)}</td><td class="small muted wrap" style="max-width:260px">${esc(reqSource(p))}</td></tr>`:''}
+      ${CM?`<tr class="tot"><td>נספר למענק</td><td class="num">${shek(t)}</td><td class="small muted">${campaignRule(p)?'מ־'+esc(st.campaignYear)+' והלאה':'כל השנים'}</td></tr>`:''}
+      ${CM?`<tr><td>צריך לאסוף</td><td class="num">${shek(r)}</td><td class="small muted wrap" style="max-width:260px">${esc(reqSource(p))}</td></tr>`:''}
       ${DB.settings.groupRule&&DB.settings.groupRule.enabled?`<tr><td>שנים עם ${DB.settings.groupRule.perYear}+ קבוצות</td><td class="num">${groupYearsCount(p)} / ${DB.settings.groupRule.years}</td><td class="small muted">${groupRuleOk(p)?'✔':'עוד לא'}</td></tr>`:''}
       ${DB.settings.loan&&DB.settings.loan.enabled?`<tr><td>הלוואה בדולרים</td><td class="num">${loanUsd(p)?'<b style="color:var(--ok)">'+fmt(loanUsd(p))+' $</b>':'–'}</td><td class="small muted">${loanUsd(p)?'זכאי – אסף '+loanYears(p)+' שנים':'אסף '+loanYears(p)+' שנים – זכאי מ־'+(DB.settings.loan.minYears||3)+' שנים'}</td></tr>`:''}
-      <tr class="tot"><td>${s.miss>0?(canSeeReq()?'חסר':'מצב'):'מצב'}</td><td class="num" style="color:${s.miss>0?'var(--bad)':'var(--ok)'}">${s.key==='groups'?'חסרות שנות קבוצות':s.miss>0?(canSeeReq()?shek(s.miss):'עוד לא זכאי'):'✔ זכאי למענק'}</td><td>${p.married?'💍 התחתן'+(p.weddingDate?' – '+dt(p.weddingDate):'')+(p.grantPaid?' · קיבל מענק':''):''}</td></tr>
+      <tr class="tot"><td>${s.miss>0?'חסר למענק':'מצב'}</td><td class="num" style="color:${s.miss>0?'var(--bad)':'var(--ok)'}">${s.key==='groups'?'חסרות שנות קבוצות':s.miss>0?shek(s.miss):'✔ זכאי למענק'}</td><td>${p.married?'💍 התחתן'+(p.weddingDate?' – '+dt(p.weddingDate):'')+(p.grantPaid?' · קיבל מענק':''):''}</td></tr>
     </tbody></table>
     ${p.engaged&&!p.married?`<div class="alert info" style="margin:6px 0">💐 מאורס${p.engDate?' מ־'+esc(hebDate(p.engDate)):''}${p.planDate?' · החתונה: <b>'+esc(dayName(p.planDate))+' '+esc(hebDate(p.planDate))+'</b> ('+inDays(daysTo(p.planDate))+')':''}${p.engNote?' · '+esc(p.engNote):''}</div>`:''}
     ${goalOf(p,S.viewYear)?`<div class="small" style="margin:4px 0">🎯 יעד אישי ${esc(S.viewYear)}: ${shek(yearTotal(p,S.viewYear))} מתוך ${shek(goalOf(p,S.viewYear))}${pctBar(yearTotal(p,S.viewYear),goalOf(p,S.viewYear))}</div>`:''}
@@ -2298,8 +2299,8 @@ function setMoney(){const st=DB.settings,ovr=DB.people.filter(p=>hasOverride(p))
     <h3>קמפיין</h3><label class="chk"><input type="checkbox" ${st.ketanaGAsGedola?'checked':''} onchange="setPath('ketanaGAsGedola',this.checked)"> ישיבה קטנה שיעור אחרון (ג') נחשבת כישיבה גדולה ביעד ובפרסים</label>
     <h3>מה כולל המענק</h3><textarea style="width:100%;min-height:120px" onchange="setPath('grantDetails',this.value)">${esc(st.grantDetails||'')}</textarea></div>
   <div class="card"><h2>סכום מיוחד לבחור מסוים</h2><div class="small muted" style="margin-bottom:8px">לבחור שצריך לתת יותר או פחות מהרגיל.</div>
-    ${ovr.length?`<table style="width:auto"><tbody>${ovr.map(p=>`<tr><td><b>${esc(fullName(p))}</b></td><td class="muted small">רגיל היה: ${fmt((campaignRule(p)||{}).req||st.defaultReq)}</td><td><input type="number" style="width:100px" value="${p.reqOverride}" onchange="byId('${p.id}').reqOverride=+this.value;log('סכום מיוחד',fullName(byId('${p.id}'))+' '+this.value);save();toast('נשמר')"> ₪</td><td><input type="text" style="width:280px" placeholder="למה? (סיבה / הוראות)" value="${esc(p.reqReason||'')}" onchange="byId('${p.id}').reqReason=this.value.trim();log('סכום מיוחד – סיבה',fullName(byId('${p.id}'))+': '+this.value.trim());save();toast('נשמר')"></td><td><button class="btn sm danger" onclick="if(!confirm('לבטל את הסכום המיוחד?'))return;byId('${p.id}').reqOverride=null;byId('${p.id}').reqReason='';save();render()">בטל</button></td></tr>`).join('')}</tbody></table>`:''}
-    <div class="toolbar" style="margin-top:10px"><select id="ovP"><option value="">בחר בחור…</option>${ps.filter(p=>!hasOverride(p)).map(p=>`<option value="${p.id}">${esc(p.last+' '+p.first)}</option>`).join('')}</select><input type="number" id="ovA" placeholder="סכום" style="width:110px"><input type="text" id="ovR" placeholder="למה? (סיבה / הוראות)" style="width:260px">
+    ${ovr.length?`<table style="width:auto"><tbody>${ovr.map(p=>`<tr><td><b>${esc(fullName(p))}</b></td><td class="muted small">רגיל היה: ${fmt((campaignRule(p)||{}).req||st.defaultReq)}</td><td><input type="number" style="width:100px" value="${p.reqOverride}" onchange="byId('${p.id}').reqOverride=+this.value;log('סכום מיוחד',fullName(byId('${p.id}'))+' '+this.value);save();toast('נשמר')"> ₪</td><td><textarea class="ovTx" rows="2" style="width:420px;max-width:60vw;min-height:44px;resize:vertical;font:inherit;line-height:1.5;overflow:hidden" placeholder="למה? (סיבה / הוראות)" oninput="ovFit(this)" onchange="byId('${p.id}').reqReason=this.value.trim();log('סכום מיוחד – סיבה',fullName(byId('${p.id}'))+': '+this.value.trim());save();toast('נשמר')">${esc(p.reqReason||'')}</textarea><div><a href="#" class="small" onclick="ovBig('${p.id}');return false">⤢ חלון גדול</a></div></td><td><button class="btn sm danger" onclick="if(!confirm('לבטל את הסכום המיוחד?'))return;byId('${p.id}').reqOverride=null;byId('${p.id}').reqReason='';save();render()">בטל</button></td></tr>`).join('')}</tbody></table>`:''}
+    <div class="toolbar" style="margin-top:10px"><select id="ovP"><option value="">בחר בחור…</option>${ps.filter(p=>!hasOverride(p)).map(p=>`<option value="${p.id}">${esc(p.last+' '+p.first)}</option>`).join('')}</select><input type="number" id="ovA" placeholder="סכום" style="width:110px"><textarea id="ovR" rows="2" placeholder="למה? (סיבה / הוראות)" style="width:420px;max-width:60vw;min-height:44px;resize:vertical;font:inherit;line-height:1.5;overflow:hidden" oninput="ovFit(this)"></textarea>
     <button class="btn" onclick="const id=document.getElementById('ovP').value,a=document.getElementById('ovA').value;if(!id||!a){toast('בחר בחור וסכום');return}byId(id).reqOverride=+a;byId(id).reqReason=(document.getElementById('ovR').value||'').trim();log('סכום מיוחד',fullName(byId(id))+' '+a+(byId(id).reqReason?' – '+byId(id).reqReason:''));save();render();toast('נשמר')">+ הוסף</button></div></div>
   ${setGroupYears()}
   <div class="card"><h2>סוגי תשלומים, קבוצות וזיכויים</h2><div class="small muted" style="margin-bottom:8px">"זיכוי / מחיר" בקבוצה = כמה נרשם לכל בחור שהלך בקבוצה הזו (V ברישום, וקבוצות פורים).</div>
@@ -2413,6 +2414,13 @@ function gyAdd(y){const n=(document.getElementById('gyN').value||'').trim(),pr=+
   if(!catDef(full)){st.categories.splice(Math.max(0,st.categories.findIndex(c=>c.name==='קבוצות')),0,{name:full,type:'group',price:0,grid:true,shift:n.replace(/^קבוצה\s*–\s*/,'')});st.catYear=st.catYear||{};st.years.forEach(x=>{if(x!==y){const o=(st.catYear[x]=st.catYear[x]||{});o[full]={off:true}}})}
   const o=((st.catYear=st.catYear||{})[y]=st.catYear[y]||{});o[full]={price:pr};log('קבוצות לפי שנה',y+': נוספה '+full+' – '+pr);save();render();toast('נוספה ל־'+y)}
 
+function ovFit(t){t.style.height='auto';t.style.height=(t.scrollHeight+2)+'px'}
+function ovFitAll(){document.querySelectorAll('.ovTx,#ovR').forEach(ovFit)}
+function ovBig(id){const p=byId(id);if(!p)return;modal(`<div class="modal"><div class="mh"><h2>למה? – ${esc(fullName(p))}</h2><button class="x" onclick="closeModal()">×</button></div><div class="mb">
+  <textarea id="ovBigT" style="width:100%;min-height:55vh;font:inherit;font-size:17px;line-height:1.7;resize:vertical" placeholder="סיבה / הוראות">${esc(p.reqReason||'')}</textarea>
+  <div class="toolbar" style="margin-top:10px"><button class="btn pri" onclick="ovBigSave('${id}')">שמירה</button><button class="btn" onclick="closeModal()">סגירה בלי שמירה</button></div></div></div>`);setTimeout(()=>{const t=document.getElementById('ovBigT');if(t){t.focus();t.setSelectionRange(t.value.length,t.value.length)}},50)}
+function ovBigSave(id){const p=byId(id),v=document.getElementById('ovBigT').value.trim();p.reqReason=v;log('סכום מיוחד – סיבה',fullName(p)+': '+v);save();closeModal();toast('נשמר');render()}
+
 /* ====================== הוראות למנהל ====================== */
 function vHelp(){const st=DB.settings,on=esc(st.orgName||'עזר'),r=st.campaignRules,sc=shiftCats();
 const S_=[
@@ -2429,7 +2437,7 @@ const S_=[
 <div class="ex">📌 דוגמה: לבחור שמסדר את המסלולים בפורים נותנים משתמש "כתובות בלבד" עם "להסתיר סכומים". הוא יכול לסדר מסלולים ולהדפיס – בלי לראות כמה כל משפחה נתנה ובלי לגעת בכסף של הבחורים.</div>`],
 ['h3','המסכים',`
 <table class="ht"><tbody>
-<tr><td><b>👤 בחורים</b></td><td>הטבלה הראשית: כל הבחורים, כל השנים, ובסוף – נספר, צריך, חסר, זכאי.</td></tr>
+<tr><td><b>👤 בחורים</b></td><td>הטבלה הראשית: כל הבחורים, כל השנים, ובסוף – כמה חסר למענק וזכאי.</td></tr>
 <tr><td><b>✎ רישום כסף לשנה</b></td><td>הקלדת הכסף של שנה אחת – כמו באקסל.</td></tr>
 ${feat('campaign')?'<tr><td><b>🎁 קמפיין ופרסים</b></td><td>יעד, מתנות, הגרלות, מי זכאי, מלאי.</td></tr>':''}
 ${feat('groups')?'<tr><td><b>👥 קבוצות פורים</b></td><td>קבוצות, שיבוץ, כסף שחזר, דירוג.</td></tr>':''}
@@ -2565,7 +2573,7 @@ ${feat('lottery')?'<li>הגרלה: "🎲 הגרלה על מסך מלא" – מת
 <li><b>איפה זה:</b> ⚙ הגדרות ← לשונית <b>"🔐 אבטחה ובדיקה"</b>.</li>
 <li><b>🔒 נעילה אוטומטית:</b> אחרי חצי שעה בלי פעילות המערכת ננעלת. כדי להמשיך – "📧 שלחו לי קוד למייל" (או Google). דקה לפני הנעילה מופיע פס כתום – לחיצה עליו ממשיכה. בעל המערכת יכול לשנות את הזמן (10 דקות עד שעתיים). גם מי שסגר את המערכת וחוזר אחרי יותר מחצי שעה – נכנס עם קוד.</li>
 <li><b>📜 מי שינה מה (רק מנהל):</b> ⚙ הגדרות ← "יומן שינויים". רואים כל מה שכל אחד עשה, בכל המחשבים: מי, מתי, ומה השתנה (למשל "טלפון: הישן ← החדש", "נוסף מזומן 300 ₪"). אפשר לבחור משתמש מסוים ולראות רק מה שהוא עשה. גם בכרטיס הבחור יש "📜 היסטוריה" – רק למנהל.</li>
-<li><b>🔢 קוד כניסה לכל המחשבים:</b> המנהל קובע קוד אחד (4–12 ספרות) ב⚙ הגדרות ← 🔐 אבטחה ובדיקה. בכל כניסה בוחרים: <b>קוד הכניסה</b> (עובד גם בלי אינטרנט) <b>או</b> "📧 כניסה דרך המייל" (קוד חד־פעמי למייל המאושר). לא צריך את שניהם. מנהל יכול לראות את הקוד (👁 הצג), לשנות או להסיר. שכחת? נכנסים דרך המייל ורואים בהגדרות. 5 טעויות – רק דרך המייל. <b>מחשב חדש:</b> בפעם הראשונה נכנסים דרך המייל (כדי שהנתונים יירדו), ומאז עם הקוד.</li>
+<li><b>✉ מייל למשתמש חדש:</b> כשמוסיפים משתמש (⚙ הגדרות ← משתמשים והרשאות ← "+ הוסף ואשר") או מאשרים בקשה – נשלח אליו לבד מייל עם הקישור למערכת והוראות כניסה. אפשר לסמן "לצרף למייל את קוד הכניסה". הכפתור "✉ שלח הוראות" ליד כל משתמש שולח את המייל שוב. מי שהמייל שלו ברשימה – נכנס דרך המייל וזהו (בלי סיסמה ובלי מפתח). בלי אינטרנט – צריך את קוד הכניסה, ורק במחשב שכבר נכנסו ממנו פעם עם אינטרנט.</li><li><b>🔢 כניסה רק עם קוד:</b> במסך הכניסה יש 3 אפשרויות – Google, "📧 כניסה עם קוד שנשלח למייל", או "🔢 כניסה רק עם קוד הכניסה". הקוד לבד עובד רק במחשב שכבר נכנסו ממנו פעם אחת עם המייל (שם שמורים הנתונים). כשנכנסים רק עם הקוד והמחשב לא מחובר לשרת – עובדים על הנתונים שבמחשב, וכדי לסנכרן נכנסים פעם אחת במייל. כשהמחשב כבר מחובר (רוב הזמן) – הקוד פותח את המערכת כרגיל, עם סנכרון.</li><li><b>🔢 קוד כניסה לכל המחשבים:</b> המנהל קובע קוד אחד (4–12 ספרות) ב⚙ הגדרות ← 🔐 אבטחה ובדיקה. בכל כניסה בוחרים: <b>קוד הכניסה</b> (עובד גם בלי אינטרנט) <b>או</b> "📧 כניסה דרך המייל" (קוד חד־פעמי למייל המאושר). לא צריך את שניהם. מנהל יכול לראות את הקוד (👁 הצג), לשנות או להסיר. שכחת? נכנסים דרך המייל ורואים בהגדרות. 5 טעויות – רק דרך המייל. <b>מחשב חדש:</b> בפעם הראשונה נכנסים דרך המייל (כדי שהנתונים יירדו), ומאז עם הקוד.</li>
 <li><b>🔐 כניסה רק עם Google או קוד במייל:</b> אין יותר סיסמאות – כדי שאף אחד לא ינחש סיסמה. נכנסים עם Google, או מקלידים מייל ומקבלים קוד חד־פעמי. הקבצים הישנים של עזר הוחלפו בדף ריק שמפנה לקישור, בלי שום נתון בתוכו.</li>
 <li><b>🔑 כניסה בלי מפתח:</b> מי שבעל המערכת או מנהל מאשר (⚙ הגדרות ← ☁ חיבור משותף ← ✅ אישור) – נכנס עם המייל שלו, והמערכת נפתחת לו לבד, בלי לדעת שום מפתח. מי שהוסר או נחסם – מאבד את הגישה מיד, והמידע נמחק אצלו מהמחשב. מנהלים יכולים לאשר, להוסיף ולהסיר משתמשים; חסימה – רק בעל המערכת.</li>
 <li><b>🗑 מחיקת היסטוריה (רק מנהל):</b> 🗑 ליד כל שורה – מוחק שורה אחת. ☑ סימון כמה שורות ← "מחיקת המסומנים". בחירת משתמש ← "מחיקת כל מה שהוא עשה". או "מחיקת כל ההיסטוריה" (צריך לכתוב "מחיקה"). המחיקה חלה בכל המחשבים.</li>
@@ -2583,7 +2591,7 @@ ${feat('lottery')?'<li>הגרלה: "🎲 הגרלה על מסך מלא" – מת
 <li><b>תזכורת אוטומטית:</b> מכ"ד אדר (בשנה מעוברת – כ"ד אדר ב') מופיעה למנהלים הודעה עם ההוראות המדויקות. היא חוזרת כל יום, עד שמורידים את התיקייה של השנה (עם התמונות והמסמכים).</li>
 <li>אחרי ההורדה: קליק ימני על הקובץ ← "חלץ הכל", ומעתיקים לדיסק החיצוני.</li></ul>`],
 ['h10r','💬 סכום מיוחד לבחור – עם סיבה',`<ul><li>⚙ הגדרות ← סכומים ותשלומים ← "סכום מיוחד לבחור מסוים": ליד כל בחור יש שדה <b>"למה?"</b> – כותבים את הסיבה או הוראות (למשל: "אח שלו כבר קיבל מענק", "סוכם עם המנהל"). נשמר לבד.</li><li>כשמוסיפים בחור חדש לרשימה – אפשר לכתוב את הסיבה כבר בשורת ההוספה.</li><li>הסיבה מופיעה גם בכרטיס הבחור (למה הוא צריך את הסכום) ונרשמת ביומן השינויים.</li></ul>`],
-['h10o','📋 סדר הבחורים ומי רואה "צריך"',`<ul><li>הרשימות מסודרות <b>מהגדולים לקטנים</b>: ישיבה גדולה – קיבוץ, שיעור ג', ב', א' – ואחר כך ישיבה קטנה ג', ב', א' – ובסוף חיידר.</li><li>בדף <b>בחורים</b> (שמראים לפעמים לבחורים) <b>אין</b> "צריך", "חסר" או סכום כולל של השנה – <b>גם לא למנהל</b>. המנהל רואה אותם בכרטיס הבחור, בדוחות ובכספים.</li><li>גם <b>סכומי הכסף הכוללים</b> – "נאסף בשנה הנוכחית", שורת הסיכום למטה ברשימה, ו<b>💰 כספים</b> – <b>רק מנהל רואה</b>.</li></ul>`],
+['h10o','📋 סדר הבחורים ומה רואים בדף הבחורים',`<ul><li>הרשימות מסודרות <b>מהגדולים לקטנים</b>: ישיבה גדולה – קיבוץ, שיעור ג', ב', א' – ואחר כך ישיבה קטנה ג', ב', א' – ובסוף חיידר.</li><li>בדף <b>בחורים</b> (שמראים לפעמים לבחורים) יש עמודה <b>"חסר למענק"</b> – כמה עוד חסר לכל בחור כדי להגיע למענק ("–" = כבר זכאי). <b>אין</b> "נספר למענק", "צריך" או סכום כולל של השנה – <b>גם לא למנהל</b>.</li><li>בכרטיס הבחור רואים רק כמה חסר. מנהל יכול ללחוץ בכרטיס "👁 הצג סכומי מענק (רק למנהל)" כדי לראות גם נספר וצריך; בפתיחה הבאה זה שוב מוסתר.</li><li><b>סכום מיוחד – "למה?":</b> השדה גדל לבד ומראה את כל מה שנכתב. "⤢ חלון גדול" פותח חלון גדול לכתיבה ולקריאה של הוראות ארוכות.</li><li>גם <b>סכומי הכסף הכוללים</b> – "נאסף בשנה הנוכחית", שורת הסיכום למטה ברשימה, ו<b>💰 כספים</b> – <b>רק מנהל רואה</b>.</li></ul>`],
 ['h10g','👥 קבוצות פורים לפי שנה',`<ul><li><b>איפה:</b> ⚙ הגדרות ← סכומים ותשלומים ← <b>"👥 קבוצות פורים לפי שנה"</b>. בוחרים שנה למעלה.</li><li>לכל קבוצה (ליל בני ברק, יום בני ברק, ליל ירושלים, יום ירושלים…): <b>"יוצאת?"</b> – מסמנים אם יוצאת השנה; <b>"זיכוי לבחור"</b> – כמה נזקף לכל בחור שהלך <b>באותה שנה</b>.</li><li>שינוי בשנה אחת <b>לא משנה</b> שנים אחרות: מי שהלך בתשפ"ד מקבל לפי תשפ"ד, ומי שהלך בתשפ"ו – לפי תשפ"ו.</li><li>קבוצה חדשה (למשל "ליל ביתר") – מוסיפים בשורה למטה; היא נוספת רק לשנה שנבחרה.</li><li>בפתיחת שנה חדשה – הקבוצות והסכומים מועתקים מהשנה הקודמת, ומשנים לפי ההחלטה.</li></ul>`],
 ['h10n','כלים חדשים: ספירה מהירה, קבלות, כפילויות, זכאות, תזכורות',`
 <ul><li><b>⚡ ספירה מהירה</b> (רישום כסף לשנה): לערב החפ"ק – כותבים שם ← Enter ← סכום ← Enter. רואים רשימה של מה שנרשם, ו"↶ ביטול" לטעות.</li>
@@ -4622,7 +4630,8 @@ function clLoginScreen(msg){
   clGate(`<div id="gBtn" style="display:flex;justify-content:center;min-height:44px"></div><div id="gMsg" class="small muted"></div>
   <div class="small muted" style="margin:14px 0 8px">— או —</div>
   <button class="btn pri" style="width:100%;margin-top:4px" onclick="clOtpStart()">📧 כניסה עם קוד שנשלח למייל</button>
-  <div class="small muted" style="margin-top:6px">גם בפעם הראשונה – מכניסים את המייל, מקבלים קוד, ומחכים לאישור המנהל.</div>
+  <button class="btn" style="width:100%;margin-top:8px" onclick="clCodeLogin()">🔢 כניסה רק עם קוד הכניסה</button>
+  <div class="small muted" style="margin-top:6px">בפעם הראשונה במחשב – נכנסים עם המייל. מאז אפשר גם רק עם קוד הכניסה (גם בלי אינטרנט).</div>
   <div id="clErr" class="small" style="color:var(--bad);margin-top:10px;min-height:18px">${msg||''}</div>
   <div class="small muted" style="margin-top:10px">🔒 רק מי שהמנהל אישר יכול להיכנס. הנתונים מוצפנים.</div>`);clInitGoogle()}
 let clNonce='';
@@ -4742,7 +4751,9 @@ async function clEnter(){clLoadMeta();{const M=CLOUD.meta,ns=Object.keys(M.synce
 function clEnterOffline(){if(idleLocked())return false;const me=JSON.parse(localStorage.getItem(KEY+'_cloud_me')||'null');if(!me)return false;CLOUD.me=me;
   return clLoadKey().then(ok=>{if(!ok)return false;clLoadMeta();CLOUD.on=true;CLOUD.online=false;clGateClose();idleStart();startSession(clUser());clStatus();clContentLoad();
     window.addEventListener('online',()=>location.reload(),{once:true});return true})}
-async function clSignOut(){try{await CLOUD.sb.auth.signOut()}catch(e){}try{localStorage.removeItem(KEY+'_cloud_me')}catch(e){}location.reload()}
+async function clSignOut(){try{await CLOUD.sb.auth.signOut()}catch(e){}try{if(typeof orgCode==='function'&&orgCode())localStorage.setItem(LOCK_K(),'1');else localStorage.removeItem(KEY+'_cloud_me')}catch(e){}location.reload()}
+function clCodeLogin(){const m=typeof pinMe==='function'&&pinMe();if(!m||!m.email||!orgCode()){const e=document.getElementById('clErr');if(e)e.innerHTML='במחשב הזה עוד לא נכנסו עם המייל'+(orgCode()?'':' (או שהמנהל עוד לא קבע קוד כניסה)')+'.<br>בפעם הראשונה נכנסים עם המייל – ומאז אפשר גם רק עם הקוד.';return}
+  pinAskScreen(()=>{idleUnlock();window._codeOk=1;clBoot()})}
 // יציאה: רגילה (העותק נשאר במחשב לעבודה בלי אינטרנט) או מלאה (מחשב משותף – מוחקים הכל מהמחשב הזה)
 function clLogoutMenu(){const pend=CLOUD.meta&&clRecords&&Object.keys(clRecords()).some(k=>CLOUD.meta.synced[k]!==clHash(clRecords()[k]));
   modal(`<div class="modal narrow"><div class="mh"><h2>🚪 יציאה</h2><button class="x" onclick="closeModal()">×</button></div><div class="mb">
@@ -4803,7 +4814,7 @@ function clRefresh(n){const busy=document.querySelector('.ov')||['INPUT','TEXTAR
   if(busy){clearTimeout(CLOUD.rT);CLOUD.rT=setTimeout(()=>clRefresh(n),4000);return}render();toast('☁ עודכן מהמחשבים האחרים')}
 function clRealtime(){try{CLOUD.sb.channel('ez').on('postgres_changes',{event:'*',schema:'public',table:'ez_records'},()=>{clearTimeout(CLOUD.pullT);CLOUD.pullT=setTimeout(()=>clSync(),800)}).subscribe()}catch(e){}}
 function clStatus(s,msg){if(s)CLOUD.state=s;let el=document.getElementById('clStat');const side=document.getElementById('sidefoot');if(!side)return;if(!el){el=document.createElement('div');el.id='clStat';el.style.cssText='margin:4px 0;font-size:12px;cursor:pointer';el.onclick=()=>{S.tab.set='cloud';go('settings')}}
-  if(!side.contains(el))side.prepend(el);const st=!CLOUD.online?['📴 בלי אינטרנט – יסתנכרן כשיחזור','#e0a800']:CLOUD.state==='err'?['⚠ בעיה בסנכרון','#ff8a80']:CLOUD.state==='wait'?['⏳ שולח…','#ffd27a']:['☁ מסונכרן','#8fd19e'];
+  if(!side.contains(el))side.prepend(el);const st=CLOUD.codeOnly&&navigator.onLine?['🔢 נכנסת עם קוד – בלי סנכרון. לסנכרון: יציאה וכניסה במייל','#e0a800']:!CLOUD.online?['📴 בלי אינטרנט – יסתנכרן כשיחזור','#e0a800']:CLOUD.state==='err'?['⚠ בעיה בסנכרון','#ff8a80']:CLOUD.state==='wait'?['⏳ שולח…','#ffd27a']:['☁ מסונכרן','#8fd19e'];
   el.innerHTML=`<span style="color:${st[1]}">${st[0]}</span>${CLOUD.me?`<div style="opacity:.75">${esc(CLOUD.me.name)}</div>`:''}`;el.title=msg||''}
 
 /* ---------- תוכן קבוע (עלונים, תמונות, מאגר הידע) – מוצפן בשרת ---------- */
@@ -4837,34 +4848,34 @@ async function clCardFill(){const el=document.getElementById('clCard');if(!el)re
    ${sys&&sys.disabled?`<button class="btn pri" onclick="clSys(false)">הפעל את המערכת</button>`:`<input type="text" id="sysMsg" placeholder="הודעה למשתמשים (לא חובה)" style="min-width:200px"><button class="btn danger" onclick="if(confirm('להשבית את המערכת לכל המשתמשים?'))clSys(true,document.getElementById('sysMsg').value)">השבת לכולם</button>`}</div>`:''}
   <p class="small muted">👑 בעלים – רק אתה: גם השבתת המערכת והשבתת משתמשים. <b>מנהל</b> – הכל, כולל הגדרות והוספה/הסרה של משתמשים. <b>רושם</b> – רושם ועורך, בלי הגדרות. <b>צפייה בלבד</b> – רואה ולא משנה. <b>כתובות בלבד</b> / <b>מתנדב לספירה</b> – רק המסך שלהם. "בלי סכומים" – לא רואה סכומי כסף.</p>
   ${pend.length?`<div class="alert warn"><b>⏳ ${pend.length} ממתינים לאישור</b> – נכנסו וביקשו גישה:<table style="margin-top:6px"><tbody>${pend.map(u=>`<tr><td><b>${esc(u.name||'')}</b><div class="small" dir="ltr">${esc(u.email)}</div></td><td><select id="pr_${esc(u.email)}">${Object.entries(CL_ROLES).map(([k,t])=>`<option value="${k}" ${k==='clerk'?'selected':''}>${t}</option>`).join('')}</select></td>
-    <td style="white-space:nowrap"><button class="btn sm pri" onclick="clUserSet(${jsq(u.email)},{active:true,role:document.getElementById('pr_${esc(u.email)}').value})">✔ אשר כניסה</button> <button class="btn sm danger" onclick="if(confirm('לדחות את הבקשה?'))clUserDel(${jsq(u.email)})">דחה</button></td></tr>`).join('')}</tbody></table>
-    <div class="small">אחרי האישור אומרים לו בעל פה את מפתח הארגון.</div></div>`:''}
+    <td style="white-space:nowrap"><button class="btn sm pri" onclick="clUserSet(${jsq(u.email)},{active:true,role:document.getElementById('pr_${esc(u.email)}').value}).then(()=>clWelcome(${jsq(u.email)},${jsq(u.name||'')},false).then(ok=>toast(ok?'✔ אושר, ונשלח אליו מייל עם הקישור וההוראות':'אושר – המייל לא נשלח')))">✔ אשר כניסה</button> <button class="btn sm danger" onclick="if(confirm('לדחות את הבקשה?'))clUserDel(${jsq(u.email)})">דחה</button></td></tr>`).join('')}</tbody></table>
+    <div class="small">אחרי האישור נשלח אליו לבד מייל עם הקישור והוראות הכניסה. לא צריך מפתח.</div></div>`:''}
   <div class="tw free"><table><thead><tr><th class="nosort">שם</th><th class="nosort">מייל</th><th class="nosort">הרשאה</th><th class="nosort">בלי סכומים</th><th class="nosort">מצב</th><th class="nosort">כניסה אחרונה</th><th class="nosort"></th></tr></thead><tbody>
   ${act.map(u=>{const me=u.email===CLOUD.me.email,own=u.role==='owner';return `<tr style="${u.blocked?'opacity:.6':''}"><td><input type="text" value="${esc(u.name||'')}" style="min-width:110px" onchange="clUserSet(${jsq(u.email)},{name:this.value})"></td><td dir="ltr" class="small">${esc(u.email)}</td>
    <td>${clRoleSel(u.email,u.role,me)}</td><td style="text-align:center"><input type="checkbox" ${u.hide_amounts?'checked':''} ${own?'disabled':''} onchange="clUserSet(${jsq(u.email)},{hide_amounts:this.checked})"></td>
    <td>${u.blocked?'<span class="pill bad">מושבת</span>':'<span class="pill ok">פעיל</span>'}</td><td class="small">${clDt(u.last_login)}</td>
-   <td style="white-space:nowrap">${me?'<span class="small muted">(אתה)</span>':own?'':`${clIsOwner()?`<button class="btn sm" onclick="clUserSet(${jsq(u.email)},{blocked:${!u.blocked}})">${u.blocked?'הפעל מחדש':'⛔ השבת'}</button> `:''}<button class="btn sm danger" onclick="if(confirm('להסיר את ${esc(u.email)}? הוא לא יוכל להיכנס יותר, ומה שנשמר אצלו במחשב יימחק בפעם הבאה שיתחבר.'))clUserDel(${jsq(u.email)})">הסר</button>`}</td></tr>`}).join('')}</tbody></table></div>
+   <td style="white-space:nowrap">${me?'<span class="small muted">(אתה)</span>':own?'':`${clIsOwner()?`<button class="btn sm" onclick="clUserSet(${jsq(u.email)},{blocked:${!u.blocked}})">${u.blocked?'הפעל מחדש':'⛔ השבת'}</button> `:''}<button class="btn sm" title="שולח לו שוב מייל עם הקישור והוראות הכניסה" onclick="clWelcomeAsk(${jsq(u.email)},${jsq(u.name||'')})">✉ שלח הוראות</button> <button class="btn sm danger" onclick="if(confirm('להסיר את ${esc(u.email)}? הוא לא יוכל להיכנס יותר, ומה שנשמר אצלו במחשב יימחק בפעם הבאה שיתחבר.'))clUserDel(${jsq(u.email)})">הסר</button>`}</td></tr>`}).join('')}</tbody></table></div>
   <div class="form" style="margin-top:12px;align-items:end"><label>הוספת משתמש – מייל<input type="email" id="nuE" dir="ltr" placeholder="name@gmail.com"></label><label>שם<input type="text" id="nuN"></label>
-   <label>הרשאה<select id="nuR">${Object.entries(CL_ROLES).map(([k,t])=>`<option value="${k}" ${k==='clerk'?'selected':''}>${t}</option>`).join('')}</select></label><button class="btn pri" onclick="clUserAdd()">+ הוסף ואשר</button></div>
-  <p class="small muted">מי שתוסיף כאן נכנס מיד עם המייל שלו (Google או קוד למייל) – רק צריך להגיד לו את מפתח הארגון. מי שלא ברשימה – לא רואה כלום, ורק מופיעה כאן בקשה שלו.</p></div>`:''}`}
+   <label>הרשאה<select id="nuR">${Object.entries(CL_ROLES).map(([k,t])=>`<option value="${k}" ${k==='clerk'?'selected':''}>${t}</option>`).join('')}</select></label><label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="nuC"> לצרף למייל את קוד הכניסה (לעבודה בלי אינטרנט)</label><button class="btn pri" onclick="clUserAdd()">+ הוסף ואשר</button></div>
+  <p class="small muted">מי שתוסיף כאן מקבל לבד מייל עם הקישור להוראות, ונכנס מיד עם המייל שלו (Google או קוד חד־פעמי למייל) – בלי מפתח ובלי סיסמה. בלי אינטרנט – נכנסים עם קוד הכניסה. מי שלא ברשימה – לא רואה כלום, ורק מופיעה כאן בקשה שלו.</p></div>`:''}`}
 async function clSys(dis,msg){const {error}=await CLOUD.sb.from('ez_system').upsert({id:1,disabled:dis,msg:msg||''});if(error){alert('השינוי נכשל: '+error.message);return}log('מערכת',dis?'הושבתה לכולם':'הופעלה מחדש');save();toast(dis?'המערכת מושבתת לכולם':'המערכת פעילה');render()}
 async function clUserSet(email,patch){const {error}=await CLOUD.sb.from('ez_users').update(patch).eq('email',email);if(error){alert('השינוי נכשל: '+error.message);return}log('משתמשים',email+' '+JSON.stringify(patch));save();toast('נשמר');if(typeof clGrantKeys==='function')clGrantKeys();render()}
 async function clUserAdd(){const email=document.getElementById('nuE').value.trim().toLowerCase(),name=document.getElementById('nuN').value.trim(),role=document.getElementById('nuR').value;if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){toast('מייל לא תקין');return}
-  const {error}=await CLOUD.sb.from('ez_users').insert({email,name:name||email.split('@')[0],role,active:true});if(error){alert(/duplicate/i.test(error.message)?'המייל הזה כבר ברשימה':error.message);return}log('משתמשים','נוסף '+email);toast('נוסף. עכשיו הוא יכול להיכנס עם המייל הזה – בלי מפתח');if(typeof clGrantKeys==='function')clGrantKeys();render()}
+  const {error}=await CLOUD.sb.from('ez_users').insert({email,name:name||email.split('@')[0],role,active:true});if(error){alert(/duplicate/i.test(error.message)?'המייל הזה כבר ברשימה':error.message);return}log('משתמשים','נוסף '+email);const wc=(document.getElementById('nuC')||{}).checked;const ok=await clWelcome(email,name||email.split('@')[0],wc);toast(ok?'✔ נוסף, ונשלח אליו מייל עם הקישור וההוראות':'נוסף – אבל המייל לא נשלח (אפשר ללחוץ ✉ שלח הוראות שוב)');if(typeof clGrantKeys==='function')clGrantKeys();render()}
 async function clUserDel(email){const {error}=await CLOUD.sb.from('ez_users').delete().eq('email',email);if(error){alert(error.message);return}log('משתמשים','הוסר '+email);render()}
 
 /* ---------- הפעלה ---------- */
 async function clBoot(){if(!CLOUD_BUILD||!/^https?:/.test(location.protocol))return false;
   clGate('<p>טוען…</p>');
   try{if(!window.supabase)await clScript(CL_SBJS);CLOUD.sb=supabase.createClient(CL_URL,CL_KEY,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'ezer-auth'}})}
-  catch(e){if(idleExpired()){try{localStorage.setItem(LOCK_K(),'1')}catch(x){}}if(idleLocked()&&pinHas()&&!pinViaEmailOn()){pinAskScreen(()=>{idleUnlock();clBoot()});return true}if(!(await clEnterOffline()))clGate('<p>אין חיבור לאינטרנט, ובמחשב הזה עוד לא נכנסו אף פעם.</p><p class="small muted">בפעם הראשונה צריך אינטרנט. אחר כך אפשר לעבוד גם בלי.</p><button class="btn" onclick="location.reload()">נסה שוב</button>');return true}
+  catch(e){if(idleExpired()){try{localStorage.setItem(LOCK_K(),'1')}catch(x){}}if(idleLocked()&&pinHas()&&!pinViaEmailOn()){pinAskScreen(()=>{idleUnlock();window._codeOk=1;clBoot()});return true}if(!(await clEnterOffline()))clGate('<p>אין חיבור לאינטרנט, ובמחשב הזה עוד לא נכנסו אף פעם.</p><p class="small muted">בפעם הראשונה צריך אינטרנט. אחר כך אפשר לעבוד גם בלי.</p><button class="btn" onclick="location.reload()">נסה שוב</button>');return true}
   try{CLOUD.sb.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY')setTimeout(clNewPassScreen,300)})}catch(e){}
   let sess=null;try{sess=(await CLOUD.sb.auth.getSession()).data.session}catch(e){}
   if(idleExpired()){try{localStorage.setItem(LOCK_K(),'1')}catch(e){}}
-  if(idleLocked()&&pinHas()&&!pinViaEmailOn()){pinAskScreen(()=>{idleUnlock();clBoot()});return true}
+  if(idleLocked()&&pinHas()&&!pinViaEmailOn()){pinAskScreen(()=>{idleUnlock();window._codeOk=1;clBoot()});return true}
   if(idleLocked()){if(sess){try{await CLOUD.sb.auth.signOut({scope:'local'})}catch(e){}}if(!navigator.onLine){clGate('<h3>🔒 המערכת נעולה</h3><p>כדי להיכנס שוב צריך קוד שנשלח למייל – ולשם צריך אינטרנט.</p><button class="btn" onclick="location.reload()">נסה שוב</button>');return true}idleLockScreen();return true}
   if(sess&&/type=recovery/.test(location.hash)){setTimeout(clNewPassScreen,300);return true}
-  if(!sess){if(!navigator.onLine&&(await clEnterOffline()))return true;clLoginScreen();return true}
+  if(!sess){if((!navigator.onLine||window._codeOk)&&(await clEnterOffline())){if(navigator.onLine){CLOUD.codeOnly=true;clStatus()}return true}clLoginScreen();return true}
   if(!navigator.onLine){if(await clEnterOffline())return true}
   try{await clAfterAuth(sess.user)}catch(e){if(!(await clEnterOffline()))clLoginScreen('אין חיבור לשרת: '+e.message)}
   return true}
@@ -4926,6 +4937,30 @@ async function srvBkRestore(id,day){if(!confirm('לשחזר את כל המערכ
   await clSync();const {data,error}=await CLOUD.sb.rpc('ez_restore',{p_id:id});if(error)return alert('השחזור נכשל: '+error.message);
   log('שחזור מגיבוי בשרת','למצב של '+day);await clSync();toast('✅ שוחזר ('+data+' רשומות). כל המחשבים יתעדכנו תוך דקה.');render()}
 
+function clWelcomeText(name,code){return `שלום ${name||''},
+
+צורפת למערכת "עזר" של קרן עזר נישואין ביאלה.
+
+הקישור למערכת:
+${EZ_LINK}
+
+איך נכנסים (עם אינטרנט):
+1. פותחים את הקישור.
+2. לוחצים "כניסה עם Google" – או מקלידים את כתובת המייל הזו ולוחצים "שלחו לי קוד למייל".
+3. אם בחרתם קוד למייל – מקבלים מייל עם קוד של 6 ספרות, מקלידים אותו – ונכנסים.
+לא צריך סיסמה ולא צריך מפתח. רק כתובת המייל הזו.
+
+בלי אינטרנט:
+אפשר לעבוד גם בלי אינטרנט, אבל רק במחשב שכבר נכנסו ממנו פעם אחת עם אינטרנט. אז נכנסים עם קוד הכניסה של המערכת.
+${code?'קוד הכניסה: '+code+'\n(שמרו אותו במקום בטוח, ואל תעבירו אותו לאחרים)':'את קוד הכניסה מקבלים מהמנהל.'}
+
+כדאי לשמור את המייל הזה.
+בהצלחה!`}
+async function clWelcome(email,name,withCode){try{const code=withCode&&typeof orgCode==='function'?orgCode():'';
+  const r=await fetch('https://api.emailjs.com/api/v1.0/email/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({service_id:EZ_MAIL.service,template_id:EZ_MAIL.template,user_id:EZ_MAIL.key,template_params:{from_name:'מערכת עזר',reply_to:(CLOUD.me&&CLOUD.me.email)||'',to_email:email,to_name:name||email,name:name||email,subject:'צורפת למערכת עזר – הקישור והוראות הכניסה',message:clWelcomeText(name,code)}})});
+  if(r.ok)log('משתמשים','נשלח מייל הוראות ל־'+email+(code?' (כולל קוד הכניסה)':''));return r.ok}catch(e){return false}}
+async function clWelcomeAsk(email,name){if(!navigator.onLine)return toast('צריך אינטרנט כדי לשלוח מייל');const wc=typeof orgCode==='function'&&orgCode()?confirm('לצרף למייל גם את קוד הכניסה (לעבודה בלי אינטרנט)?\n\nאישור = כן, לצרף\nביטול = בלי הקוד'):false;toast('שולח…');const ok=await clWelcome(email,name,wc);toast(ok?'✉ נשלח ל־'+email:'השליחה נכשלה – נסו שוב')}
+
 /* ====================== אבטחה: נעילה אוטומטית, היסטוריה בכרטיס, בדיקה עצמית, הודעה על הצטרפות ====================== */
 
 /* ---------- 1. נעילה אחרי זמן בלי פעילות ---------- */
@@ -4946,8 +4981,8 @@ async function idleLock(){if(idleLocked())return;try{localStorage.setItem(LOCK_K
   try{await CLOUD.sb.auth.signOut({scope:'local'})}catch(e){}location.reload()}
 function idleUnlock(){try{localStorage.removeItem(LOCK_K());localStorage.removeItem(KEY+'_viaEmail');localStorage.setItem(IDLE_K(),String(Date.now()))}catch(e){}}
 function idleLockScreen(){const m=+(localStorage.getItem(IDLE_MIN_K())||30);
-  clGate(`<h3>🔒 המערכת ננעלה</h3><p>לא הייתה פעילות ${m} דקות, ולכן המערכת ננעלה כדי לשמור על הפרטיות.</p><p class="small muted">כל הנתונים שמורים. כדי להמשיך – נכנסים שוב עם קוד שנשלח למייל, או עם חשבון Google.</p>
-  <button class="btn pri" style="width:100%;margin:6px 0" onclick="clOtpStart()">📧 שלחו לי קוד למייל</button>
+  clGate(`<h3>🔒 המערכת ננעלה</h3><p>לא הייתה פעילות ${m} דקות, ולכן המערכת ננעלה כדי לשמור על הפרטיות.</p><p class="small muted">כל הנתונים שמורים. כדי להמשיך – נכנסים שוב עם קוד שנשלח למייל, עם חשבון Google, או עם קוד הכניסה.</p>
+  <button class="btn pri" style="width:100%;margin:6px 0" onclick="clOtpStart()">📧 שלחו לי קוד למייל</button>${orgCode()?'<button class="btn" style="width:100%;margin:6px 0" onclick="clCodeLogin()">🔢 כניסה רק עם קוד הכניסה</button>':''}
   <div class="small muted" style="margin:8px 0">— או —</div><div id="gBtn" style="display:flex;justify-content:center;min-height:44px"></div><div id="gMsg" class="small muted"></div>
   <div id="clErr" class="small" style="color:var(--bad);margin-top:10px;min-height:18px"></div>`);clInitGoogle()}
 function idleSetMin(v){DB.settings.idleMin=+v;try{localStorage.setItem(IDLE_MIN_K(),String(+v))}catch(e){}log('אבטחה','נעילה אוטומטית: '+(+v?v+' דקות':'כבויה'));save();toast('נשמר – חל על כל המשתמשים');render()}
@@ -5207,7 +5242,7 @@ function renderNav(){
   document.getElementById('sidefoot').innerHTML=`גיבוי אחרון: ${lb?esc(hebDate(localIso(lb))):'<b>אף פעם</b>'}${days===null||days>=7?' ⚠':''}
     ${can('settings')||USER.role==='clerk'?`<button onclick="backup()">💾 שמור גיבוי</button>`:''}${can('settings')?`<button onclick="archiveModal()">📦 תיקיית סוף שנה</button>`:''}${USER.role!=='addresses'?`<button onclick="exportAll()">📊 ייצוא לאקסל</button>`:''}
     <div class="row"><button onclick="fontSize(1)" title="אותיות גדולות">א+</button><button onclick="fontSize(-1)" title="אותיות קטנות">א−</button><button onclick="openTheme()" title="צבעים ומראה">🎨</button></div>
-    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 24.10.2026 23:17</div>`;
+    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 25.10.2026 00:21</div>`;
   const yp=document.getElementById('yearpick');yp.innerHTML=st.years.map(y=>`<option ${y===S.viewYear?'selected':''} value='${esc(y)}'>${esc(y)}${y===st.currentYear?' (נוכחית)':''}</option>`).join('');
   document.getElementById('todayHeb').textContent=hebDate(today());applyBrand();
   document.getElementById('gsWrap').style.display=USER.role==='addresses'||USER.role==='counter'?'none':'';
@@ -5229,6 +5264,7 @@ function render(){if(typeof ensureCatYear==='function')ensureCatYear();
   if(S.view==='year')bindYearGrid();
   if(keep){const tw=document.querySelector('#view .tw');if(tw)tw.scrollTop=keep[0];window.scrollTo(0,keep[1])}
   document.body.classList.toggle('ro',USER.role==='viewer');
+  if(typeof ovFitAll==='function')ovFitAll();
   alertsAtLogin();
 }
 document.getElementById('lockpw').addEventListener('keydown',e=>{if(e.key==='Enter')tryLogin()});
