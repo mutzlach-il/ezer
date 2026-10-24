@@ -739,6 +739,12 @@ function yearEditable(y,then){
 const fullName=p=>((p.first||'')+' '+(p.last||'')).trim();
 function byId(id){return DB.people.find(p=>p.id===id)}
 function catDef(name){return DB.settings.categories.find(c=>c.name===name)}
+// קבוצות לפי שנה: כל שנה – סכום משלה, ואפשר לבטל קבוצה בשנה מסוימת. שנים קודמות לא מושפעות.
+function catYO(c,y){y=y||S.viewYear;return ((DB.settings.catYear||{})[y]||{})[c.name]}
+function catPrice(c,y){const o=catYO(c,y);return o&&o.price!==undefined&&o.price!==null&&o.price!==''?+o.price:(+c.price||0)}
+function catUsed(y,name){return DB.people.some(p=>((p.years[y]||{}).entries||[]).some(e=>e.cat===name))}
+function ensureCatYear(){if(!DB||DB.catYearInit||!USER||!can('edit'))return;const st=DB.settings;st.catYear=st.catYear||{};for(const y of st.years){const o=(st.catYear[y]=st.catYear[y]||{});for(const c of st.categories)if(c.type==='group'&&c.name!=='קבוצות'&&!o[c.name])o[c.name]=c.price?{price:+c.price}:(catUsed(y,c.name)?{price:0}:{off:true})}DB.catYearInit=true;save(true)}
+function catOn(c,y){const o=catYO(c,y);return !(o&&o.off)}
 function yr(p,y){return p.years[y]||{entries:[],flags:{}}}
 function yrEnsure(p,y){if(!p.years[y]) p.years[y]={entries:[],flags:{}}; if(!p.years[y].flags) p.years[y].flags={}; return p.years[y]}
 function yearTotal(p,y){return yr(p,y).entries.reduce((a,e)=>a+(+e.amount||0),0)}
@@ -799,9 +805,9 @@ function groupCat(g){return DB.settings.categories.find(c=>c.name===g.shift)||nu
 function syncGroupCredits(y){
   for(const p of DB.people){const r=p.years[y];if(r) r.entries=r.entries.filter(e=>!(e.src&&e.src.startsWith('g:')))}
   for(const g of DB.groups.filter(g=>g.year===y)){
-    const c=groupCat(g); if(!c||g.noCredit) continue;
+    const c=groupCat(g); if(!c||g.noCredit||!catOn(c,y)) continue;
     for(const m of g.members){ if(m.att===false) continue; const p=byId(m.id); if(!p) continue;
-      yrEnsure(p,y).entries.push({id:'g'+g.id+m.id,cat:c.name,amount:+c.price||0,date:g.date||'',note:'קבוצה '+(g.num||'')+(g.neighborhood?' – '+g.neighborhood:''),src:'g:'+g.id});
+      yrEnsure(p,y).entries.push({id:'g'+g.id+m.id,cat:c.name,amount:catPrice(c,y),date:g.date||'',note:'קבוצה '+(g.num||'')+(g.neighborhood?' – '+g.neighborhood:''),src:'g:'+g.id});
     }
   }
 }
@@ -1078,7 +1084,7 @@ function importPeopleXlsx(){
 
 /* ====================== רישום כסף לשנה ====================== */
 function vYear(){
-  const y=S.viewYear,st=DB.settings,cats=st.categories.filter(c=>c.grid);
+  const y=S.viewYear,st=DB.settings,cats=st.categories.filter(c=>c.grid&&(c.type!=='group'||catOn(c,y)||catUsed(y,c.name)));
   const q=S.filter.q.trim();
   const G={name:p=>(p.last||'')+' '+(p.first||''),yeshiva:p=>p.yeshiva,total:p=>yearTotal(p,y)};
   let rows=activePeople().filter(p=>!q||fullName(p).includes(q)||String(p.num)===q).filter(p=>!S.filter.yeshiva||p.yeshiva===S.filter.yeshiva);
@@ -1100,7 +1106,7 @@ function vYear(){
   <div class="tw"><table id="ygrid">
     <thead><tr>${th('year','name','שם')}${th('year','yeshiva','ישיבה')}
     ${flags.map(f=>`<th class="nosort small" style="white-space:normal;max-width:64px;line-height:1.2;text-align:center">${esc(f)}</th>`).join('')}
-    ${cats.map(c=>`<th class="nosort num">${esc(c.name.replace('קבוצה – ',''))}${c.price?`<div class="muted small">${fmt(c.price)}</div>`:''}</th>`).join('')}
+    ${cats.map(c=>`<th class="nosort num">${esc(c.name.replace('קבוצה – ',''))}${catPrice(c,y)?`<div class="muted small">${fmt(catPrice(c,y))}</div>`:''}</th>`).join('')}
     <th class="nosort num">אחר</th>${th('year','total','סה"כ שנה','num')}<th class="nosort">יעד</th></tr></thead>
     <tbody>${rows.map(p=>{const r=yr(p,y);const t=yearTotal(p,y);
       return `<tr data-id="${p.id}"><td class="name" onclick="openCard('${p.id}',${jsq(y)})">${esc(fullName(p))}</td><td class="small">${esc(yName(p.yeshiva))} ${esc(p.shiur)}</td>
@@ -1140,7 +1146,7 @@ function commitCell(inp){
 }
 function commitCellDo(p,y,cat,c,inp){
   const raw=inp.value.trim();let v;
-  if(/^[vV✓]$/.test(raw))v=c&&c.price?+c.price:0;else v=raw===''?0:+raw.replace(/[,₪\s]/g,'');
+  if(/^[vV✓]$/.test(raw))v=c?catPrice(c,y):0;else v=raw===''?0:+raw.replace(/[,₪\s]/g,'');
   if(isNaN(v)){toast('יש להקליד מספר');inp.value=catTotal(p,y,cat)||'';return}
   const r=yrEnsure(p,y),existing=r.entries.filter(e=>e.cat===cat&&!e.src);
   if(existing.length>1&&!confirm(`ל${fullName(p)} יש ${existing.length} תשלומים נפרדים מסוג "${cat}" בשנה זו.\nהשינוי יאחד אותם לתשלום אחד של ${fmt(v)} ₪. להמשיך?`)){inp.value=catTotal(p,y,cat)||'';return}
@@ -1162,7 +1168,7 @@ function openPayment(pid,cat,amount,year,eid){
     <label class="full">בחור<input type="text" list="plist" id="pp" value="${pid?esc(fullName(byId(pid))):''}" placeholder="התחל להקליד שם או מספר…" ${pid?'':'autofocus'}>
       <datalist id="plist">${ps.map(p=>`<option value="${esc(fullName(p))}">${p.num?'מס\' '+p.num+' · ':''}${esc(yName(p.yeshiva)+' '+(p.shiur||''))}</option>`).join('')}</datalist></label>
     <label>שנה<select id="py">${st.years.map(x=>`<option ${x===y?'selected':''}>${esc(x)}</option>`).join('')}</select></label>
-    <label>סוג<select id="pc" onchange="const c=catDef(this.value);if(c&&c.price&&!document.getElementById('pa').value)document.getElementById('pa').value=c.price">${st.categories.map(c=>`<option ${(e?e.cat:cat)===c.name?'selected':''}>${esc(c.name)}</option>`).join('')}</select></label>
+    <label>סוג<select id="pc" onchange="const c=catDef(this.value);if(c&&catPrice(c)&&!document.getElementById('pa').value)document.getElementById('pa').value=catPrice(c)">${st.categories.map(c=>`<option ${(e?e.cat:cat)===c.name?'selected':''}>${esc(c.name)}</option>`).join('')}</select></label>
     <label>סכום (₪)<input type="number" id="pa" value="${e?e.amount:(amount??'')}" ${pid?'autofocus':''}></label>
     <label class="full">תאריך ${dateInput('pd',e?e.date:today())}</label>
     <label class="full">הערה<input type="text" id="pn" value="${e?esc(e.note):''}"></label>
@@ -1191,7 +1197,7 @@ function openMulti(){
   const st=DB.settings,y=S.viewYear,ps=groupSort(activePeople());
   modal(`<div class="modal"><div class="mh"><h2>רישום אותו סכום לכמה בחורים – ${esc(y)}</h2><button class="x" onclick="closeModal()">×</button></div>
   <div class="mb"><div class="form">
-    <label>סוג<select id="mc" onchange="const c=catDef(this.value);if(c&&c.price)document.getElementById('ma').value=c.price">${st.categories.map(c=>`<option>${esc(c.name)}</option>`).join('')}</select></label>
+    <label>סוג<select id="mc" onchange="const c=catDef(this.value);if(c&&catPrice(c))document.getElementById('ma').value=catPrice(c)">${st.categories.map(c=>`<option>${esc(c.name)}</option>`).join('')}</select></label>
     <label>סכום לכל אחד<input type="number" id="ma"></label>
     <label>תאריך ${dateInput('md',today())}</label>
     <label>הערה<input type="text" id="mn"></label></div>
@@ -1521,7 +1527,7 @@ function kitPanel(){const K=kitCfg(),pr=kitPricesOn(),by={};K.items.forEach(i=>{
 
 /* ====================== קבוצות פורים ====================== */
 const GCOLORS=['#2c5282','#b8892a','#1e7b4a','#b42318','#6b46c1','#0e7490','#c05621','#be185d','#4a5568','#15803d','#9a3412','#1d4ed8'];
-function shiftCats(){return DB.settings.categories.filter(c=>c.type==='group'&&c.price)}
+function shiftCats(){return DB.settings.categories.filter(c=>c.type==='group'&&catOn(c)&&catPrice(c))}
 function shiftLabel(name){const c=catDef(name);return c?(c.shift||c.name.replace('קבוצה – ','')):name}
 function gMoney(g){const m=g.money||{};return (+m.cash||0)+(+m.cheque||0)+(+m.usd||0)*(+DB.settings.usdRate||0)}
 function gExp(g){return (g.expenses||[]).reduce((a,e)=>a+(+e.amount||0),0)}
@@ -1535,7 +1541,7 @@ function vGroups(){
 function groupsList(y,gs){
   const sc=shiftCats();
   return `<div class="toolbar"><button class="btn pri edit-only" onclick="editGroup()">+ קבוצה חדשה</button>
-    <span class="muted small">זיכוי לכל בחור שהלך: ${sc.map(c=>`${esc(shiftLabel(c.name))} ${shek(c.price)}`).join(' · ')} (משנים בהגדרות ← סוגי תשלומים)</span>
+    <span class="muted small">זיכוי לכל בחור שהלך: ${sc.map(c=>`${esc(shiftLabel(c.name))} ${shek(catPrice(c))}`).join(' · ')} (משנים בהגדרות ← סכומים ותשלומים ← קבוצות פורים לפי שנה)</span>
     <span style="flex:1"></span><button class="btn" onclick="printAllGroups()">🖨 דפי קבוצות</button><button class="btn" onclick="printCashSheet()" title="דף ספירת קופה עם חתימות – לכל הקבוצות">💵 דפי ספירת קופה</button><button class="btn" onclick="exportGroups()">📊 לאקסל</button></div>
   ${gs.length?`<div class="grid three">${gs.map(g=>{const leader=byId(g.leaderId),r=DB.routes.find(r=>r.id===g.routeId);return `<div class="card" style="border-top:5px solid ${g.color||'#2c5282'}">
     <div style="display:flex;align-items:center;gap:8px"><h2 style="margin:0;flex:1"><span class="colorDot" style="background:${g.color}"></span>קבוצה ${g.num||''}</h2><span class="pill info">${esc(shiftLabel(g.shift))}</span></div>
@@ -1551,7 +1557,7 @@ function editGroup(id){
   <div class="mb"><div class="form" id="gf">
     <label>מספר קבוצה<input type="number" name="num" value="${g.num||''}"></label>
     <label>צבע<input type="color" name="color" value="${g.color||'#2c5282'}" style="height:38px;padding:2px"></label>
-    <label>משמרת<select name="shift">${shiftCats().map(c=>`<option value="${esc(c.name)}" ${c.name===g.shift?'selected':''}>${esc(shiftLabel(c.name))} (${shek(c.price)})</option>`).join('')}</select></label>
+    <label>משמרת<select name="shift">${shiftCats().map(c=>`<option value="${esc(c.name)}" ${c.name===g.shift?'selected':''}>${esc(shiftLabel(c.name))} (${shek(catPrice(c))})</option>`).join('')}</select></label>
     <label>עיר<select name="city">${st.cities.map(c=>`<option ${c===g.city?'selected':''}>${esc(c)}</option>`).join('')}</select></label>
     <label>שכונה<input type="text" name="neighborhood" list="nbl" value="${esc(g.neighborhood||'')}"><datalist id="nbl">${Object.values(st.neighborhoods).flat().map(n=>`<option value="${esc(n)}">`).join('')}</datalist></label>
     ${feat('addresses')?`<label>מסלול<select name="routeId"><option value="">—</option>${DB.routes.filter(r=>r.year===y).map(r=>`<option value="${r.id}" ${r.id===g.routeId?'selected':''}>${esc(r.city+' – '+r.name)}</option>`).join('')}</select></label>`:''}
@@ -2295,6 +2301,7 @@ function setMoney(){const st=DB.settings,ovr=DB.people.filter(p=>hasOverride(p))
     ${ovr.length?`<table style="width:auto"><tbody>${ovr.map(p=>`<tr><td><b>${esc(fullName(p))}</b></td><td class="muted small">רגיל היה: ${fmt((campaignRule(p)||{}).req||st.defaultReq)}</td><td><input type="number" style="width:100px" value="${p.reqOverride}" onchange="byId('${p.id}').reqOverride=+this.value;log('סכום מיוחד',fullName(byId('${p.id}'))+' '+this.value);save();toast('נשמר')"> ₪</td><td><input type="text" style="width:280px" placeholder="למה? (סיבה / הוראות)" value="${esc(p.reqReason||'')}" onchange="byId('${p.id}').reqReason=this.value.trim();log('סכום מיוחד – סיבה',fullName(byId('${p.id}'))+': '+this.value.trim());save();toast('נשמר')"></td><td><button class="btn sm danger" onclick="if(!confirm('לבטל את הסכום המיוחד?'))return;byId('${p.id}').reqOverride=null;byId('${p.id}').reqReason='';save();render()">בטל</button></td></tr>`).join('')}</tbody></table>`:''}
     <div class="toolbar" style="margin-top:10px"><select id="ovP"><option value="">בחר בחור…</option>${ps.filter(p=>!hasOverride(p)).map(p=>`<option value="${p.id}">${esc(p.last+' '+p.first)}</option>`).join('')}</select><input type="number" id="ovA" placeholder="סכום" style="width:110px"><input type="text" id="ovR" placeholder="למה? (סיבה / הוראות)" style="width:260px">
     <button class="btn" onclick="const id=document.getElementById('ovP').value,a=document.getElementById('ovA').value;if(!id||!a){toast('בחר בחור וסכום');return}byId(id).reqOverride=+a;byId(id).reqReason=(document.getElementById('ovR').value||'').trim();log('סכום מיוחד',fullName(byId(id))+' '+a+(byId(id).reqReason?' – '+byId(id).reqReason:''));save();render();toast('נשמר')">+ הוסף</button></div></div>
+  ${setGroupYears()}
   <div class="card"><h2>סוגי תשלומים, קבוצות וזיכויים</h2><div class="small muted" style="margin-bottom:8px">"זיכוי / מחיר" בקבוצה = כמה נרשם לכל בחור שהלך בקבוצה הזו (V ברישום, וקבוצות פורים).</div>
     <table style="width:auto"><thead><tr><th class="nosort">שם</th><th class="nosort">סוג</th><th class="nosort">זיכוי / מחיר</th><th class="nosort">שם המשמרת</th><th class="nosort">עמודה ברישום</th><th class="nosort"></th></tr></thead><tbody>
     ${st.categories.map((c,i)=>`<tr><td><input type="text" value="${esc(c.name)}" onchange="renameCat(${i},this.value)"></td><td><select onchange="setPath('categories.${i}.type',this.value)">${[['money','כסף'],['group','קבוצה'],['summary','סיכום']].map(([k,t])=>`<option value="${k}" ${c.type===k?'selected':''}>${t}</option>`).join('')}</select></td><td>${numIn('categories.'+i+'.price',c.price,90)}</td><td>${c.type==='group'?`<input type="text" style="width:120px" value="${esc(c.shift||'')}" onchange="setPath('categories.${i}.shift',this.value)">`:''}</td>
@@ -2302,7 +2309,7 @@ function setMoney(){const st=DB.settings,ovr=DB.people.filter(p=>hasOverride(p))
     <button class="btn sm" style="margin-top:8px" onclick="DB.settings.categories.push({name:'סוג חדש',type:'money',grid:false});save();render()">+ סוג תשלום</button></div>
   <div class="card"><h2>עוד</h2><table style="width:auto"><tbody><tr><td>שער דולר (לחישובי קבוצות וכתובות)</td><td>${numIn('usdRate',st.usdRate,80)}</td></tr><tr><td>"קרוב למתנה" – עד כמה חסר</td><td>${numIn('nearPrize',st.nearPrize)} ₪</td></tr></tbody></table>
     <h3>סוגי הוצאות</h3>${listIn('expenseCats',st.expenseCats)}</div>`}
-function renameCat(i,name){const old=DB.settings.categories[i].name;if(!name.trim())return;DB.settings.categories[i].name=name;for(const p of DB.people)for(const y in p.years)for(const e of p.years[y].entries)if(e.cat===old)e.cat=name;DB.groups.forEach(g=>{if(g.shift===old)g.shift=name});log('שינוי שם סוג',old+' → '+name);save();toast('נשמר')}
+function renameCat(i,name){const old=DB.settings.categories[i].name;if(!name.trim())return;DB.settings.categories[i].name=name;for(const p of DB.people)for(const y in p.years)for(const e of p.years[y].entries)if(e.cat===old)e.cat=name;DB.groups.forEach(g=>{if(g.shift===old)g.shift=name});Object.values(DB.settings.catYear||{}).forEach(o=>{if(o[old]){o[name]=o[old];delete o[old]}});log('שינוי שם סוג',old+' → '+name);save();toast('נשמר')}
 function delCat(i){const n=DB.settings.categories[i].name;if(DB.people.some(p=>Object.values(p.years).some(r=>r.entries.some(e=>e.cat===n)))){alert('יש תשלומים מהסוג הזה – אי אפשר למחוק. אפשר לשנות את השם.');return}DB.settings.categories.splice(i,1);save();render()}
 function setLists(){const st=DB.settings;return `
   <div class="card"><h2>סימונים לכל שנה</h2>${listIn('flags',st.flags)}<div class="small muted">למשל: להתקשר לפני הכנס, כנס, טיול – מופרדים בפסיק. הראשון ברשימה משמש לרשימת "לפני הכנס" בדוחות.</div></div>
@@ -2360,7 +2367,7 @@ function newYear(){
 function doNewYear(ny){const st=DB.settings,last=st.years[st.years.length-1],lastC=[...st.years].reverse().find(y=>st.campaigns[y]);
   const promote=document.getElementById('nyPromote').checked,cc=document.getElementById('nyCamp').checked,lk=document.getElementById('nyLock');let left=0;
   document.querySelectorAll('.nyKeep').forEach(cb=>{if(!cb.checked){const p=byId(cb.dataset.id);p.active=false;p.leftYear=last;left++}});
-  st.years.push(ny);st.currentYear=ny;S.viewYear=ny;(DB.tasks||[]).forEach(t=>{if(!t.done&&(t.src==='plan'||t.src==='ozer')&&t.year===last&&t.due&&hebYearOfIso(t.due)===ny)t.year=ny});if(cc&&lastC)st.campaigns[ny]=clone(st.campaigns[lastC]);if(lk&&lk.checked&&!st.lockedYears.includes(last))st.lockedYears.push(last);
+  st.catYear=st.catYear||{};if(st.catYear[last]&&!st.catYear[ny])st.catYear[ny]=JSON.parse(JSON.stringify(st.catYear[last]));st.years.push(ny);st.currentYear=ny;S.viewYear=ny;(DB.tasks||[]).forEach(t=>{if(!t.done&&(t.src==='plan'||t.src==='ozer')&&t.year===last&&t.due&&hebYearOfIso(t.due)===ny)t.year=ny});if(cc&&lastC)st.campaigns[ny]=clone(st.campaigns[lastC]);if(lk&&lk.checked&&!st.lockedYears.includes(last))st.lockedYears.push(last);
   if(promote)for(const p of activePeople())promoteOne(p);
   log('פתיחת שנה',ny+(left?' · '+left+' לארכיון':''));save();closeModal();go('people');toast('שנת '+ny+' נפתחה'+(left?' · '+left+' עברו לארכיון':''))}
 function addPrevYear(){const y=prevYearLabel();if(!confirm('להוסיף את השנה '+y+' בהתחלה?'))return;DB.settings.years.unshift(y);log('הוספת שנה',y);save();render()}
@@ -2392,6 +2399,19 @@ function exportAll(){const st=DB.settings,ps=groupSort(DB.people),ys=st.years;
     sheets.push(['שנת '+y.replace(/"/g,"''"),rows])}
   const t=[['שם','משפחה','שנה','סוג','סכום','תאריך עברי','הערה','נרשם ע"י']];for(const p of ps)for(const y of Object.keys(p.years))for(const e of p.years[y].entries)t.push([p.first,p.last,y,e.cat,+e.amount,dtText(e.date),e.note||'',e.by||'']);sheets.push(['כל התשלומים',t]);
   writeXlsx((st.orgName||'עזר')+'-'+stamp()+'.xlsx',sheets);toast('קובץ האקסל ירד')}
+
+/* ---------- קבוצות פורים לפי שנה ---------- */
+function setGroupYears(){const st=DB.settings,y=S.gyY&&st.years.includes(S.gyY)?S.gyY:st.currentYear,G=st.categories.map((c,i)=>({c,i})).filter(x=>x.c.type==='group'&&x.c.name!=='קבוצות');
+  return `<div class="card" style="border-color:var(--gold)"><div class="toolbar" style="margin:0"><h2 style="margin:0;flex:1">👥 קבוצות פורים לפי שנה</h2><label>שנה: <select onchange="S.gyY=this.value;render()">${st.years.map(x=>`<option ${x===y?'selected':''}>${esc(x)}</option>`).join('')}</select></label></div>
+  <p class="small muted">כל שנה מחליטים אילו קבוצות יוצאות וכמה נזקף לכל בחור שהלך. שינוי בשנה אחת <b>לא משנה</b> שנים אחרות – מי שהלך בשנה מסוימת מקבל לפי הסכום של אותה שנה.</p>
+  <table style="width:auto"><thead><tr><th class="nosort">קבוצה</th><th class="nosort">יוצאת ב־${esc(y)}?</th><th class="nosort">זיכוי לבחור ב־${esc(y)}</th></tr></thead><tbody>
+  ${G.map(({c})=>{const on=catOn(c,y);return `<tr style="${on?'':'opacity:.55'}"><td><b>${esc(c.name.replace('קבוצה – ',''))}</b></td><td style="text-align:center"><input type="checkbox" ${on?'checked':''} onchange="gySet(${jsq(y)},${jsq(c.name)},'off',!this.checked)"></td><td><input type="number" style="width:100px" value="${on?catPrice(c,y):''}" ${on?'':'disabled'} onchange="gySet(${jsq(y)},${jsq(c.name)},'price',this.value===''?'':+this.value)"> ₪</td></tr>`}).join('')}</tbody></table>
+  <div class="toolbar" style="margin-top:10px"><input type="text" id="gyN" placeholder="קבוצה חדשה, למשל: ליל ביתר" style="width:220px"><input type="number" id="gyP" placeholder="זיכוי" style="width:100px"><button class="btn" onclick="gyAdd(${jsq(y)})">+ הוספת קבוצה ל־${esc(y)}</button></div></div>`}
+function gySet(y,name,k,v){const st=DB.settings;st.catYear=st.catYear||{};const o=(st.catYear[y]=st.catYear[y]||{});o[name]=o[name]||{};o[name][k]=v;if(k==='off'&&!v&&(o[name].price===undefined||o[name].price===''))o[name].price=+(catDef(name)||{}).price||0;
+  if(typeof syncGroupCredits==='function')syncGroupCredits(y);log('קבוצות לפי שנה',y+': '+name+' – '+(k==='off'?(v?'לא יוצאת':'יוצאת'):'זיכוי '+v));save();render();toast('נשמר ל־'+y)}
+function gyAdd(y){const n=(document.getElementById('gyN').value||'').trim(),pr=+document.getElementById('gyP').value||0;if(!n)return toast('כתבו שם לקבוצה');const st=DB.settings,full=n.startsWith('קבוצה')?n:'קבוצה – '+n;
+  if(!catDef(full)){st.categories.splice(Math.max(0,st.categories.findIndex(c=>c.name==='קבוצות')),0,{name:full,type:'group',price:0,grid:true,shift:n.replace(/^קבוצה\s*–\s*/,'')});st.catYear=st.catYear||{};st.years.forEach(x=>{if(x!==y){const o=(st.catYear[x]=st.catYear[x]||{});o[full]={off:true}}})}
+  const o=((st.catYear=st.catYear||{})[y]=st.catYear[y]||{});o[full]={price:pr};log('קבוצות לפי שנה',y+': נוספה '+full+' – '+pr);save();render();toast('נוספה ל־'+y)}
 
 /* ====================== הוראות למנהל ====================== */
 function vHelp(){const st=DB.settings,on=esc(st.orgName||'עזר'),r=st.campaignRules,sc=shiftCats();
@@ -2453,7 +2473,7 @@ ${feat('inventory')?'<li>"מלאי והזמנות" – כמה יש, כמה הו�
 ${feat('lottery')?'<li>הגרלה: "🎲 הגרלה על מסך מלא" – מתאים להקרנה בכנס. בסוף "שמור זוכה".</li>':''}</ul>
 <div class="ex">📌 דוגמה: שי מ־1,800 עד 2,100, טאבעק מ־2,100 עד 2,600, סידור מ־2,600. בחור שאסף 2,300 מקבל טאבעק בלבד.</div>`]]:[]),
 ...(feat('groups')?[['h8','קבוצות פורים',`
-<ul><li>זיכוי לכל בחור שהלך: ${sc.map(c=>esc(shiftLabel(c.name))+' '+shek(c.price)).join(' · ')}. הזיכוי קבוע – לא תלוי בכמה הקבוצה הביאה. משנים בהגדרות ← סוגי תשלומים.</li>
+<ul><li>זיכוי לכל בחור שהלך: ${sc.map(c=>esc(shiftLabel(c.name))+' '+shek(catPrice(c))).join(' · ')}. הזיכוי קבוע – לא תלוי בכמה הקבוצה הביאה. משנים בהגדרות ← סוגי תשלומים.</li>
 <li><b>+ קבוצה חדשה</b>: מספר, צבע, משמרת, עיר ושכונה, מסלול, נהג ורכב, שעות, בחורים (וי שני = הגיע בפועל; מי שלא הגיע לא מקבל זיכוי), אחראי, הוצאות.</li>
 <li><b>שיבוץ בחורים</b>: טבלה – לכל בחור בוחרים קבוצה בכל משמרת. אי אפשר לשבץ פעמיים באותה משמרת. למעלה מופיע מי עוד לא שובץ.</li>
 <li><b>כסף שחזר</b>: מזומן, צ'קים, דולרים, ו"האחראי מסר" – אם יש הפרש רואים מיד.</li>
@@ -2564,6 +2584,7 @@ ${feat('lottery')?'<li>הגרלה: "🎲 הגרלה על מסך מלא" – מת
 <li>אחרי ההורדה: קליק ימני על הקובץ ← "חלץ הכל", ומעתיקים לדיסק החיצוני.</li></ul>`],
 ['h10r','💬 סכום מיוחד לבחור – עם סיבה',`<ul><li>⚙ הגדרות ← סכומים ותשלומים ← "סכום מיוחד לבחור מסוים": ליד כל בחור יש שדה <b>"למה?"</b> – כותבים את הסיבה או הוראות (למשל: "אח שלו כבר קיבל מענק", "סוכם עם המנהל"). נשמר לבד.</li><li>כשמוסיפים בחור חדש לרשימה – אפשר לכתוב את הסיבה כבר בשורת ההוספה.</li><li>הסיבה מופיעה גם בכרטיס הבחור (למה הוא צריך את הסכום) ונרשמת ביומן השינויים.</li></ul>`],
 ['h10o','📋 סדר הבחורים ומי רואה "צריך"',`<ul><li>הרשימות מסודרות <b>מהגדולים לקטנים</b>: ישיבה גדולה – קיבוץ, שיעור ג', ב', א' – ואחר כך ישיבה קטנה ג', ב', א' – ובסוף חיידר.</li><li>העמודות <b>"צריך"</b> ו<b>"חסר"</b> (כמה כל בחור צריך להביא, וכמה סוכם איתו) – <b>רק מנהל רואה</b>. שאר המשתמשים רואים רק כמה כל בחור הביא והאם זכאי.</li><li>גם <b>סכומי הכסף הכוללים</b> – "נאסף בשנה הנוכחית", שורת הסיכום למטה ברשימה, ו<b>💰 כספים</b> – <b>רק מנהל רואה</b>.</li></ul>`],
+['h10g','👥 קבוצות פורים לפי שנה',`<ul><li><b>איפה:</b> ⚙ הגדרות ← סכומים ותשלומים ← <b>"👥 קבוצות פורים לפי שנה"</b>. בוחרים שנה למעלה.</li><li>לכל קבוצה (ליל בני ברק, יום בני ברק, ליל ירושלים, יום ירושלים…): <b>"יוצאת?"</b> – מסמנים אם יוצאת השנה; <b>"זיכוי לבחור"</b> – כמה נזקף לכל בחור שהלך <b>באותה שנה</b>.</li><li>שינוי בשנה אחת <b>לא משנה</b> שנים אחרות: מי שהלך בתשפ"ד מקבל לפי תשפ"ד, ומי שהלך בתשפ"ו – לפי תשפ"ו.</li><li>קבוצה חדשה (למשל "ליל ביתר") – מוסיפים בשורה למטה; היא נוספת רק לשנה שנבחרה.</li><li>בפתיחת שנה חדשה – הקבוצות והסכומים מועתקים מהשנה הקודמת, ומשנים לפי ההחלטה.</li></ul>`],
 ['h10n','כלים חדשים: ספירה מהירה, קבלות, כפילויות, זכאות, תזכורות',`
 <ul><li><b>⚡ ספירה מהירה</b> (רישום כסף לשנה): לערב החפ"ק – כותבים שם ← Enter ← סכום ← Enter. רואים רשימה של מה שנרשם, ו"↶ ביטול" לטעות.</li>
 <li><b>🧾 קבלה</b>: בכרטיס הבחור, ליד כל תשלום – אישור קבלת כסף עם מספר רץ (מקור + העתק).</li>
@@ -5183,7 +5204,7 @@ function renderNav(){
   document.getElementById('sidefoot').innerHTML=`גיבוי אחרון: ${lb?esc(hebDate(localIso(lb))):'<b>אף פעם</b>'}${days===null||days>=7?' ⚠':''}
     ${can('settings')||USER.role==='clerk'?`<button onclick="backup()">💾 שמור גיבוי</button>`:''}${can('settings')?`<button onclick="archiveModal()">📦 תיקיית סוף שנה</button>`:''}${USER.role!=='addresses'?`<button onclick="exportAll()">📊 ייצוא לאקסל</button>`:''}
     <div class="row"><button onclick="fontSize(1)" title="אותיות גדולות">א+</button><button onclick="fontSize(-1)" title="אותיות קטנות">א−</button><button onclick="openTheme()" title="צבעים ומראה">🎨</button></div>
-    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 24.10.2026 23:03</div>`;
+    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 24.10.2026 23:09</div>`;
   const yp=document.getElementById('yearpick');yp.innerHTML=st.years.map(y=>`<option ${y===S.viewYear?'selected':''} value='${esc(y)}'>${esc(y)}${y===st.currentYear?' (נוכחית)':''}</option>`).join('');
   document.getElementById('todayHeb').textContent=hebDate(today());applyBrand();
   document.getElementById('gsWrap').style.display=USER.role==='addresses'||USER.role==='counter'?'none':'';
@@ -5193,7 +5214,7 @@ function renderNav(){
   if(USER.role!=='addresses'&&USER.role!=='counter')tb.insertAdjacentHTML('afterbegin',alertsBadge()+' ');
   if(CLOUD.on){clStatus();clInstallBtn();{const b=document.createElement('button');b.id='clOut';b.className='btn';b.textContent='🚪 יציאה';b.title='יציאה מהמערכת';b.onclick=clLogoutMenu;tb.appendChild(b)}}
 }
-function render(){
+function render(){if(typeof ensureCatYear==='function')ensureCatYear();
   if(!USER)return;
   const vs=views();if(!vs.some(v=>v[0]===S.view))S.view=vs[0][0];
   if(!DB.settings.years.includes(S.viewYear))S.viewYear=DB.settings.currentYear;
