@@ -2557,6 +2557,10 @@ ${feat('lottery')?'<li>הגרלה: "🎲 הגרלה על מסך מלא" – מת
 <li>בצד, מתחת למצב החיבור, כתוב "🖼 מעלה / מוריד תמונות וקבצים 120/900" – ואחר כך "מעודכן". אפשר להמשיך לעבוד בזמן הזה.</li>
 <li>חבילה שנטענה בשני מחשבים לא נכפלת – המערכת מזהה שזה אותו קובץ.</li>
 <li>הבדיקה העצמית (⚙ הגדרות ← 🔐 אבטחה ובדיקה) מראה כמה יש במחשב וכמה בשרת.</li></ul>`],
+['h10y','📦 תיקיית סוף שנה + תזכורת שנתית',`<ul>
+<li><b>איפה:</b> ⚙ הגדרות ← גיבוי ← <b>"📦 הורדת תיקיית שנה"</b>. יורד ZIP עם תיקייה מסודרת לכל שנה – כמו התיקיות של העמותה: ניהול עייזר (אקסלים), כתובות ומסלולים, קבוצות פורים, מענקים, קמפיין, מודעות, וכל התמונות והמסמכים – ובנוסף גיבוי מלא של המערכת.</li>
+<li><b>תזכורת אוטומטית:</b> מכ"ד אדר (בשנה מעוברת – כ"ד אדר ב') מופיעה למנהלים הודעה עם ההוראות המדויקות. היא חוזרת כל יום, עד שמורידים את התיקייה של השנה (עם התמונות והמסמכים).</li>
+<li>אחרי ההורדה: קליק ימני על הקובץ ← "חלץ הכל", ומעתיקים לדיסק החיצוני.</li></ul>`],
 ['h10n','כלים חדשים: ספירה מהירה, קבלות, כפילויות, זכאות, תזכורות',`
 <ul><li><b>⚡ ספירה מהירה</b> (רישום כסף לשנה): לערב החפ"ק – כותבים שם ← Enter ← סכום ← Enter. רואים רשימה של מה שנרשם, ו"↶ ביטול" לטעות.</li>
 <li><b>🧾 קבלה</b>: בכרטיס הבחור, ליד כל תשלום – אישור קבלת כסף עם מספר רץ (מקור + העתק).</li>
@@ -3246,7 +3250,7 @@ async function archiveDo(){const ys=[...document.querySelectorAll('.arY:checked'
   try{const med=(document.getElementById('arMedia')||{}).checked;for(const y of ys){pr.textContent='מכין את '+y+'…';const base=root+'/'+y.replace(/"/g,'');if(DB.settings.years.includes(y))files=files.concat(await buildYearFiles(y,base));if(med||!DB.settings.years.includes(y)){pr.textContent='אוסף את התמונות והמסמכים של '+y+'…';files=files.concat(await yearMediaFiles(y,base+'/'))}}
     files.push([root+'/גיבוי מלא של המערכת '+stamp()+'.json',JSON.stringify(DB)]);
     files=files.map(([n,d])=>[n.split('/').map(x=>x.replace(/"/g,"''").replace(/[\\:*?<>|]/g,'-')).join('/'),d]);
-    download(root+' '+ys.map(y=>y.replace(/"/g,'')).join('-')+'.zip',zip(files,'application/zip'));log('תיקיית סוף שנה',ys.join(', '));pr.innerHTML=`<span style="color:var(--ok)">✔ ירד קובץ ZIP עם ${files.length} קבצים (בתיקיית ההורדות). לוחצים עליו קליק ימני ← "חלץ הכל".</span>`}
+    download(root+' '+ys.map(y=>y.replace(/"/g,'')).join('-')+'.zip',zip(files,'application/zip'));log('תיקיית סוף שנה',ys.join(', '));if(typeof arcMark==='function'&&(document.getElementById('arMedia')||{}).checked)arcMark(ys);pr.innerHTML=`<span style="color:var(--ok)">✔ ירד קובץ ZIP עם ${files.length} קבצים (בתיקיית ההורדות). לוחצים עליו קליק ימני ← "חלץ הכל".</span>`}
   catch(e){console.error(e);pr.innerHTML=`<span style="color:var(--bad)">שגיאה: ${esc(e.message)}</span>`}btn.disabled=false}
 
 /* ====================== חומר מוכן: רקעים, תמונות ודוגמאות מהשנים הקודמות ======================
@@ -4153,7 +4157,7 @@ function alertsModal(tab){tab=tab||window._alTab||'now';window._alTab=tab;const 
   <div class="mb">${tab==='now'?(A.length?`<table><tbody>${A.map(a=>`<tr><td style="font-size:20px;width:30px">${a.ico}</td><td class="wrap"><span class="pill ${a.lv}" style="margin-inline-end:6px">${{bk:'גיבוי',task:'משימה',chq:'צ\'ק',rcpt:'קבלה',hk:'הוראת קבע',loan:'הלוואה',wed:'חתונה',near:'פרסים',risk:'חתנים'}[a.k]}</span>${a.txt}</td><td style="white-space:nowrap" class="edit-only">${a.btn||''}</td></tr>`).join('')}</tbody></table>`:'<div class="muted" style="text-align:center;padding:30px">✔ אין התראות כרגע.</div>'):weekHtml()}</div>
   <div class="mf"><button class="btn" onclick="closeModal();render()">סגירה</button>${tab==='week'?'<button class="btn" onclick="printHtml(\'השבוע\',\'<h1>📆 מה עושים השבוע</h1>\'+weekHtml())">🖨 הדפסה</button>':''}${feat('tasks')?`<button class="btn edit-only" onclick="editTask()">+ משימה</button>`:''}</div></div>`)}
 function alertsBadge(){try{const n=alertsList().filter(a=>a.lv!=='info').length;return `<button class="btn ${n?'pri':''}" onclick="alertsModal('now')" title="התראות ותזכורות">🔔${n?' '+n:''}</button>`}catch(e){return ''}}
-function alertsAtLogin(){if(window._alShown||!USER||USER.role==='addresses'||USER.role==='counter')return;window._alShown=true;const A=alertsList().filter(a=>a.k==='task'||a.k==='chq'||a.lv==='bad');if(A.length)setTimeout(()=>{if(!document.querySelector('.ov'))alertsModal('now')},400)}
+function alertsAtLogin(){if(typeof arcShowOnce==='function')arcShowOnce();if(window._alShown||!USER||USER.role==='addresses'||USER.role==='counter')return;window._alShown=true;const A=alertsList().filter(a=>a.k==='task'||a.k==='chq'||a.lv==='bad');if(A.length)setTimeout(()=>{if(!document.querySelector('.ov'))alertsModal('now')},400)}
 
 /* ---- 57. מה עושים השבוע ---- */
 function weekHtml(){const t0=today(),end=addDays(t0,7),rows=[];
@@ -4996,6 +5000,7 @@ async function selfCheck(){const el=document.getElementById('selfChk');if(!el)re
   try{const ph=(typeof PHOTOS!=='undefined'?PHOTOS.length:0),kb=(typeof KB!=='undefined'&&KB.faq?KB.faq.length:0);add(ph&&kb?'ok':'warn','תוכן קבוע (תמונות, שאלות ותשובות)',ph&&kb?ph+' תמונות, '+kb+' שאלות':'עוד לא הועלה – ☁ חיבור משותף ← "📤 העלאת תוכן קבוע"')}catch(e){}
   try{if(typeof mediaStatus==='function'){const s=await mediaStatus();add(s.missing?'warn':'ok','תמונות ומסמכים בכל המחשבים',s.text)}}catch(e){}
   try{const q=navigator.storage&&await navigator.storage.estimate();if(q){const p=q.usage/q.quota;add(p<.8?'ok':'warn','מקום במחשב',Math.round(q.usage/1048576)+' MB בשימוש')}}catch(e){}
+  {const ad=arcDue();add(ad?'warn':'ok','תיקיית סוף שנה',ad?'עוד לא הורדה התיקייה של '+ad+' – ⚙ הגדרות ← גיבוי ← "📦 הורדת תיקיית שנה"':'מעודכן')}
   add(pinHas()?'ok':'warn','קוד המחשב',pinHas()?'מוגדר – אפשר להיכנס גם בלי אינטרנט':'עוד לא הוגדר – ⚙ הגדרות ← 🔐 אבטחה ובדיקה');
   add('ok','נעילה אוטומטית',idleMin()?'אחרי '+idleMin()+' דקות בלי פעילות':'כבויה');
   {const v=[...document.querySelectorAll('#sidefoot div')].map(d=>d.textContent).find(t=>/^\s*גרסה:/.test(t))||'';const upd=!!document.getElementById('swUpd');add(upd?'warn':'ok','גרסה',(v.replace(/^\s*גרסה:\s*/,'')||'—')+(upd?' – מתעדכנת עכשיו לגרסה חדשה':' – מעודכנת'))}
@@ -5069,6 +5074,23 @@ async function clServerPeople(){try{const {count,error}=await CLOUD.sb.from('ez_
 async function clFullResync(silent){if(!CLOUD.on||!navigator.onLine)return toast('צריך אינטרנט');if(!silent&&!confirm('לטעון מחדש את כל הנתונים מהשרת?\nשינויים שעוד לא נשלחו – יאוחדו, לא יימחקו.'))return;
   const M=CLOUD.meta;M.lastPull='1970-01-01T00:00:00Z';M.ver={};clSaveMeta();toast('⏳ טוען את כל הנתונים מהשרת…');await clSync(true);
   const n=await clServerPeople();toast(n>=0&&(DB.people||[]).length>=n?'✅ כל הנתונים נטענו ('+DB.people.length+' בחורים)':'⚠ נטענו '+(DB.people||[]).length+' מתוך '+n+' – נסו שוב');render()}
+
+/* ---------- תזכורת שנתית: מכ"ד אדר (באדר ב' בשנה מעוברת) – להוריד את תיקיית סוף השנה. כל יום, עד שמורידים ---------- */
+const arcNum=lbl=>5700+hebVal(lbl);
+function arcDue(dt){const y=DB&&DB.settings&&DB.settings.currentYear;if(!y||(DB.archiveDone||{})[y])return null;const h=isoToHeb(dt||today());if(!h)return null;const N=arcNum(y),pm=hLeap(h.y)?13:12;
+  return (h.y>N||(h.y===N&&((h.m===pm&&h.d>=24)||(h.m>=1&&h.m<=6))))?y:null}
+function arcMark(ys){const y=DB.settings.currentYear;if(!ys.includes(y))return;DB.archiveDone=DB.archiveDone||{};DB.archiveDone[y]={t:new Date().toISOString(),by:USER?USER.name:''};log('תיקיית סוף שנה','הורדה מלאה של '+y);save()}
+function arcModal(y){modal(`<div class="modal narrow"><div class="mh"><h2>📦 הגיע הזמן להוריד את החומר של ${esc(y)}</h2><button class="x" onclick="closeModal()">×</button></div><div class="mb">
+  <p>פורים עבר 🎉 עכשיו שומרים את <b>כל החומר של השנה</b> במחשב – בתיקיות מסודרות, כמו התיקיות של העמותה: אקסלים, כתובות ומסלולים, קבוצות, מענקים, קמפיין, מודעות, תמונות ומסמכים.</p>
+  <ol style="line-height:1.9;padding-right:20px"><li>לוחצים על הכפתור למטה <b>"📦 להוריד עכשיו"</b> (או: ⚙ הגדרות ← גיבוי ← "📦 הורדת תיקיית שנה").</li>
+  <li>מסמנים את השנה <b>${esc(y)}</b>, ומשאירים מסומן <b>"כל התמונות והמסמכים"</b>.</li>
+  <li>לוחצים <b>"⬇ הורד את התיקייה"</b> ומחכים עד שכתוב ✔.</li>
+  <li>בתיקיית ההורדות: קליק ימני על הקובץ ← <b>"חלץ הכל"</b>.</li>
+  <li>מעתיקים את התיקייה לדיסק החיצוני (תיקיית "מסודר לפי שנים").</li></ol>
+  <div class="alert warn small">ההודעה הזאת תופיע כל יום, עד שמורידים את התיקייה של ${esc(y)}.</div></div>
+  <div class="mf"><button class="btn pri" onclick="closeModal();archiveModal()">📦 להוריד עכשיו</button><button class="btn" onclick="closeModal()">תזכיר לי מחר</button></div></div>`)}
+function arcShowOnce(){if(window._arcShown||!USER||!can('settings'))return;window._arcShown=true;const y=arcDue();if(!y)return;const k=KEY+'_arcRem_'+today();try{if(localStorage.getItem(k))return;localStorage.setItem(k,'1')}catch(e){}
+  const tryShow=(n)=>{if(document.querySelector('.ov')||document.getElementById('clGate')){if(n<40)setTimeout(()=>tryShow(n+1),3000);return}arcModal(y)};setTimeout(()=>tryShow(0),2500)}
 
 /* ====================== תמונות ומסמכים בכל המחשבים (מוצפן, דרך השרת) ======================
    כל מחשב שיש בו תמונות/מסמכים (מחבילות שנה או שהועלו ידנית) – מעלה אותם מוצפנים לשרת.
@@ -5155,7 +5177,7 @@ function renderNav(){
   document.getElementById('sidefoot').innerHTML=`גיבוי אחרון: ${lb?esc(hebDate(localIso(lb))):'<b>אף פעם</b>'}${days===null||days>=7?' ⚠':''}
     ${can('settings')||USER.role==='clerk'?`<button onclick="backup()">💾 שמור גיבוי</button>`:''}${can('settings')?`<button onclick="archiveModal()">📦 תיקיית סוף שנה</button>`:''}${USER.role!=='addresses'?`<button onclick="exportAll()">📊 ייצוא לאקסל</button>`:''}
     <div class="row"><button onclick="fontSize(1)" title="אותיות גדולות">א+</button><button onclick="fontSize(-1)" title="אותיות קטנות">א−</button><button onclick="openTheme()" title="צבעים ומראה">🎨</button></div>
-    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 24.10.2026 19:17</div>`;
+    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 24.10.2026 20:56</div>`;
   const yp=document.getElementById('yearpick');yp.innerHTML=st.years.map(y=>`<option ${y===S.viewYear?'selected':''} value='${esc(y)}'>${esc(y)}${y===st.currentYear?' (נוכחית)':''}</option>`).join('');
   document.getElementById('todayHeb').textContent=hebDate(today());applyBrand();
   document.getElementById('gsWrap').style.display=USER.role==='addresses'||USER.role==='counter'?'none':'';
