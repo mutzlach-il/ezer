@@ -2506,7 +2506,7 @@ ${feat('lottery')?'<li>הגרלה: "🎲 הגרלה על מסך מלא" – מת
 <li><b>שכחת את המפתח?</b> המנהל לא צריך פתק: נכנסים עם <b>המייל שלך</b> (כפתור Google, או מייל וסיסמה – ואם שכחת גם את הסיסמה, "שכחתי סיסמה" שולח קישור למייל) ← לוחצים <b>"📧 שכחתי את המפתח – שחזור דרך המייל שלי"</b> ← בוחרים משפט חדש. שום נתון לא נמחק. עובד רק לחשבון של מנהל. עובד ששכח – המנהל אומר לו את המפתח. מחשב שכבר מחובר ממשיך לעבוד בלי להקליד שוב. <b>חשוב:</b> מי שנכנס למייל של המנהל יכול לשחזר – לכן שומרים היטב על הסיסמה של המייל.</li>
 <li><b>סנכרון:</b> כל שינוי עובר לכל המחשבים תוך שניות. בפס הצד רואים "☁ מסונכרן". אם שניים רשמו לאותו בחור באותו זמן – שני התשלומים נשמרים, שום דבר לא נדרס.</li>
 <li><b>בלי אינטרנט:</b> לוחצים בפס הצד "💻 הורדה למחשב" – ומקבלים סמל של עזר. עובדים רגיל גם בלי אינטרנט, וכשהחיבור חוזר הכל נשלח לבד ("📴 בלי אינטרנט – יסתנכרן כשיחזור").</li>
-<li><b>עדכונים:</b> כשיוצאת גרסה חדשה מופיע למטה "✔ יש גרסה חדשה – לחצו לרענון". לא שולחים יותר קבצים.</li>
+<li><b>עדכונים:</b> כשיוצאת גרסה חדשה מופיע למטה "✔ מתעדכן לגרסה החדשה". לא שולחים יותר קבצים.</li>
 <li><b>העברת הנתונים בפעם הראשונה:</b> בקובץ הישן במחשב – הגדרות ← גיבוי ← "💾 שמירת גיבוי". בגרסה המקוונת – הגדרות ← גיבוי ← "טעינת גיבוי" ובוחרים את הקובץ. הכל עולה מוצפן לשרת.</li>
 <li><b>עלונים, תמונות ומאגר הידע</b> של העוזר לא נמצאים בקישור (פרטיות). המנהל מעלה אותם פעם אחת: הגדרות ← "☁ חיבור משותף" ← "📤 העלאת תוכן קבוע" ← הקובץ "עזר – תוכן קבוע.ezpack". הם עולים מוצפנים, וכל המחשבים מקבלים אותם לבד.</li></ul>`],
 ['h10k','🎁 סל הבגדים לחתן ופתק לחנות',`
@@ -4840,7 +4840,14 @@ async function clBoot(){if(!CLOUD_BUILD||!/^https?:/.test(location.protocol))ret
   if(!navigator.onLine){if(await clEnterOffline())return true}
   try{await clAfterAuth(sess.user)}catch(e){if(!(await clEnterOffline()))clLoginScreen('אין חיבור לשרת: '+e.message)}
   return true}
-if(CLOUD_BUILD&&'serviceWorker' in navigator&&/^https:/.test(location.protocol)){navigator.serviceWorker.register('sw.js').then(r=>{r.addEventListener('updatefound',()=>{const w=r.installing;w&&w.addEventListener('statechange',()=>{if(w.state==='installed'&&navigator.serviceWorker.controller){const b=document.createElement('div');b.id='swUpd';b.style.cssText='position:fixed;bottom:14px;left:14px;z-index:9800;background:#1e7b4a;color:#fff;padding:10px 14px;border-radius:10px;cursor:pointer;box-shadow:0 4px 16px #0004';b.textContent='✔ יש גרסה חדשה – לחצו לרענון';b.onclick=()=>location.reload();document.body.appendChild(b)}})})}).catch(()=>{})}
+if(CLOUD_BUILD&&'serviceWorker' in navigator&&/^https:/.test(location.protocol)){
+  // עדכון אוטומטי: כשיש גרסה חדשה – שומרים, ומתרעננים לבד (מחכים אם באמצע הקלדה או חלון פתוח)
+  const hadCtl=!!navigator.serviceWorker.controller;let swGo=false;
+  const swReload=()=>{if(swGo)return;swGo=true;const b=document.createElement('div');b.id='swUpd';b.style.cssText='position:fixed;bottom:14px;left:14px;z-index:9800;background:#1e7b4a;color:#fff;padding:10px 14px;border-radius:10px;box-shadow:0 4px 16px #0004';b.textContent='⏳ מתעדכן לגרסה החדשה…';document.body.appendChild(b);
+    const busy=()=>document.querySelector('.ov')||['INPUT','TEXTAREA','SELECT'].includes((document.activeElement||{}).tagName);
+    const go=async()=>{if(busy()){b.textContent='⏳ גרסה חדשה – תתעדכן לבד כשתסיים';setTimeout(go,4000);return}try{if(CLOUD.on&&navigator.onLine)await Promise.race([clSync(),new Promise(r=>setTimeout(r,3000))])}catch(e){}location.reload()};setTimeout(go,600)};
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(hadCtl)swReload()});
+  navigator.serviceWorker.register('sw.js').then(r=>{const chk=()=>{try{r.update()}catch(e){}};chk();setInterval(chk,15*60000);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')chk()});window.addEventListener('online',chk)}).catch(()=>{})}
 // התקנה כאפליקציה במחשב (סמל על שולחן העבודה, עובד גם בלי אינטרנט)
 let clInstallEvt=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();clInstallEvt=e;clInstallBtn()});
 function clInstallBtn(){const side=document.getElementById('sidefoot');if(!side||document.getElementById('clInst')||matchMedia('(display-mode: standalone)').matches)return;const b=document.createElement('button');b.id='clInst';b.textContent='💻 הורדה למחשב';b.title='מתקין את עזר כתוכנה – סמל על שולחן העבודה, עובד גם בלי אינטרנט';
@@ -4991,7 +4998,7 @@ async function selfCheck(){const el=document.getElementById('selfChk');if(!el)re
   try{const q=navigator.storage&&await navigator.storage.estimate();if(q){const p=q.usage/q.quota;add(p<.8?'ok':'warn','מקום במחשב',Math.round(q.usage/1048576)+' MB בשימוש')}}catch(e){}
   add(pinHas()?'ok':'warn','קוד המחשב',pinHas()?'מוגדר – אפשר להיכנס גם בלי אינטרנט':'עוד לא הוגדר – ⚙ הגדרות ← 🔐 אבטחה ובדיקה');
   add('ok','נעילה אוטומטית',idleMin()?'אחרי '+idleMin()+' דקות בלי פעילות':'כבויה');
-  {const v=[...document.querySelectorAll('#sidefoot div')].map(d=>d.textContent).find(t=>/^\s*גרסה:/.test(t))||'';const upd=!!document.getElementById('swUpd');add(upd?'warn':'ok','גרסה',(v.replace(/^\s*גרסה:\s*/,'')||'—')+(upd?' – יש גרסה חדשה, לחצו על הכפתור הירוק למטה':' – מעודכנת'))}
+  {const v=[...document.querySelectorAll('#sidefoot div')].map(d=>d.textContent).find(t=>/^\s*גרסה:/.test(t))||'';const upd=!!document.getElementById('swUpd');add(upd?'warn':'ok','גרסה',(v.replace(/^\s*גרסה:\s*/,'')||'—')+(upd?' – מתעדכנת עכשיו לגרסה חדשה':' – מעודכנת'))}
   const ic={ok:'✅',warn:'⚠',bad:'❌'};const bad=R.filter(r=>r[0]==='bad').length,warn=R.filter(r=>r[0]==='warn').length;
   el.classList.remove('muted');el.innerHTML=`<div class="alert ${bad?'bad':warn?'warn':'ok'}" style="margin-bottom:8px">${bad?'❌ יש '+bad+' דברים שצריכים טיפול':warn?'⚠ הכל עובד, יש '+warn+' דברים לתשומת לב':'✅ הכל תקין'}</div><table><tbody>${R.map(([s,t,d])=>`<tr><td style="width:28px">${ic[s]}</td><td><b>${esc(t)}</b></td><td class="small">${esc(d)}</td></tr>`).join('')}</tbody></table>`}
 
@@ -5148,7 +5155,7 @@ function renderNav(){
   document.getElementById('sidefoot').innerHTML=`גיבוי אחרון: ${lb?esc(hebDate(localIso(lb))):'<b>אף פעם</b>'}${days===null||days>=7?' ⚠':''}
     ${can('settings')||USER.role==='clerk'?`<button onclick="backup()">💾 שמור גיבוי</button>`:''}${can('settings')?`<button onclick="archiveModal()">📦 תיקיית סוף שנה</button>`:''}${USER.role!=='addresses'?`<button onclick="exportAll()">📊 ייצוא לאקסל</button>`:''}
     <div class="row"><button onclick="fontSize(1)" title="אותיות גדולות">א+</button><button onclick="fontSize(-1)" title="אותיות קטנות">א−</button><button onclick="openTheme()" title="צבעים ומראה">🎨</button></div>
-    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 23.10.2026 17:52</div>`;
+    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 24.10.2026 19:17</div>`;
   const yp=document.getElementById('yearpick');yp.innerHTML=st.years.map(y=>`<option ${y===S.viewYear?'selected':''} value='${esc(y)}'>${esc(y)}${y===st.currentYear?' (נוכחית)':''}</option>`).join('');
   document.getElementById('todayHeb').textContent=hebDate(today());applyBrand();
   document.getElementById('gsWrap').style.display=USER.role==='addresses'||USER.role==='counter'?'none':'';
