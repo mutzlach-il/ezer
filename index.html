@@ -1532,7 +1532,7 @@ const KF_CROWN='<svg viewBox="0 0 64 40" class="kfCrown"><path d="M8 32L4 10l13 
 const KF_CSS=`.kf{width:180mm;margin:0 auto;border:5px solid #c9a231;border-radius:16px;overflow:hidden;background:#fbf6ea;background-image:radial-gradient(circle at 50% 30%,#fff 0,transparent 65%),repeating-linear-gradient(45deg,#a8832a12 0 1px,transparent 1px 14px),repeating-linear-gradient(-45deg,#a8832a12 0 1px,transparent 1px 14px);color:#1d1b1c;-webkit-print-color-adjust:exact;print-color-adjust:exact;page-break-inside:avoid;box-shadow:0 6px 24px #0003}
 .kf .hd{position:relative;background:#1d1b1c;background-image:radial-gradient(circle at 50% 0,#3a332280,transparent 70%),repeating-linear-gradient(45deg,#c9a2311a 0 1px,transparent 1px 14px),repeating-linear-gradient(-45deg,#c9a2311a 0 1px,transparent 1px 14px);padding:16px 22px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px}
 .kf .bsd{position:absolute;top:6px;right:14px;font-size:11.5px;color:#c9a231}
-.kf .le{height:100px;background:#fff;border-radius:50%;padding:6px}.kf .lr{height:118px}
+.kf .le{height:112px;filter:drop-shadow(0 2px 6px #0008)}.kf .lr{height:118px}
 .kf .mid{text-align:center;flex:1}.kf .kfCrown{width:44px;display:block;margin:0 auto 4px}
 .kf .t{font-size:42px;font-weight:900;line-height:1.15;background:linear-gradient(180deg,#fff6cf,#e6c25a 55%,#b8901f);-webkit-background-clip:text;background-clip:text;color:transparent}.kf .s{font-size:13px;color:#c9a231;margin-top:4px;letter-spacing:.3px}
 .kf .band{background:linear-gradient(90deg,#a8831f,#e6c25a 30%,#f5dc8c 50%,#e6c25a 70%,#a8831f);padding:11px 22px;display:flex;align-items:center;justify-content:center;gap:14px;border-top:2px solid #1d1b1c;border-bottom:2px solid #1d1b1c}
@@ -1546,7 +1546,7 @@ function kitFancyHtml(p,store){const K=kitCfg(),I=kitItems(p).filter(i=>(i.store
   return `<div class="kf"><div class="hd"><span class="bsd">בס"ד</span>${lg?`<img class="lr" src="${lg}">`:'<div style="width:100px"></div>'}<div class="mid"><div class="t">${esc(title)}</div><div class="s">${esc(orgFull())} ${esc(orgSub())}</div></div><img class="le" src="${logoSrc()}"></div>
   <div class="band"><span class="lbl">שם החתן</span><span class="nm">${esc(fullName(p))}</span></div>
   <table><thead><tr><th>#</th><th>פריט</th><th style="text-align:center">כמות</th><th style="text-align:center">נמסר</th></tr></thead><tbody>${I.map((i,x)=>`<tr><td class="i">${x+1}</td><td>${esc(i.n)}</td><td class="q">${esc(i.q)}</td><td class="v"><span></span></td></tr>`).join('')}</tbody></table>
-  <div class="ft"><span class="sig">חתימת החנות</span><span class="sig">חתימת החתן</span></div></div>`}
+  <div class="ft"><span class="sig">חתימת החנות</span><span class="sig">חתימת העזר</span></div></div>`}
 function kitFancy(id,store){const p=byId(id);p.kit=p.kit||{};if(!p.kit.no){const K=kitCfg();K.nextNo=(K.nextNo||100)+1;p.kit.no=K.nextNo}p.kit.date=today();log('סל מענק','כרטיסייה מעוצבת ל'+fullName(p)+' – '+store);save();
   printHtml('כרטיסייה – '+fullName(p),'<div class="nolh">'+kitFancyHtml(p,store)+'</div>',KF_CSS+'@page{size:A4;margin:10mm}')}
 
@@ -5404,7 +5404,7 @@ function renderNav(){
   document.getElementById('sidefoot').innerHTML=`גיבוי אחרון: ${lb?esc(hebDate(localIso(lb))):'<b>אף פעם</b>'}${days===null||days>=7?' ⚠':''}
     ${can('settings')||USER.role==='clerk'?`<button onclick="backup()">💾 שמור גיבוי</button>`:''}${can('settings')?`<button onclick="archiveModal()">📦 תיקיית סוף שנה</button>`:''}${USER.role!=='addresses'?`<button onclick="exportAll()">📊 ייצוא לאקסל</button>`:''}
     <div class="row"><button onclick="fontSize(1)" title="אותיות גדולות">א+</button><button onclick="fontSize(-1)" title="אותיות קטנות">א−</button><button onclick="openTheme()" title="צבעים ומראה">🎨</button></div>
-    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 03.11.2026 16:54</div>`;
+    <button onclick="logout()">יציאה</button><div style="opacity:.6;margin-top:6px">גרסה: 03.11.2026 16:55</div>`;
   const yp=document.getElementById('yearpick');yp.innerHTML=st.years.map(y=>`<option ${y===S.viewYear?'selected':''} value='${esc(y)}'>${esc(y)}${y===st.currentYear?' (נוכחית)':''}</option>`).join('');
   document.getElementById('todayHeb').textContent=hebDate(today());applyBrand();
   document.getElementById('gsWrap').style.display=USER.role==='addresses'||USER.role==='counter'?'none':'';
