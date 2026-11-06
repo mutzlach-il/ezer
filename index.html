@@ -1962,7 +1962,7 @@ function openGmaps(){const r=window._er||{},hs=(r.stops||[]).map(hById).filter(B
   modal(`<div class="modal narrow"><div class="mh"><h2>המסלול בגוגל מפות</h2><button class="x" onclick="editRoute('${r.id||''}')">×</button></div><div class="mb"><p class="small">המסלול ארוך – גוגל מפות מקבל עד 10 תחנות בכל פעם. פתחו לפי הסדר:</p>${links.map((l,i)=>`<div><a href="${l}" target="_blank">חלק ${i+1} ↗</a></div>`).join('')}</div></div>`)}
 async function drawMapBox(){const r=window._er,box=document.getElementById('mapBox');if(!box)return;
   let html=`<div class="toolbar"><button class="btn sm" onclick="attachMap()">📎 צירוף קובץ מפה (תמונה או PDF)</button>${r.mapKey?`<button class="btn sm danger" onclick="window._er.mapKey=null;window._er.mapName='';drawMapBox()">הסר מפה</button>`:''}</div>`;
-  if(r.mapKey){const b=await idbGet(r.mapKey);if(b){const u=URL.createObjectURL(b);html+=b.type.startsWith('image')?`<img src="${u}" style="max-width:100%;border:1px solid var(--line);border-radius:8px">`:`<a class="btn sm" href="${u}" target="_blank">📄 פתיחת ${esc(r.mapName||'המפה')}</a>`}else html+='<div class="small muted">הקובץ לא נמצא בדפדפן הזה (מפות נשמרות רק במחשב שבו צורפו).</div>'}
+  if(r.mapKey){const b=await idbGet(r.mapKey);if(b){const u=URL.createObjectURL(b);html+=b.type.startsWith('image')?`<img src="${u}" style="max-width:100%;border:1px solid var(--line);border-radius:8px">`:`<a class="btn sm" href="${u}" target="_blank">📄 פתיחת ${esc(r.mapName||'המפה')}</a>`}else html+='<div class="small muted">הקובץ עוד לא ירד למחשב הזה. בגרסה המקוונת המפות נשמרות מוצפנות בשרת ויורדות לבד לכל מחשב – כדאי לחכות דקה כשיש אינטרנט ולפתוח שוב.</div>'}
   box.innerHTML=html}
 function attachMap(){pickFile('image/*,.pdf',async f=>{const k='map_'+uid();await idbPut(k,f);window._er.mapKey=k;window._er.mapName=f.name;drawMapBox();toast('המפה צורפה')})}
 function saveRoute(andPrint){const r=window._er,f=document.getElementById('rf'),g=n=>f.querySelector(`[name="${n}"]`).value.trim();
@@ -2639,7 +2639,7 @@ ${feat('lottery')?'<li>הגרלה: "🎲 הגרלה על מסך מלא" – מת
 <li>הדפסה: 🗺 ליד כל מסלול, או "🖨 עם מפות והוראות" – דף מסלול + מפה מצוירת של הרחובות עם הדרך בקו אדום ומספר לכל תחנה.</li>
 <li>אם בית לא נמצא במפה – בודקים את שם הרחוב בכרטיס הבית (כתיב כמו בשלט) ולוחצים במסך המפות "📍 מיקום הבתים".</li></ul>`],
 ['h10c','☁ הגרסה המקוונת – כל הצוות על אותם נתונים, מוצפן',`
-<ul><li><b>הקישור:</b> <span dir="ltr">mutzlach-il.github.io/ezer</span>. שם יש רק את התוכנה – בלי שום נתון. מי שאין לו הרשאה רואה רק מסך כניסה.</li>
+<ul><li><b>הקישור:</b> <span dir="ltr">${ezHost()}/ezer</span>. שם יש רק את התוכנה – בלי שום נתון. מי שאין לו הרשאה רואה רק מסך כניסה.</li>
 <li><b>כניסה אישית:</b> עם Google, או מייל וסיסמה, או <b>"📧 כניסה עם קוד שנשלח למייל"</b> – כותבים את המייל, מקבלים קוד של 6 ספרות ומקלידים אותו (בלי סיסמה בכלל; גם מי ששכח סיסמה נכנס ככה, ואחר כך יכול לקבוע סיסמה חדשה בהגדרות ← "☁ חיבור משותף" ← "🔐 קביעת / שינוי סיסמה").</li>
 <li><b>🚪 יציאה</b> (כפתור למעלה): "יציאה רגילה" – במחשב שלך; "יציאה ומחיקה מהמחשב הזה" – במחשב משותף: מוחק מהמחשב את הנתונים והמפתח (בשרת לא נמחק כלום). עובד שהורדת לו את האישור – בפעם הבאה שהמחשב שלו מתחבר, הנתונים נמחקים ממנו לבד.</li>
 <li><b>אישור:</b> הראשון שנכנס אי פעם הוא המנהל. כל מי שנכנס אחריו מחכה לאישור: הגדרות ← "☁ חיבור משותף" ← "מי יכול להיכנס" – מסמנים "מאושר" ובוחרים הרשאה (מנהל / רושם / צפייה / כתובות / מתנדב לספירה, ואפשר "בלי סכומים").</li>
@@ -2764,7 +2764,7 @@ ${feat('letters')?'<li><b>✉ מכתבים</b> – מכתב אישי לכל בח
 <tr><td><b>משתמשים</b></td><td>שמות, סיסמאות, הרשאות, הסתרת סכומים, ביטול מסך הכניסה.</td></tr><tr><td><b>גיבוי</b></td><td>גיבוי רגיל או עם סיסמה, טעינה, ייצוא לאקסל, תזכורת.</td></tr><tr><td><b>סל מחזור</b></td><td>כל מה שנמחק ב־30 הימים האחרונים – "↩ שחזר".</td></tr><tr><td><b>יומן שינויים</b></td><td>מי עשה מה ומתי.</td></tr></tbody></table>`],
 ['h15','גיבוי ומעבר מחשב – חשוב!',`
 <ul><li>הנתונים שמורים <b>בדפדפן של המחשב הזה</b>. בדפדפן אחר / מחשב אחר הם לא יופיעו.</li><li>פעם בשבוע: <b>💾 שמור גיבוי</b> (בצד ימין למטה). יורד קובץ ל"הורדות" – מעתיקים גם לדיסק און קי. המערכת מזכירה לבד.</li>
-<li>במחשב אחר: פותחים את קובץ המערכת ← הגדרות ← גיבוי ← "📂 טען גיבוי".</li><li>לא לנקות "נתוני גלישה" בדפדפן בלי גיבוי.</li>${feat('addresses')?'<li>קבצי מפות שצורפו למסלולים נשמרים רק במחשב שבו צורפו.</li>':''}</ul>`],
+<li>במחשב אחר: פותחים את קובץ המערכת ← הגדרות ← גיבוי ← "📂 טען גיבוי".</li><li>לא לנקות "נתוני גלישה" בדפדפן בלי גיבוי.</li>${feat('addresses')?'<li>קבצי מפות שצורפו למסלולים: בגרסה המקוונת הם נשמרים מוצפנים בשרת ויורדים לבד לכל מחשב; בקובץ שבמחשב הם נשמרים רק במחשב שבו צורפו.</li>':''}</ul>`],
 ['h16','שאלות נפוצות',`
 <ul><li><b>איפה הסיכום של השנה?</b> – "📅 לוח שנה": למעלה יש "סיכום ולקחים לשנה הבאה" לכל שנה.</li><li><b>טעיתי – איך מתקנים?</b> "↶ בטל" למעלה. או משנים את המספר בתא, או מוחקים תשלום בכרטיס (🗑).</li>
 <li><b>מחקתי משהו בטעות</b> – הגדרות ← סל מחזור ← "↩ שחזר".</li><li><b>מי שינה את זה?</b> – הגדרות ← יומן שינויים.</li>
@@ -4950,7 +4950,7 @@ async function clContentPush(c){if(c.kind!=='ezer-content')throw new Error('זה
   await idbPut('cl_content_ver','');await clContentLoad();log('ענן','הועלה תוכן קבוע ('+Math.round(s.length/1e6)+'MB)');toast('✔ התוכן הועלה – כולם יקבלו אותו')}
 
 /* ---------- ניהול: משתמשים, מצב, מפתח ---------- */
-function setCloud(){if(!CLOUD.on)return `<div class="card"><h2>☁ גרסה מקוונת משותפת</h2><p>זה הקובץ שבמחשב – הנתונים כאן נשמרים רק במחשב הזה.</p><p>בגרסה המקוונת כל הצוות עובד על אותם נתונים, מוצפנים, עם כניסה אישית – וגם בלי אינטרנט: <a href="https://mutzlach-il.github.io/ezer/" target="_blank" dir="ltr">mutzlach-il.github.io/ezer</a></p><p class="small muted">כדי להעביר לשם את הנתונים: שומרים כאן גיבוי (לשונית "גיבוי"), ובגרסה המקוונת – הגדרות ← גיבוי ← טעינת גיבוי.</p></div>`;
+function setCloud(){if(!CLOUD.on)return `<div class="card"><h2>☁ גרסה מקוונת משותפת</h2><p>זה הקובץ שבמחשב – הנתונים כאן נשמרים רק במחשב הזה.</p><p>בגרסה המקוונת כל הצוות עובד על אותם נתונים, מוצפנים, עם כניסה אישית – וגם בלי אינטרנט: <a href="https://${ezHost()}/ezer/" target="_blank" dir="ltr">${ezHost()}/ezer</a></p><p class="small muted">כדי להעביר לשם את הנתונים: שומרים כאן גיבוי (לשונית "גיבוי"), ובגרסה המקוונת – הגדרות ← גיבוי ← טעינת גיבוי.</p></div>`;
   setTimeout(clCardFill,0);return `<div class="card" id="clCard">טוען…</div>`}
 const clIsAdm=()=>CLOUD.me&&(CLOUD.me.role==='admin'||CLOUD.me.role==='owner'),clIsOwner=()=>CLOUD.me&&CLOUD.me.role==='owner';
 const clDt=t=>t?esc(hebDate(localIso(t),false))+' <span class="small muted">'+esc(new Date(t).toTimeString().slice(0,5))+'</span>':'<span class="muted">עוד לא נכנס</span>';
@@ -5026,7 +5026,9 @@ function clInstall(){if(clInstallEvt){clInstallEvt.prompt();clInstallEvt.userCho
 
 /* ====================== הקובץ הישן נעול – עובדים רק דרך הקישור ====================== */
 const LEGACY_LOCK=false;
-const EZ_LINK='https://mutzlach-il.github.io/ezer/';
+/* הכתובת של עזר – לפי המקום שבו המערכת פתוחה (מוכן למעבר לכתובת bonehsystems.co.il) */
+function ezHost(){try{return /(^|\.)bonehsystems\.co\.il$/.test(location.hostname)?location.hostname:'mutzlach-il.github.io'}catch(e){return 'mutzlach-il.github.io'}}
+const EZ_LINK='https://'+ezHost()+'/ezer/';
 function legacyLockScreen(){const raw=(()=>{try{return localStorage.getItem(KEY)}catch(e){return null}})();let n=0;try{n=JSON.parse(raw||'{}').people.length}catch(e){}
   clGate(`<h2 style="margin:6px 0">🔒 המערכת עברה לקישור</h2><p>הקובץ הזה כבר לא בשימוש. עובדים רק דרך הקישור – שם כולם רואים את אותם נתונים, מוצפנים ומעודכנים:</p>
   <p><a class="btn pri" style="font-size:17px" href="${EZ_LINK}" target="_blank" rel="noopener">🌐 פתיחת עזר בקישור</a></p><p dir="ltr" class="small muted">${EZ_LINK}</p>
@@ -5296,7 +5298,7 @@ function medStat(){const side=document.getElementById('sidefoot');if(!side||!CLO
   el.textContent=MED.busy&&MED.total?`🖼 ${MED.up?'מעלה':'מוריד'} תמונות וקבצים ${MED.done}/${MED.total}`:MED.stopped?'🖼 '+MED.stopped:MED.last?`🖼 תמונות וקבצים: ${MED.local.toLocaleString()} – מעודכן`:'';el.title='תמונות ומסמכים מכל השנים – נשמרים מוצפנים בשרת ויורדים לכל מחשב'}
 let medT=null;function mediaKick(ms){if(!CLOUD.on)return;clearTimeout(medT);medT=setTimeout(mediaSync,ms||3000)}
 async function mediaSync(){if(!CLOUD.on||!CLOUD.key||!CLOUD.sb||!navigator.onLine)return;if(MED.busy){MED.again=true;return}MED.busy=true;MED.again=false;MED.stopped='';MED.err=0;
-  try{const R=await medIndex();const U=await userPhotos(),F=await yearFiles();
+  try{const RALL=await medIndex();const R=RALL.filter(r=>r.kind!=='map'),RM=RALL.filter(r=>r.kind==='map');const U=await userPhotos(),F=await yearFiles();
     const rk=new Set(R.map(r=>medKey(r.m))),rid=new Set(R.map(r=>r.id));
     const lk=new Set([...U,...F].map(medKey)),lid=new Set([...U,...F].map(x=>x.id));
     const toUp=[...U.map(x=>['photo',x]),...F.map(x=>['file',x])].filter(([k,x])=>!rid.has(x.id)&&!rk.has(medKey(x)));
@@ -5317,6 +5319,14 @@ async function mediaSync(){if(!CLOUD.on||!CLOUD.key||!CLOUD.sb||!navigator.onLin
     await work(toDown,async r=>{if(r.kind==='photo'){const img=await medGet('p/'+r.id);let th=null;try{th=await medGet('t/'+r.id)}catch(e){}await idbPut('alonimg_'+r.id,img);if(th)await idbPut('alonthumb_'+r.id,th);addU.push(r.m)}
       else{await idbPut('yfile_'+r.id,await medGet('f/'+r.id));addF.push(r.m)}if(addU.length+addF.length>=20)await flush()});
     await flush();await fq;
+    // מפות של מסלולים – נשמרות מוצפנות בשרת ויורדות לכל מחשב (כדי שלא יישארו רק במחשב אחד)
+    try{const have=new Set(RM.filter(r=>!r.del).map(r=>r.id)),seen=new Set();
+      for(const rt of ((typeof DB!=='undefined'&&DB&&DB.routes)||[])){const k=rt&&rt.mapKey;if(!k||seen.has(k))continue;seen.add(k);
+        try{const loc=await idbGet(k);
+          if(loc&&!have.has(k)){await medPut('m/'+k,loc);const {error}=await CLOUD.sb.from('ez_media').upsert({id:k,kind:'map',meta:await clEnc(JSON.stringify({k,n:rt.mapName||''})),size:+(loc.size||0),deleted:false,updated_by:CLOUD.me.email});if(error)throw new Error(error.message)}
+          else if(!loc&&have.has(k)){await idbPut(k,await medGet('m/'+k))}
+        }catch(e){if(e&&e.message==='big')continue;MED.err++}}
+    }catch(e){console.warn(e)}
     MED.local=(await userPhotos()).length+(await yearFiles()).length;MED.last=new Date().toISOString();try{localStorage.setItem(KEY+'_med_last',MED.last)}catch(e){}
   }catch(e){MED.stopped='סנכרון התמונות נכשל – ינסה שוב';console.warn(e)}
   MED.busy=false;MED.total=0;medStat();if(MED.again)mediaKick(1000)}
